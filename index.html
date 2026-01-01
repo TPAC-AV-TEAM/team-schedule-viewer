@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>視聽班表系統 | V5.8 Final Stable</title>
+    <title>視聽班表系統 | V5.9 Color Optimized</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -23,7 +23,8 @@
             --mac-bg: #000000; --mac-card: #121214; --mac-blue: #0A84FF; 
             --women-text: #FFD6E0; --men-text: #E0F7FF; --special-text: #FFFFE0;
             --women-dot: #FF375F; --men-dot: #00FFFF; --special-dot: #FFD60A;
-            --master-gt: #8B0000; --master-bb: #008B8B; --master-gp: #006400; 
+            /* 配色優化：BB 改為深寶藍，與 GP 的深綠做出明顯區隔 */
+            --master-gt: #8B0000; --master-bb: #00008B; --master-gp: #006400; 
         }
         body { font-family: 'Inter', 'Noto Sans TC', sans-serif; height: 100vh; overflow: hidden; background: #000000; color: #FFFFFF; -webkit-font-smoothing: antialiased; }
         .aura-bg { position: fixed; inset: 0; background: radial-gradient(circle at 50% 50%, #0a183d 0%, #000000 100%); z-index: 0; pointer-events: none; }
@@ -40,7 +41,6 @@
         .orbit-base::after { content: ''; position: absolute; width: 8px; height: 8px; border-radius: 50%; left: 50%; bottom: -4px; transform: translateX(-50%); background: currentColor; box-shadow: 0 0 15px currentColor; }
         @keyframes rotate-linear { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-        /* B班邊框發光效果 (僅用於總表格子) */
         .b-shift-glow { animation: b-glow-focus 1.5s infinite alternate; border: 1.5px solid #FFFFFF !important; }
         @keyframes b-glow-focus { 0% { box-shadow: 0 0 2px rgba(255,255,255,0.4); } 100% { box-shadow: 0 0 12px rgba(255,255,255,1); } }
         
@@ -55,11 +55,13 @@
 
         const FIREBASE_CONFIG = { apiKey: "AIzaSyAx2aYlfqHBUe3V7a3sT5ZPVNYyr2JY8OA", authDomain: "tpac-schedule.firebaseapp.com", projectId: "tpac-schedule", storageBucket: "tpac-schedule.firebasestorage.app", messagingSenderId: "70955835780", appId: "1:70955835780:web:9d3b0958738557d1f7fdd1" };
         const STAFF_ORDER = ["王志剛", "張國飛", "張劭如", "謝祥玄", "張懷德", "楊淯舒", "黎祐甄", "廖俊龍", "曾健洋", "劉智敏"];
+        // 修正 1：移除所有預設 VIP 屬性
         const STAFF_INFO = { 
-            "廖俊龍": { gender: "M", defVip: "VIP1" }, "黎祐甄": { gender: "F", defVip: "VIP2" },
-            "張劭如": { gender: "F" }, "楊淯舒": { gender: "F" }, "劉智敏": { type: "Special", gender: "M" },
-            "曾健洋": { type: "Special", gender: "M" }, "王志剛": { gender: "M" }, 
-            "張國飛": { gender: "M" }, "張懷德": { gender: "M" }, "謝祥玄": { gender: "M" } 
+            "廖俊龍": { gender: "M" }, "黎祐甄": { gender: "F" },
+            "張劭如": { gender: "F" }, "楊淯舒": { gender: "F" }, 
+            "劉智敏": { type: "Special", gender: "M" }, "曾健洋": { type: "Special", gender: "M" }, 
+            "王志剛": { gender: "M" }, "張國飛": { gender: "M" }, 
+            "張懷德": { gender: "M" }, "謝祥玄": { gender: "M" } 
         };
 
         const formatK = (d) => `${d.getFullYear()}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getDate().toString().padStart(2,'0')}`;
@@ -88,7 +90,6 @@
             const disp = forceName || aliasMap[name] || name;
             const colorClass = info?.type === "Special" ? "text-[var(--special-text)]" : info?.gender === "F" ? "text-[var(--women-text)]" : "text-[var(--men-text)]";
             
-            // 總表模式調整為 16px
             const fontSize = mode === "master" ? "text-[16px]" : (mode === "tiny" ? "text-[14px]" : (mode === "small" ? (name === "廖俊龍" ? "text-[14px]" : "text-[18px]") : (name === "廖俊龍" ? "text-[22px]" : "text-[26px]")));
             const btnClass = `${mode === "small" || mode === "master" ? 'h-8' : 'h-10'} ${fontSize} rounded-[0.6rem] ${isBShift ? 'b-shift-glow' : ''}`;
 
@@ -110,7 +111,8 @@
             const [queryStaff, setQueryStaff] = useState(null), [queryVenue, setQueryVenue] = useState(null), [showMasterModal, setShowMasterModal] = useState(false);
             const [toast, setToast] = useState(null);
             const [vipManager, setVipManager] = useState(false);
-            const [vips, setVips] = useState(() => STAFF_ORDER.reduce((acc, n) => ({ ...acc, [n]: STAFF_INFO[n]?.defVip || "NONE" }), {}));
+            // 修正 2：初始設定所有人 VIP 狀態為 "NONE"
+            const [vips, setVips] = useState(() => STAFF_ORDER.reduce((acc, n) => ({ ...acc, [n]: "NONE" }), {}));
 
             const handleBackToday = useCallback(() => {
                 const now = new Date(), tK = formatK(now), idx = dates.findIndex(d => d.fullKey === tK); 
@@ -121,7 +123,7 @@
                 const timer = setInterval(() => {
                     if (window.isFirebaseReady && window.Firebase) {
                         clearInterval(timer);
-                        const app = Firebase.getApps().length === 0 ? Firebase.initializeApp(FIREBASE_CONFIG) : Firebase.getApp();
+                        const app = Firebase.initializeApp(FIREBASE_CONFIG);
                         Firebase.signInAnonymously(Firebase.getAuth(app)).then(() => {
                             Firebase.getDoc(Firebase.doc(Firebase.getFirestore(app), 'artifacts', 'tpac-schedule', 'public', 'data', 'configs', 'name_mapping')).then(snap => {
                                 if (snap.exists()) setAliasMap(snap.data().maps || {});
@@ -204,7 +206,8 @@
 
                         <div className="grid grid-cols-3 gap-2 mb-6">
                             {['GT','BB','GP'].map(v=>{
-                                const vColor = v==='GT'?'#FF2D55':v==='BB'?'cyan':'#32DE84';
+                                // 主頁面修正：BB 使用深藍色 (#0A84FF) 以提高辨識度
+                                const vColor = v==='GT'?'#FF2D55':v==='BB'?'#0A84FF':'#32DE84';
                                 return (
                                     <div key={v} className="bg-[#121214] rounded-[1.5rem] flex flex-col border" style={{ borderColor: `${vColor}80` }}>
                                         <button onClick={() => setQueryVenue(v)} className="py-2 font-black text-xl" style={{color: vColor}}>{v}</button>
@@ -214,7 +217,6 @@
                                         <div className="p-1 space-y-1">
                                             {['A','B'].map(sh=>(
                                                 <div key={sh} className="bg-zinc-900/40 rounded-[1.2rem] p-1 flex flex-col gap-1 min-h-[60px]">
-                                                    {/* 主頁面修正：isBShift 傳入 false 使 B 班回歸正常樣式 */}
                                                     {dData?.s[v][sh].map(n=><StaffButton key={n} name={n} aliasMap={aliasMap} mode="small" onClick={setQueryStaff} isBShift={false} vip={vips[n]} />)}
                                                 </div>
                                             ))}
@@ -240,7 +242,6 @@
                             <div className="bg-[#121214] border border-white/10 w-full max-w-4xl rounded-[2rem] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
                                 <div className="p-4 border-b border-white/10 flex items-center justify-between bg-zinc-900/40">
                                     <div className="flex items-center gap-4">
-                                        {/* 關閉按鈕鎖定於左上角 */}
                                         <button onClick={() => setShowMasterModal(false)} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-xl shrink-0">×</button>
                                         <h3 className="text-lg font-black italic">Master Roster</h3>
                                     </div>
@@ -262,7 +263,6 @@
                                         <div key={staff} className="flex border-b border-white/[0.04]">
                                             <div className="master-sticky-col py-2 px-1 flex items-center gap-1">
                                                 {vipManager && <div onClick={() => setVips(p=>({...p, [staff]: p[staff]==="NONE"?"VIP1":p[staff]==="VIP1"?"VIP2":"NONE"}))} className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black cursor-pointer ${vips[staff]==="VIP1"?'bg-blue-500':vips[staff]==="VIP2"?'bg-cyan-400':'bg-white/10'}`}>{vips[staff]==="NONE"?"":vips[staff]==="VIP1"?"1":"2"}</div>}
-                                                {/* 總表人名字體調整至 16px，維持廖俊龍->阿龍轉換 */}
                                                 <StaffButton name={staff} aliasMap={aliasMap} mode="master" forceName={staff==="廖俊龍"?"阿龍":null} onClick={(s)=>{setShowMasterModal(false); setQueryStaff(s);}} vip={vips[staff]} />
                                             </div>
                                             {currentWeek.map(d => {
@@ -272,7 +272,6 @@
                                                         const sh = schedule.roster[d.fullKey][v][staff].shift;
                                                         label = `${v}-${sh}`;
                                                         const baseColor = v === 'GT' ? 'var(--master-gt)' : v === 'BB' ? 'var(--master-bb)' : 'var(--master-gp)';
-                                                        // 總表 B 班維持底色不變，僅加邊框發光效果
                                                         cls = sh === 'B' 
                                                             ? `bg-[${baseColor}] bg-opacity-70 text-white font-black b-shift-glow` 
                                                             : `bg-[${baseColor}] bg-opacity-60 text-white`;
@@ -295,7 +294,6 @@
                              <div className="bg-[#121214] border border-white/10 w-full max-w-lg rounded-[2.5rem] shadow-2xl flex flex-col max-h-[85vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
                                 <div className="p-4 border-b border-white/10 flex items-center justify-between bg-zinc-900/40">
                                     <div className="flex items-center gap-3">
-                                        {/* 關閉按鈕鎖定於左上角 */}
                                         <button onClick={() => { setQueryStaff(null); setQueryVenue(null); }} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-2xl text-white">×</button>
                                         <h3 className="text-xl font-black italic">{queryVenue ? `${queryVenue} Weekly` : (aliasMap[queryStaff] || queryStaff)}</h3>
                                     </div>
@@ -326,7 +324,7 @@
                                                 if(schedule.roster[d.fullKey]?.[v]?.[queryStaff]) { 
                                                     const sh = schedule.roster[d.fullKey][v][queryStaff].shift; 
                                                     sTxt = `${v}-${sh}`; 
-                                                    sCol = sh === 'B' ? '#FF0000' : 'cyan'; 
+                                                    sCol = sh === 'B' ? '#FF0000' : (v==='BB'?'#0A84FF':'cyan'); 
                                                 } 
                                             });
                                             if(schedule.statuses[d.fullKey]?.[queryStaff]?.match(/休|例/)) { sTxt = "休假"; sCol = "#8E8E93"; }
