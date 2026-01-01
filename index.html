@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>視聽班表系統 | V5.4 Final Stable</title>
+    <title>視聽班表系統 | V5.5 Master Polish</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -43,7 +43,7 @@
         .b-shift-glow { animation: b-glow-red 1.5s infinite alternate; border: 1.5px solid #FFFFFF !important; }
         @keyframes b-glow-red { 0% { box-shadow: 0 0 2px rgba(255,0,0,0.4); } 100% { box-shadow: 0 0 20px rgba(255,0,0,1); } }
         
-        .master-sticky-col { position: sticky; left: 0; z-index: 30; background: #121214; min-width: 95px; border-right: 1.5px solid rgba(255,255,255,0.15); }
+        .master-sticky-col { position: sticky; left: 0; z-index: 30; background: #121214; min-width: 85px; border-right: 1.5px solid rgba(255,255,255,0.15); }
     </style>
 </head>
 <body>
@@ -82,11 +82,14 @@
             </div>
         );
 
-        const StaffButton = memo(({ name, aliasMap = {}, onClick, mode = "normal", isBShift = false, vip = "NONE" }) => {
+        const StaffButton = memo(({ name, aliasMap = {}, forceName = null, onClick, mode = "normal", isBShift = false, vip = "NONE" }) => {
             const info = STAFF_INFO[name] || { gender: 'M' };
-            const disp = aliasMap[name] || name;
+            const disp = forceName || aliasMap[name] || name;
             const colorClass = info?.type === "Special" ? "text-[var(--special-text)]" : info?.gender === "F" ? "text-[var(--women-text)]" : "text-[var(--men-text)]";
-            const btnClass = `${mode === "small" || mode === "master" ? 'h-8' : 'h-10'} ${mode === "tiny" ? "text-[14px]" : mode === "small" ? "text-[18px]" : "text-[22px]"} rounded-[0.6rem] ${isBShift ? 'b-shift-glow' : ''}`;
+            
+            // 修改處：總表專用縮小字級 (14px)
+            const fontSizeClass = mode === "tiny" ? "text-[14px]" : mode === "small" ? (name === "廖俊龍" ? "text-[14px]" : "text-[18px]") : mode === "master" ? "text-[14px]" : (name === "廖俊龍" ? "text-[22px]" : "text-[26px]");
+            const btnClass = `${mode === "small" || mode === "master" ? 'h-8' : 'h-10'} ${fontSizeClass} rounded-[0.6rem] ${isBShift ? 'b-shift-glow' : ''}`;
 
             return (
                 <div className={vip === "VIP2" ? "vip2-orbit-container" : "w-full"}>
@@ -239,7 +242,9 @@
                                 </div>
                                 <div className="flex-1 overflow-auto p-1 no-scrollbar">
                                     <div className="flex bg-[#1a1a1c] border-b border-white/20 sticky top-0 z-40">
-                                        <div onClick={() => setVipManager(!vipManager)} className="master-sticky-col p-2 text-[9px] font-black text-white/40 text-center flex items-center justify-center cursor-help">{vipManager ? "SAVE" : "STAFF"}</div>
+                                        <div onClick={() => setVipManager(!vipManager)} className="master-sticky-col p-2 text-[10px] font-black text-white/40 text-center flex items-center justify-center cursor-help">
+                                            {vipManager ? "SAVE" : "STAFF"}
+                                        </div>
                                         {currentWeek.map(d => (
                                             <div key={d.fullKey} className={`min-w-[75px] flex-1 p-2 text-center border-l border-white/20 ${d.fullKey === dates[dateIdx]?.fullKey ? 'bg-blue-900/20' : ''}`}>
                                                 <div className={`text-[8px] ${d.w === '六' || d.w === '日' ? 'text-[#FFD1DC]' : 'opacity-40'}`}>週{d.w}</div>
@@ -251,7 +256,8 @@
                                         <div key={staff} className="flex border-b border-white/[0.04]">
                                             <div className="master-sticky-col py-2 px-1 flex items-center gap-1">
                                                 {vipManager && <div onClick={() => setVips(p=>({...p, [staff]: p[staff]==="NONE"?"VIP1":p[staff]==="VIP1"?"VIP2":"NONE"}))} className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black cursor-pointer ${vips[staff]==="VIP1"?'bg-blue-500':vips[staff]==="VIP2"?'bg-cyan-400':'bg-white/10'}`}>{vips[staff]==="NONE"?"":vips[staff]==="VIP1"?"1":"2"}</div>}
-                                                <StaffButton name={staff} aliasMap={aliasMap} mode="master" onClick={(s)=>{setShowMasterModal(false); setQueryStaff(s);}} vip={vips[staff]} />
+                                                {/* 修改處：廖俊龍 -> 阿龍，且 mode="master" 觸發縮小字級 */}
+                                                <StaffButton name={staff} aliasMap={aliasMap} mode="master" forceName={staff==="廖俊龍"?"阿龍":null} onClick={(s)=>{setShowMasterModal(false); setQueryStaff(s);}} vip={vips[staff]} />
                                             </div>
                                             {currentWeek.map(d => {
                                                 let label = "—", cls = "bg-white/[0.03] text-white/10";
@@ -259,13 +265,17 @@
                                                     if (schedule.roster[d.fullKey]?.[v]?.[staff]) { 
                                                         const sh = schedule.roster[d.fullKey][v][staff].shift;
                                                         label = `${v}-${sh}`;
-                                                        cls = sh === 'B' ? `bg-red-600 text-white font-black b-shift-glow` : `bg-blue-500/20 text-white`;
+                                                        // 修改處：A班回歸廳院色，B班維持亮紅
+                                                        const baseColor = v === 'GT' ? 'var(--master-gt)' : v === 'BB' ? 'var(--master-bb)' : 'var(--master-gp)';
+                                                        cls = sh === 'B' 
+                                                            ? `bg-red-600 text-white font-black b-shift-glow shadow-[0_0_10px_rgba(255,0,0,0.5)]` 
+                                                            : `bg-[${baseColor}] bg-opacity-60 text-white`;
                                                     } 
                                                 });
                                                 const st = schedule.statuses[d.fullKey]?.[staff] || "";
                                                 if (label === "—" && st.match(/辦公|其他/)) { label = "辦"; cls = "bg-[#B36200]/40 text-[#FF9500]"; } 
                                                 else if (label === "—" && (st==="" || st.match(/休假|無排班/))) { label = "休"; cls = "bg-[#444444] text-white/80"; }
-                                                return <div key={d.fullKey} className="min-w-[75px] flex-1 p-1 flex items-center justify-center border-l border-white/[0.05]"><div className={`w-full h-9 flex items-center justify-center rounded-md ${cls} text-[13px]`}>{label}</div></div>;
+                                                return <div key={d.fullKey} className="min-w-[75px] flex-1 p-1 flex items-center justify-center border-l border-white/[0.05]"><div className={`w-full h-9 flex items-center justify-center rounded-md ${cls} text-[13px] transition-all`}>{label}</div></div>;
                                             })}
                                         </div>
                                     ))}
@@ -296,7 +306,13 @@
                                             );
                                         } else {
                                             let sTxt = "辦公", sCol = "#FF9500";
-                                            ['GT','BB','GP'].forEach(v => { if(schedule.roster[d.fullKey]?.[v]?.[queryStaff]) { const sh = schedule.roster[d.fullKey][v][queryStaff].shift; sTxt = `${v}-${sh}`; sCol = sh === 'B' ? '#FF0000' : 'cyan'; } });
+                                            ['GT','BB','GP'].forEach(v => { 
+                                                if(schedule.roster[d.fullKey]?.[v]?.[queryStaff]) { 
+                                                    const sh = schedule.roster[d.fullKey][v][queryStaff].shift; 
+                                                    sTxt = `${v}-${sh}`; 
+                                                    sCol = sh === 'B' ? '#FF0000' : 'cyan'; 
+                                                } 
+                                            });
                                             if(schedule.statuses[d.fullKey]?.[queryStaff]?.match(/休|例/)) { sTxt = "休假"; sCol = "#8E8E93"; }
                                             rowContent = <span className="text-lg font-black" style={{ color: sCol }}>{sTxt}</span>;
                                         }
