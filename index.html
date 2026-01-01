@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>視聽班表系統 | V5.7 Final Polish</title>
+    <title>視聽班表系統 | V5.8 Final Stable</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -40,7 +40,7 @@
         .orbit-base::after { content: ''; position: absolute; width: 8px; height: 8px; border-radius: 50%; left: 50%; bottom: -4px; transform: translateX(-50%); background: currentColor; box-shadow: 0 0 15px currentColor; }
         @keyframes rotate-linear { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-        /* B班邊框發光 - 修改為純白強效邊框 */
+        /* B班邊框發光效果 (僅用於總表格子) */
         .b-shift-glow { animation: b-glow-focus 1.5s infinite alternate; border: 1.5px solid #FFFFFF !important; }
         @keyframes b-glow-focus { 0% { box-shadow: 0 0 2px rgba(255,255,255,0.4); } 100% { box-shadow: 0 0 12px rgba(255,255,255,1); } }
         
@@ -88,8 +88,8 @@
             const disp = forceName || aliasMap[name] || name;
             const colorClass = info?.type === "Special" ? "text-[var(--special-text)]" : info?.gender === "F" ? "text-[var(--women-text)]" : "text-[var(--men-text)]";
             
-            // 修正：總表字體 +10% (14px -> 15.5px)
-            const fontSize = mode === "master" ? "text-[15.5px]" : (mode === "tiny" ? "text-[14px]" : (mode === "small" ? (name === "廖俊龍" ? "text-[14px]" : "text-[18px]") : (name === "廖俊龍" ? "text-[22px]" : "text-[26px]")));
+            // 總表模式調整為 16px
+            const fontSize = mode === "master" ? "text-[16px]" : (mode === "tiny" ? "text-[14px]" : (mode === "small" ? (name === "廖俊龍" ? "text-[14px]" : "text-[18px]") : (name === "廖俊龍" ? "text-[22px]" : "text-[26px]")));
             const btnClass = `${mode === "small" || mode === "master" ? 'h-8' : 'h-10'} ${fontSize} rounded-[0.6rem] ${isBShift ? 'b-shift-glow' : ''}`;
 
             return (
@@ -168,7 +168,7 @@
                 return res;
             }, [dateIdx, dates, schedule]);
 
-            if (!isUnlocked) return <div className="h-screen flex items-center justify-center bg-black text-white text-2xl animate-pulse tracking-widest uppercase">TpAc Scheduling...</div>;
+            if (!isUnlocked) return <div className="h-screen flex items-center justify-center bg-black text-white text-2xl animate-pulse tracking-widest uppercase">TpAc Syncing...</div>;
 
             return (
                 <div className="h-screen flex flex-col overflow-hidden relative text-white bg-black">
@@ -214,7 +214,8 @@
                                         <div className="p-1 space-y-1">
                                             {['A','B'].map(sh=>(
                                                 <div key={sh} className="bg-zinc-900/40 rounded-[1.2rem] p-1 flex flex-col gap-1 min-h-[60px]">
-                                                    {dData?.s[v][sh].map(n=><StaffButton key={n} name={n} aliasMap={aliasMap} mode="small" onClick={setQueryStaff} isBShift={sh === 'B'} vip={vips[n]} />)}
+                                                    {/* 主頁面修正：isBShift 傳入 false 使 B 班回歸正常樣式 */}
+                                                    {dData?.s[v][sh].map(n=><StaffButton key={n} name={n} aliasMap={aliasMap} mode="small" onClick={setQueryStaff} isBShift={false} vip={vips[n]} />)}
                                                 </div>
                                             ))}
                                         </div>
@@ -234,13 +235,12 @@
                         </div>
                     </main>
 
-                    {/*總表彈窗*/}
                     {showMasterModal && (
                         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-2 bg-black/95 backdrop-blur-3xl" onClick={() => setShowMasterModal(false)}>
                             <div className="bg-[#121214] border border-white/10 w-full max-w-4xl rounded-[2rem] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
                                 <div className="p-4 border-b border-white/10 flex items-center justify-between bg-zinc-900/40">
                                     <div className="flex items-center gap-4">
-                                        {/* 修正：關閉鈕移至左側 */}
+                                        {/* 關閉按鈕鎖定於左上角 */}
                                         <button onClick={() => setShowMasterModal(false)} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-xl shrink-0">×</button>
                                         <h3 className="text-lg font-black italic">Master Roster</h3>
                                     </div>
@@ -262,6 +262,7 @@
                                         <div key={staff} className="flex border-b border-white/[0.04]">
                                             <div className="master-sticky-col py-2 px-1 flex items-center gap-1">
                                                 {vipManager && <div onClick={() => setVips(p=>({...p, [staff]: p[staff]==="NONE"?"VIP1":p[staff]==="VIP1"?"VIP2":"NONE"}))} className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black cursor-pointer ${vips[staff]==="VIP1"?'bg-blue-500':vips[staff]==="VIP2"?'bg-cyan-400':'bg-white/10'}`}>{vips[staff]==="NONE"?"":vips[staff]==="VIP1"?"1":"2"}</div>}
+                                                {/* 總表人名字體調整至 16px，維持廖俊龍->阿龍轉換 */}
                                                 <StaffButton name={staff} aliasMap={aliasMap} mode="master" forceName={staff==="廖俊龍"?"阿龍":null} onClick={(s)=>{setShowMasterModal(false); setQueryStaff(s);}} vip={vips[staff]} />
                                             </div>
                                             {currentWeek.map(d => {
@@ -271,7 +272,7 @@
                                                         const sh = schedule.roster[d.fullKey][v][staff].shift;
                                                         label = `${v}-${sh}`;
                                                         const baseColor = v === 'GT' ? 'var(--master-gt)' : v === 'BB' ? 'var(--master-bb)' : 'var(--master-gp)';
-                                                        // 修正：B班底色不變，僅加邊框發光
+                                                        // 總表 B 班維持底色不變，僅加邊框發光效果
                                                         cls = sh === 'B' 
                                                             ? `bg-[${baseColor}] bg-opacity-70 text-white font-black b-shift-glow` 
                                                             : `bg-[${baseColor}] bg-opacity-60 text-white`;
@@ -289,13 +290,12 @@
                         </div>
                     )}
 
-                    {/*場地週表 / 個人週表*/}
                     {(queryStaff || queryVenue) && (
                         <div className="fixed inset-0 z-[2000] flex items-center justify-center p-6 bg-black/90 backdrop-blur-2xl" onClick={() => { setQueryStaff(null); setQueryVenue(null); }}>
                              <div className="bg-[#121214] border border-white/10 w-full max-w-lg rounded-[2.5rem] shadow-2xl flex flex-col max-h-[85vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
                                 <div className="p-4 border-b border-white/10 flex items-center justify-between bg-zinc-900/40">
                                     <div className="flex items-center gap-3">
-                                        {/* 修正：關閉鈕移至左側 */}
+                                        {/* 關閉按鈕鎖定於左上角 */}
                                         <button onClick={() => { setQueryStaff(null); setQueryVenue(null); }} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-2xl text-white">×</button>
                                         <h3 className="text-xl font-black italic">{queryVenue ? `${queryVenue} Weekly` : (aliasMap[queryStaff] || queryStaff)}</h3>
                                     </div>
@@ -316,7 +316,7 @@
                                                 <div className="flex-1 flex flex-col gap-2">
                                                     <p className="text-xs opacity-50 italic truncate">{schedule.shows?.[d.fullKey]?.[queryVenue] || "無演出內容"}</p>
                                                     <div className="grid grid-cols-2 gap-2">
-                                                        {['A','B'].map(sh => (<div key={sh} className="bg-black/40 p-1 rounded-lg flex flex-col gap-1 min-h-[40px]">{Object.entries(schedule.roster[d.fullKey]?.[queryVenue]||{}).filter(([_,v])=>v.shift===sh).map(([n])=><StaffButton key={n} name={n} aliasMap={aliasMap} mode="tiny" onClick={setQueryStaff} vip={vips[n]} />)}</div>))}
+                                                        {['A','B'].map(sh => (<div key={sh} className="bg-black/40 p-1 rounded-lg flex flex-col gap-1 min-h-[40px]">{Object.entries(schedule.roster[d.fullKey]?.[queryVenue]||{}).filter(([_,v])=>v.shift===sh).map(([n])=><StaffButton key={n} name={n} aliasMap={aliasMap} mode="tiny" onClick={setQueryStaff} isBShift={false} vip={vips[n]} />)}</div>))}
                                                     </div>
                                                 </div>
                                             );
