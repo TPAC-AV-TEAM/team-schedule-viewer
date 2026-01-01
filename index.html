@@ -2,8 +2,8 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>視聽班表系統 | V6.4 Ultimate Stable</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>視聽班表系統 | V7.0 Expert Refined</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -48,6 +48,8 @@
         @keyframes b-glow-focus { 0% { box-shadow: 0 0 2px rgba(255,255,255,0.4); } 100% { box-shadow: 0 0 12px rgba(255,255,255,1); } }
         
         .master-sticky-col { position: sticky; left: 0; z-index: 30; background: #121214; min-width: 95px; border-right: 1.5px solid rgba(255,255,255,0.15); }
+        /* iPhone 底部安全區優化 */
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
     </style>
 </head>
 <body>
@@ -113,13 +115,25 @@
             const [queryStaff, setQueryStaff] = useState(null), [queryVenue, setQueryVenue] = useState(null), [showMasterModal, setShowMasterModal] = useState(false);
             const [toast, setToast] = useState(null), [diag, setDiag] = useState("正在同步中...");
             const [vipManager, setVipManager] = useState(false), [vips, setVips] = useState(() => STAFF_ORDER.reduce((acc, n) => ({ ...acc, [n]: "NONE" }), {}));
+            // 優化：新增逾時檢測
+            const [timeoutError, setTimeoutError] = useState(false);
 
             const handleBackToday = useCallback(() => {
                 const now = new Date(), tK = formatK(now), idx = dates.findIndex(d => d.fullKey === tK); 
                 if(idx!==-1) { setDateIdx(idx); const mK = getMonK(dates[0].fullKey), tMon = getMonK(tK); setWeekOffset(Math.max(0, Math.floor((new Date(tMon)-new Date(mK))/(7*24*60*60*1000)))); } 
             }, [dates]);
 
+            // 優化：鎖定背景滾動
             useEffect(() => {
+                if (showMasterModal || queryStaff || queryVenue) { document.body.style.overflow = 'hidden'; } 
+                else { document.body.style.overflow = ''; }
+                return () => { document.body.style.overflow = ''; };
+            }, [showMasterModal, queryStaff, queryVenue]);
+
+            useEffect(() => {
+                // 8秒後若未連線，顯示重試
+                const failTimer = setTimeout(() => { if (!isUnlocked) setTimeoutError(true); }, 8000);
+                
                 const timer = setInterval(() => {
                     if (window.isFirebaseReady && window.Firebase) {
                         clearInterval(timer);
@@ -133,13 +147,13 @@
                                     const d = s.data(), ros = JSON.parse(d.roster || '{}'), ks = Object.keys(ros).sort();
                                     const sd = ks.map(k => { const dt = new Date(k); return { d: `${dt.getMonth()+1}/${dt.getDate()}`, w: ['日','一','二','三','四','五','六'][dt.getDay()], fullKey: k }; });
                                     setSchedule({ roster: ros, statuses: JSON.parse(d.statuses || '{}'), shows: JSON.parse(d.shows || '{}'), notes: JSON.parse(d.notes || '{}') });
-                                    setDates(sd); setIsUnlocked(true);
+                                    setDates(sd); setIsUnlocked(true); clearTimeout(failTimer);
                                 }
                             });
                         });
                     }
                 }, 200);
-                return () => clearInterval(timer);
+                return () => { clearInterval(timer); clearTimeout(failTimer); };
             }, []);
 
             useEffect(() => { if(isUnlocked && dates.length) {
@@ -156,21 +170,14 @@
                 });
             }, [dates, weekOffset]);
 
-            // 強制檢查：確保即使資料未完整載入，dData 計算也不會報錯
             const dData = useMemo(() => {
                 const d = dates[dateIdx]; if (!d) return null;
                 const res = { s: { GT:{A:[],B:[]}, BB:{A:[],B:[]}, GP:{A:[],B:[]}, "辦公":[], "休假":[] } };
-                const rawR = schedule.roster?.[d.fullKey] || {}; 
-                const rawS = schedule.statuses?.[d.fullKey] || {};
+                const rawR = schedule.roster[d.fullKey] || {}, rawS = schedule.statuses[d.fullKey] || {};
                 const hasShift = new Set();
-                ['GT','BB','GP'].forEach(v => {
-                    const venueData = rawR[v] || {};
-                    Object.entries(venueData).forEach(([n,val]) => { 
-                        if(val && val.shift && res.s[v] && res.s[v][val.shift]) { 
-                            res.s[v][val.shift].push(n); hasShift.add(n); 
-                        } 
-                    });
-                });
+                ['GT','BB','GP'].forEach(v => Object.entries(rawR[v]||{}).forEach(([n,val]) => { 
+                    if(res.s[v] && res.s[v][val.shift]) { res.s[v][val.shift].push(n); hasShift.add(n); }
+                }));
                 STAFF_ORDER.forEach(n => {
                     const code = rawS[n] || "";
                     if (code.match(/辦公|其他/)) res.s["辦公"].push(n);
@@ -192,6 +199,7 @@
                         </div>
                         <h2 className="text-2xl font-black uppercase tracking-widest italic mb-2 text-center">Connecting</h2>
                         <p className="text-[10px] font-bold text-blue-500 uppercase tracking-widest opacity-60 animate-pulse text-center">{diag}</p>
+                        {timeoutError && <button onClick={()=>window.location.reload()} className="mt-4 px-4 py-2 bg-white/10 rounded-full text-xs font-bold border border-white/20 animate-bounce">連線逾時，點擊重試</button>}
                     </div>
                 </div>
             );
@@ -207,7 +215,7 @@
                         <button onClick={()=>window.location.reload()} className="h-7 w-7 rounded-full bg-white/5 border border-white/10 flex items-center justify-center active:bg-white/10"><Icon name="refresh" className="w-3 h-3 text-white/60" /></button>
                     </header>
 
-                    <main className="flex-1 overflow-y-auto px-2 py-3 no-scrollbar pb-24 z-10">
+                    <main className="flex-1 overflow-y-auto px-2 py-3 no-scrollbar pb-24 z-10 pb-safe">
                         <div className="mac-glass sticky top-0 -mx-2 px-2 py-2 flex flex-col mb-4 z-20 shadow-2xl">
                             <div className="flex items-center justify-between mb-2 px-1">
                                 <button onClick={() => setWeekOffset(p => Math.max(0, p-1))} className="text-white/30 text-xs hover:text-white transition-colors">◀ 上週</button>
@@ -248,23 +256,21 @@
                                 );
                             })}
                         </div>
-                        {dData && (
-                            <div className="space-y-4 px-1 pb-10">
-                                <section className="bg-white/5 border border-white/10 rounded-[1.5rem] p-4 shadow-sm">
-                                    <h4 className="text-orange-400 text-xs font-black uppercase mb-3 flex items-center gap-2"><Icon name="briefcase" /> 辦公人員</h4>
-                                    <div className="grid grid-cols-4 gap-2">{dData.s["辦公"].map(n=>(<StaffButton key={n} name={n} aliasMap={aliasMap} mode="tiny" onClick={setQueryStaff} vip={vips[n]} />))}</div>
-                                </section>
-                                <section className="bg-white/5 border border-white/10 rounded-[1.5rem] p-4 shadow-sm">
-                                    <h4 className="text-gray-400 text-xs font-black uppercase mb-3 flex items-center gap-2"><Icon name="sun" /> 今日休假</h4>
-                                    <div className="grid grid-cols-4 gap-2">{dData.s["休假"].map(n=>(<StaffButton key={n} name={n} aliasMap={aliasMap} mode="tiny" onClick={setQueryStaff} vip={vips[n]} />))}</div>
-                                </section>
-                            </div>
-                        )}
+                        <div className="space-y-4 px-1 pb-10">
+                            <section className="bg-white/5 border border-white/10 rounded-[1.5rem] p-4 shadow-sm">
+                                <h4 className="text-orange-400 text-xs font-black uppercase mb-3 flex items-center gap-2"><Icon name="briefcase" /> 辦公人員</h4>
+                                <div className="grid grid-cols-4 gap-2">{dData?.s?.["辦公"]?.map(n=>(<StaffButton key={n} name={n} aliasMap={aliasMap} mode="tiny" onClick={setQueryStaff} vip={vips[n]} />))}</div>
+                            </section>
+                            <section className="bg-white/5 border border-white/10 rounded-[1.5rem] p-4 shadow-sm">
+                                <h4 className="text-gray-400 text-xs font-black uppercase mb-3 flex items-center gap-2"><Icon name="sun" /> 今日休假</h4>
+                                <div className="grid grid-cols-4 gap-2">{dData?.s?.["休假"]?.map(n=>(<StaffButton key={n} name={n} aliasMap={aliasMap} mode="tiny" onClick={setQueryStaff} vip={vips[n]} />))}</div>
+                            </section>
+                        </div>
                     </main>
 
                     {showMasterModal && (
-                        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-2 bg-black/95 backdrop-blur-3xl" onClick={() => setShowMasterModal(false)}>
-                            <div className="bg-[#121214] border border-white/10 w-full max-w-4xl rounded-[2rem] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
+                        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-2 bg-black/95 backdrop-blur-3xl">
+                            <div className="bg-[#121214] border border-white/10 w-full max-w-4xl rounded-[2rem] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
                                 <div className="p-4 border-b border-white/10 flex items-center justify-between bg-zinc-900/40">
                                     <div className="flex items-center gap-4">
                                         <button onClick={() => setShowMasterModal(false)} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-xl shrink-0">×</button>
@@ -274,10 +280,12 @@
                                 </div>
                                 <div className="flex-1 overflow-auto p-1 no-scrollbar">
                                     <div className="flex bg-[#1a1a1c] border-b border-white/20 sticky top-0 z-40">
-                                        <div onClick={() => setVipManager(!vipManager)} className="master-sticky-col p-2 text-[10px] font-black text-white/40 text-center flex items-center justify-center cursor-help">{vipManager ? "SAVE" : "STAFF"}</div>
+                                        <div onClick={() => setVipManager(!vipManager)} className="master-sticky-col p-2 text-[10px] font-black text-white/40 text-center flex items-center justify-center cursor-help">
+                                            {vipManager ? "SAVE" : "STAFF"}
+                                        </div>
                                         {currentWeek.map(d => (
                                             <div key={d.fullKey} className={`min-w-[75px] flex-1 p-2 text-center border-l border-white/20 ${d.fullKey === dates[dateIdx]?.fullKey ? 'bg-blue-900/20' : ''}`}>
-                                                <div className={`text-[10px] font-black ${d.w === '六' || d.w === '日' ? 'text-[#FFD1DC]' : 'opacity-40'}`}>週{d.w}</div>
+                                                <div className={`text-[11px] font-black ${d.w === '六' || d.w === '日' ? 'text-[#FFD1DC]' : 'opacity-40'}`}>週{d.w}</div>
                                                 <div className="text-[13px] font-bold">{d.d}</div>
                                             </div>
                                         ))}
@@ -291,7 +299,7 @@
                                             {currentWeek.map(d => {
                                                 let label = "—", cellV = null, isB = false;
                                                 ['GT','BB','GP'].forEach(v => { 
-                                                    if (schedule.roster[d.fullKey]?.[v]?.[staff]) { 
+                                                    if (schedule.roster[d.fullKey] && schedule.roster[d.fullKey][v] && schedule.roster[d.fullKey][v][staff]) { 
                                                         label = `${v}-${schedule.roster[d.fullKey][v][staff].shift}`;
                                                         cellV = v; isB = schedule.roster[d.fullKey][v][staff].shift === 'B';
                                                     } 
@@ -314,8 +322,8 @@
                     )}
 
                     {(queryStaff || queryVenue) && (
-                        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-6 bg-black/90 backdrop-blur-2xl" onClick={() => { setQueryStaff(null); setQueryVenue(null); }}>
-                             <div className="bg-[#121214] border border-white/10 w-full max-w-lg rounded-[2.5rem] shadow-2xl flex flex-col max-h-[85vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
+                        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-6 bg-black/90 backdrop-blur-2xl">
+                             <div className="bg-[#121214] border border-white/10 w-full max-w-lg rounded-[2.5rem] shadow-2xl flex flex-col max-h-[85vh] overflow-hidden">
                                 <div className="p-4 border-b border-white/10 flex items-center justify-between bg-zinc-900/40">
                                     <div className="flex items-center gap-3">
                                         <button onClick={() => { setQueryStaff(null); setQueryVenue(null); }} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-2xl text-white">×</button>
