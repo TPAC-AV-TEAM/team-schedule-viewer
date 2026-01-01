@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>視聽班表系統 | V5.0 Final Stable</title>
+    <title>視聽班表系統 | V5.1 VIP Master Manager</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -33,20 +33,21 @@
         .mac-glass { background: rgba(18, 18, 20, 0.85); backdrop-filter: blur(40px) saturate(200%); border-bottom: 0.5px solid rgba(255,255,255,0.12); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         
-        /* VIP1 呼吸燈 */
+        /* VIP1 呼吸燈特效 */
         .vip-1-breath { animation: vip1-pulse 1.8s infinite alternate ease-in-out; font-weight: 900 !important; }
         @keyframes vip1-pulse { 0% { text-shadow: 0 0 4px rgba(255,255,255,0.2); } 100% { text-shadow: 0 0 8px #fff, 0 0 15px var(--mac-blue), 0 0 25px var(--mac-blue); } }
 
-        /* VIP2 軌道 */
+        /* VIP2 衛星軌道特效 */
         .vip2-orbit-container { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
-        .orbit-base { position: absolute; width: 125px; height: 42px; border-radius: 50%; animation: rotate-linear 4s linear infinite; z-index: 1; pointer-events: none; border: 1px solid rgba(255,255,255,0.1); }
+        .orbit-base { position: absolute; width: 125px; height: 42px; border-radius: 50%; animation: rotate-linear 4s linear infinite; z-index: 1; pointer-events: none; border: 1px solid rgba(255,255,255,0.08); }
         .orbit-base::after { content: ''; position: absolute; width: 8px; height: 8px; border-radius: 50%; left: 50%; bottom: -4px; transform: translateX(-50%); background: currentColor; box-shadow: 0 0 15px currentColor; }
         @keyframes rotate-linear { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
+        /* B班加強發光 */
         .b-shift-glow { animation: b-glow-strong 1.5s infinite alternate; border: 1.5px solid #FFFFFF !important; }
         @keyframes b-glow-strong { 0% { box-shadow: 0 0 2px rgba(255,255,255,0.4); } 100% { box-shadow: 0 0 15px rgba(255,255,255,1); } }
         
-        .master-sticky-col { position: sticky; left: 0; z-index: 30; background: #121214; min-width: 90px; border-right: 1.5px solid rgba(255,255,255,0.15); }
+        .master-sticky-col { position: sticky; left: 0; z-index: 30; background: #121214; min-width: 95px; border-right: 1.5px solid rgba(255,255,255,0.15); }
     </style>
 </head>
 <body>
@@ -58,8 +59,8 @@
         const FIREBASE_CONFIG = { apiKey: "AIzaSyAx2aYlfqHBUe3V7a3sT5ZPVNYyr2JY8OA", authDomain: "tpac-schedule.firebaseapp.com", projectId: "tpac-schedule", storageBucket: "tpac-schedule.firebasestorage.app", messagingSenderId: "70955835780", appId: "1:70955835780:web:9d3b0958738557d1f7fdd1" };
         const STAFF_ORDER = ["王志剛", "張國飛", "張劭如", "謝祥玄", "張懷德", "楊淯舒", "黎祐甄", "廖俊龍", "曾健洋", "劉智敏"];
         const STAFF_INFO = { 
-            "廖俊龍": { gender: "M", vipTag: "VIP1" },
-            "黎祐甄": { gender: "F", vipTag: "VIP2" },
+            "廖俊龍": { gender: "M", defaultVip: "VIP1" },
+            "黎祐甄": { gender: "F", defaultVip: "VIP2" },
             "張劭如": { gender: "F" }, "楊淯舒": { gender: "F" }, 
             "劉智敏": { type: "Special", gender: "M" }, "曾健洋": { type: "Special", gender: "M" }, 
             "王志剛": { gender: "M" }, "張國飛": { gender: "M" }, 
@@ -82,16 +83,17 @@
         const NavGroup = ({ onPrev, onToday, onNext }) => (
             <div className="flex items-center gap-1 bg-white/10 rounded-full px-1 py-1">
                 <button onClick={onPrev} className="p-1 text-white/40"><Icon name="left" /></button>
-                <button onClick={onToday} className="text-[9px] font-black uppercase px-2">Today</button>
+                <button onClick={onToday} className="text-[9px] font-black uppercase px-2 text-blue-400">Today</button>
                 <button onClick={onNext} className="p-1 text-white/40"><Icon name="right" /></button>
             </div>
         );
 
-        const StaffButton = memo(({ name, aliasMap = {}, onClick, mode = "normal", isBShift = false, showGlow = false, vipEnabled = true }) => {
+        const StaffButton = memo(({ name, aliasMap = {}, onClick, mode = "normal", isBShift = false, showGlow = false, activeVip = "NONE" }) => {
             const info = STAFF_INFO[name] || { gender: 'M' };
             const disp = aliasMap[name] || name;
-            const isVIP1 = info.vipTag === "VIP1" && vipEnabled;
-            const isVIP2 = info.vipTag === "VIP2" && vipEnabled;
+            
+            const isVIP1 = activeVip === "VIP1";
+            const isVIP2 = activeVip === "VIP2";
             
             const colorClass = info?.type === "Special" ? "text-[var(--special-text)]" : info?.gender === "F" ? "text-[var(--women-text)]" : "text-[var(--men-text)]";
             const btnClass = `${mode === "small" || mode === "master" ? 'h-8' : 'h-10'} ${mode === "tiny" ? "text-[14px]" : mode === "small" ? "text-[18px]" : "text-[22px]"} rounded-[0.6rem] ${(isBShift && showGlow) ? 'b-shift-glow' : ''}`;
@@ -99,8 +101,8 @@
             return (
                 <div className={isVIP2 ? "vip2-orbit-container" : "w-full"}>
                     {isVIP2 && <div className={`orbit-base`} style={{ color: info.gender === 'F' ? '#FF375F' : '#00FFFF' }}></div>}
-                    <button onClick={(e) => { e.stopPropagation(); onClick(name); }} className={`w-full ${btnClass} ${isVIP1 ? 'vip-1-breath' : ''} border border-white/5 bg-white/[0.06] flex items-center justify-center gap-1 relative z-10 ${colorClass} truncate active:scale-95 transition-transform`}>
-                        {(!isVIP1 && !isVIP2) && <span className="w-1 h-1 rounded-full bg-current shadow-[0_0_5px_currentColor]"></span>}
+                    <button onClick={(e) => { e.stopPropagation(); onClick(name); }} className={`w-full ${btnClass} ${isVIP1 ? 'vip-1-breath' : ''} border border-white/5 bg-white/[0.06] flex items-center justify-center gap-1 relative z-10 ${colorClass} truncate active:scale-95 transition-transform font-bold`}>
+                        {(!isVIP1 && !isVIP2) && <span className="w-1.5 h-1.5 rounded-full bg-current opacity-80 shadow-[0_0_5px_currentColor]"></span>}
                         {disp}
                     </button>
                 </div>
@@ -114,8 +116,11 @@
             const [queryStaff, setQueryStaff] = useState(null), [queryVenue, setQueryVenue] = useState(null), [showMasterModal, setShowMasterModal] = useState(false);
             const [toast, setToast] = useState(null), [diag, setDiag] = useState("正在同步中...");
             
+            // VIP 動態配置管理器 (NONE | VIP1 | VIP2)
             const [vipManagerActive, setVipManagerActive] = useState(false);
-            const [vipConfig, setVipConfig] = useState(() => STAFF_ORDER.reduce((acc, n) => ({ ...acc, [n]: true }), {}));
+            const [vipConfig, setVipConfig] = useState(() => 
+                STAFF_ORDER.reduce((acc, n) => ({ ...acc, [n]: STAFF_INFO[n]?.defaultVip || "NONE" }), {})
+            );
 
             const handleBackToday = useCallback(() => {
                 const now = new Date(), tK = formatK(now), idx = dates.findIndex(d => d.fullKey === tK); 
@@ -149,8 +154,7 @@
                 const db = Firebase.getFirestore();
                 return Firebase.onSnapshot(Firebase.doc(db, 'artifacts', 'tpac-schedule', 'public', 'data', 'rosters', 'master'), (snap) => {
                     if (snap.exists()) {
-                        const data = snap.data();
-                        const roster = JSON.parse(data.roster || '{}'), keys = Object.keys(roster).sort();
+                        const data = snap.data(), roster = JSON.parse(data.roster || '{}'), keys = Object.keys(roster).sort();
                         const sd = keys.map(k => { const d = new Date(k); return { d: `${d.getMonth()+1}/${d.getDate()}`, w: ['日','一','二','三','四','五','六'][d.getDay()], fullKey: k }; });
                         setSchedule({ roster, statuses: JSON.parse(data.statuses || '{}'), shows: JSON.parse(data.shows || '{}'), notes: JSON.parse(data.notes || '{}') });
                         setDates(sd); setIsUnlocked(true); 
@@ -183,7 +187,7 @@
                 return res;
             }, [dateIdx, dates, schedule]);
 
-            if (!isUnlocked) return <div className="h-screen flex items-center justify-center bg-black text-white font-black text-2xl animate-pulse tracking-[0.5em]">{diag}</div>;
+            if (!isUnlocked) return <div className="h-screen flex items-center justify-center bg-black text-white text-2xl animate-pulse">{diag}</div>;
 
             return (
                 <div className="h-screen flex flex-col overflow-hidden relative text-white bg-black">
@@ -193,24 +197,24 @@
                     <header className="mac-glass pt-10 pb-3 px-4 flex items-center justify-between shrink-0 z-50">
                         <button onClick={handleBackToday} className="bg-blue-600 px-4 h-7 rounded-full text-[10px] font-black uppercase">Today</button>
                         <h1 className="text-xl font-black italic cursor-pointer" onClick={() => setShowMasterModal(true)}>視聽班表系統</h1>
-                        <button onClick={()=>window.location.reload()} className="h-7 w-7 rounded-full bg-white/5 border border-white/10 flex items-center justify-center"><Icon name="refresh" /></button>
+                        <button onClick={()=>window.location.reload()} className="h-7 w-7 rounded-full bg-white/5 flex items-center justify-center"><Icon name="refresh" /></button>
                     </header>
 
                     <main className="flex-1 overflow-y-auto px-2 py-3 no-scrollbar pb-24 z-10">
                         <div className="mac-glass sticky top-0 -mx-2 px-2 py-2 flex flex-col mb-4 z-20 shadow-2xl">
                             <div className="flex items-center justify-between mb-2 px-1">
                                 <button onClick={() => setWeekOffset(p => Math.max(0, p-1))} className="text-white/30 text-xs">◀ 上週</button>
-                                <span className="text-[10px] font-bold opacity-40">WEEK VIEW</span>
+                                <span className="text-[10px] font-bold opacity-40">WEEKLY NAVIGATION</span>
                                 <button onClick={() => setWeekOffset(p => p + 1)} className="text-white/30 text-xs">下週 ▶</button>
                             </div>
                             <div className="flex gap-2 overflow-x-auto no-scrollbar">
                                 {currentWeek.map(d => {
                                     const realIdx = dates.findIndex(ad => ad.fullKey === d.fullKey);
-                                    const active = dateIdx === realIdx, isW = d.w === '六' || d.w === '日';
+                                    const active = dateIdx === realIdx;
                                     return (
                                         <button key={d.fullKey} disabled={realIdx === -1} onClick={()=>setDateIdx(realIdx)} className={`flex-1 min-w-[45px] py-2 rounded-xl border-2 ${active ? 'border-blue-500 bg-blue-500/10' : 'border-transparent bg-white/5'} ${realIdx === -1 ? 'opacity-20' : ''}`}>
-                                            <span className={`text-[9px] ${isW ? 'text-[#FFD1DC]' : 'text-white/50'}`}>週{d.w}</span>
-                                            <span className={`text-base font-black ${active ? 'text-white' : isW ? 'text-[#FFD1DC]' : 'text-white/80'}`}>{d.d}</span>
+                                            <span className={`text-[9px] ${d.w==='六'||d.w==='日'?'text-[#FFD1DC]':'text-white/50'}`}>週{d.w}</span>
+                                            <span className={`text-base font-black ${active ? 'text-white' : 'text-white/80'}`}>{d.d}</span>
                                         </button>
                                     );
                                 })}
@@ -226,7 +230,7 @@
                             {['GT','BB','GP'].map(v=>{
                                 const vColor = v==='GT'?'#FF2D55':v==='BB'?'cyan':'#32DE84';
                                 return (
-                                    <div key={v} className="bg-[#121214] rounded-[1.5rem] flex flex-col border relative" style={{ borderColor: `${vColor}80` }}>
+                                    <div key={v} className="bg-[#121214] rounded-[1.5rem] flex flex-col border" style={{ borderColor: `${vColor}80` }}>
                                         <button onClick={() => setQueryVenue(v)} className="py-2 font-black text-xl" style={{color: vColor}}>{v}</button>
                                         <div className="px-1 py-1 min-h-[30px] border-b border-white/5 bg-black/40 text-center overflow-hidden">
                                             <p className="text-[14px] font-bold opacity-70 italic truncate">{schedule.shows?.[dates[dateIdx]?.fullKey]?.[v]||""}</p>
@@ -234,7 +238,7 @@
                                         <div className="p-1 space-y-1">
                                             {['A','B'].map(sh=>(
                                                 <div key={sh} className="bg-zinc-900/40 rounded-[1.2rem] p-1 flex flex-col gap-1 min-h-[60px]">
-                                                    {dData?.s[v][sh].map(n=><StaffButton key={n} name={n} aliasMap={aliasMap} mode="small" onClick={setQueryStaff} isBShift={sh === 'B'} showGlow={false} vipEnabled={vipConfig[n]} />)}
+                                                    {dData?.s[v][sh].map(n=><StaffButton key={n} name={n} aliasMap={aliasMap} mode="small" onClick={setQueryStaff} isBShift={sh === 'B'} showGlow={false} activeVip={vipConfig[n]} />)}
                                                 </div>
                                             ))}
                                         </div>
@@ -246,20 +250,24 @@
                         <div className="space-y-4 px-1 pb-10">
                             <section className="bg-white/5 border border-white/10 rounded-[1.5rem] p-4">
                                 <h4 className="text-orange-400 text-xs font-black uppercase mb-3">辦公人員</h4>
-                                <div className="grid grid-cols-4 gap-2">{dData?.s?.["辦公"]?.map(n=>(<StaffButton key={n} name={n} aliasMap={aliasMap} mode="tiny" onClick={setQueryStaff} vipEnabled={vipConfig[n]} />))}</div>
+                                <div className="grid grid-cols-4 gap-2">{dData?.s?.["辦公"]?.map(n=>(<StaffButton key={n} name={n} aliasMap={aliasMap} mode="tiny" onClick={setQueryStaff} activeVip={vipConfig[n]} />))}</div>
                             </section>
                             <section className="bg-white/5 border border-white/10 rounded-[1.5rem] p-4">
                                 <h4 className="text-gray-400 text-xs font-black uppercase mb-3">今日休假</h4>
-                                <div className="grid grid-cols-4 gap-2">{dData?.s?.["休假"]?.map(n=>(<StaffButton key={n} name={n} aliasMap={aliasMap} mode="tiny" onClick={setQueryStaff} vipEnabled={vipConfig[n]} />))}</div>
+                                <div className="grid grid-cols-4 gap-2">{dData?.s?.["休假"]?.map(n=>(<StaffButton key={n} name={n} aliasMap={aliasMap} mode="tiny" onClick={setQueryStaff} activeVip={vipConfig[n]} />))}</div>
                             </section>
                         </div>
                     </main>
 
+                    {/*總表彈窗*/}
                     {showMasterModal && (
                         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-2 bg-black/95 backdrop-blur-3xl" onClick={() => setShowMasterModal(false)}>
                             <div className="bg-[#121214] border border-white/10 w-full max-w-4xl rounded-[2rem] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
                                 <div className="p-4 border-b border-white/10 flex items-center justify-between bg-zinc-900/40">
-                                    <h3 className="text-lg font-black italic">Master Roster</h3>
+                                    <div className="flex items-center gap-4">
+                                        <button onClick={() => setShowMasterModal(false)} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-xl shrink-0">×</button>
+                                        <h3 className="text-lg font-black italic">Master Roster</h3>
+                                    </div>
                                     <NavGroup onPrev={()=>setWeekOffset(p=>Math.max(0,p-1))} onToday={handleBackToday} onNext={()=>setWeekOffset(p=>p+1)} />
                                 </div>
                                 <div className="flex-1 overflow-auto p-1 no-scrollbar">
@@ -275,8 +283,21 @@
                                     {STAFF_ORDER.map(staff => (
                                         <div key={staff} className="flex border-b border-white/[0.04]">
                                             <div className="master-sticky-col py-2 px-1 flex items-center gap-1">
-                                                {vipManagerActive && <div onClick={() => setVipConfig(p=>({...p, [staff]: !p[staff]}))} className={`w-3 h-3 rounded-full ${vipConfig[staff] ? 'bg-green-500 shadow-[0_0_8px_#22c55e]' : 'bg-white/10'}`} />}
-                                                <StaffButton name={staff} aliasMap={aliasMap} mode="master" onClick={(s)=>{setShowMasterModal(false); setQueryStaff(s);}} vipEnabled={vipConfig[staff]} />
+                                                {vipManagerActive && (
+                                                    <div 
+                                                        onClick={() => {
+                                                            setVipConfig(p => {
+                                                                const cur = p[staff];
+                                                                const next = cur === "NONE" ? "VIP1" : (cur === "VIP1" ? "VIP2" : "NONE");
+                                                                return { ...p, [staff]: next };
+                                                            });
+                                                        }} 
+                                                        className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black cursor-pointer transition-colors ${vipConfig[staff] === "VIP1" ? 'bg-blue-500' : (vipConfig[staff] === "VIP2" ? 'bg-cyan-400' : 'bg-white/10')}`}
+                                                    >
+                                                        {vipConfig[staff] === "NONE" ? "" : vipConfig[staff] === "VIP1" ? "1" : "2"}
+                                                    </div>
+                                                )}
+                                                <StaffButton name={staff} aliasMap={aliasMap} mode="master" onClick={(s)=>{setShowMasterModal(false); setQueryStaff(s);}} activeVip={vipConfig[staff]} />
                                             </div>
                                             {currentWeek.map(d => {
                                                 let label = "—", cls = "bg-white/[0.03] text-white/10";
@@ -300,31 +321,26 @@
                         </div>
                     )}
 
+                    {/*場地與個人週表彈窗*/}
                     {(queryStaff || queryVenue) && (
                         <div className="fixed inset-0 z-[2000] flex items-center justify-center p-6 bg-black/90 backdrop-blur-2xl" onClick={() => { setQueryStaff(null); setQueryVenue(null); }}>
                              <div className="bg-[#121214] border border-white/10 w-full max-w-lg rounded-[2.5rem] shadow-2xl flex flex-col max-h-[85vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
                                 <div className="p-4 border-b border-white/10 flex items-center justify-between bg-zinc-900/40">
                                     <h3 className="text-xl font-black italic">{queryVenue ? `${queryVenue} 週表` : (aliasMap[queryStaff] || queryStaff)}</h3>
-                                    <div className="flex items-center gap-2">
-                                        <NavGroup onPrev={()=>setWeekOffset(p=>Math.max(0,p-1))} onToday={handleBackToday} onNext={()=>setWeekOffset(p=>p+1)} />
-                                        <button onClick={() => {
-                                            const text = queryVenue ? `${queryVenue} 週表:\n` + currentWeek.map(d => `${d.d}(${d.w}): 早[${Object.entries(schedule.roster[d.fullKey]?.[queryVenue]||{}).filter(([_,v])=>v.shift==='A').map(([n])=>aliasMap[n]||n).join('、')||'無'}] 晚[${Object.entries(schedule.roster[d.fullKey]?.[queryVenue]||{}).filter(([_,v])=>v.shift==='B').map(([n])=>aliasMap[n]||n).join('、')||'無'}]`).join('\n') : `${aliasMap[queryStaff]||queryStaff} 週表:\n` + currentWeek.map(d => { let s="辦公"; ['GT','BB','GP'].forEach(v=>{if(schedule.roster[d.fullKey]?.[v]?.[queryStaff]) s=`${v}-${schedule.roster[d.fullKey][v][queryStaff].shift}`}); if(schedule.statuses[d.fullKey]?.[queryStaff]?.match(/休|例/)) s="休假"; return `${d.d}(${d.w}): ${s}`; }).join('\n');
-                                            navigator.clipboard.writeText(text); setToast("已複製"); setTimeout(()=>setToast(null), 2000);
-                                        }} className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center"><Icon name="copy" /></button>
-                                    </div>
+                                    <NavGroup onPrev={()=>setWeekOffset(p=>Math.max(0,p-1))} onToday={handleBackToday} onNext={()=>setWeekOffset(p=>p+1)} />
                                 </div>
                                 <div className="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar scroll-smooth">
                                     {currentWeek.map(d => {
                                         const isToday = d.fullKey === dates[dateIdx]?.fullKey;
-                                        let rowContent = <span className="text-lg font-black opacity-40">—</span>;
+                                        let rowContent;
                                         if (queryVenue) {
                                             rowContent = (
                                                 <div className="flex-1 flex flex-col gap-2">
-                                                    <p className="text-xs opacity-50 italic">{schedule.shows?.[d.fullKey]?.[queryVenue] || "無演出內容"}</p>
+                                                    <p className="text-xs opacity-50 italic truncate">{schedule.shows?.[d.fullKey]?.[queryVenue] || "無演出內容"}</p>
                                                     <div className="grid grid-cols-2 gap-2">
                                                         {['A','B'].map(sh => (
                                                             <div key={sh} className="bg-black/40 p-1 rounded-lg flex flex-col gap-1 min-h-[40px]">
-                                                                {Object.entries(schedule.roster[d.fullKey]?.[queryVenue]||{}).filter(([_,v])=>v.shift===sh).map(([n])=><StaffButton key={n} name={n} aliasMap={aliasMap} mode="tiny" onClick={setQueryStaff} vipEnabled={vipConfig[n]} />)}
+                                                                {Object.entries(schedule.roster[d.fullKey]?.[queryVenue]||{}).filter(([_,v])=>v.shift===sh).map(([n])=><StaffButton key={n} name={n} aliasMap={aliasMap} mode="tiny" onClick={setQueryStaff} activeVip={vipConfig[n]} />)}
                                                             </div>
                                                         ))}
                                                     </div>
