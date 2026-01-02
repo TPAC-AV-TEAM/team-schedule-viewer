@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>視聽班表系統 | V5.7 Adaptive Pro</title>
+    <title>視聽班表系統 | V5.8 Final Polish</title>
 
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -30,6 +30,7 @@
             --women-text: #FFD6E0; --men-text: #E0F7FF; --special-text: #FFFFE0;
             --women-dot: #FF375F; --men-dot: #00FFFF; --special-dot: #FFD60A;
             --master-gt: #8B0000; --master-bb: #008B8B; --master-gp: #006400; 
+            --reminder-pink: #FF69B4;
         }
         body { font-family: 'Inter', 'Noto Sans TC', sans-serif; height: 100vh; overflow: hidden; background: var(--mac-bg); color: #FFFFFF; -webkit-font-smoothing: antialiased; }
         .aura-bg { position: fixed; inset: 0; background: radial-gradient(circle at 50% 0%, #3a3a3c 0%, #1c1c1e 100%); z-index: 0; pointer-events: none; }
@@ -41,27 +42,24 @@
         
         @keyframes b-glow-adaptive {
             0% { box-shadow: 0 0 2px rgba(255,255,255,0.4); }
-            100% { 
-                /* 電腦版使用多層陰影補償亮度不足 */
-                box-shadow: 0 0 8px #fff, 0 0 15px rgba(255,255,255,0.6), 0 0 30px rgba(255,255,255,0.4); 
-            }
+            100% { box-shadow: 0 0 8px #fff, 0 0 15px rgba(255,255,255,0.6), 0 0 30px rgba(255,255,255,0.4); }
         }
 
-        /* 若為手機版則改回細膩單層發光，並縮小框線 */
         @media (max-width: 768px) {
             @keyframes b-glow-adaptive {
                 0% { box-shadow: 0 0 2px rgba(255,255,255,0.4); }
                 100% { box-shadow: 0 0 15px rgba(255,255,255,1); }
             }
-            .venue-card-border { border-width: 1px !important; } /* 手機版外框細一半 */
+            .venue-card-border { border-width: 1px !important; }
         }
 
-        @keyframes reminder-pulse {
-            0% { box-shadow: 0 0 5px rgba(255, 45, 85, 0.2); border-color: rgba(255, 45, 85, 0.3); }
-            50% { box-shadow: 0 0 25px rgba(255, 45, 85, 0.6); border-color: rgba(255, 45, 85, 1); }
-            100% { box-shadow: 0 0 5px rgba(255, 45, 85, 0.2); border-color: rgba(255, 45, 85, 0.3); }
+        /* 提醒事項粉紅色呼吸燈 */
+        @keyframes reminder-pulse-pink {
+            0% { box-shadow: 0 0 5px rgba(255, 105, 180, 0.2); border-color: rgba(255, 105, 180, 0.3); }
+            50% { box-shadow: 0 0 25px rgba(255, 105, 180, 0.6); border-color: var(--reminder-pink); }
+            100% { box-shadow: 0 0 5px rgba(255, 105, 180, 0.2); border-color: rgba(255, 105, 180, 0.3); }
         }
-        .reminder-active-glow { animation: reminder-pulse 2s infinite ease-in-out; border-width: 1.5px !important; }
+        .reminder-active-glow { animation: reminder-pulse-pink 2s infinite ease-in-out; border-width: 1.5px !important; }
 
         .master-left-column {
             position: absolute; left: 0; top: 0; bottom: 0;
@@ -80,9 +78,10 @@
         .day-block-today { background: #48484a !important; border: 2px solid var(--mac-blue) !important; box-shadow: 0 0 20px rgba(10, 132, 255, 0.3) !important; }
         .master-today-highlight { background: rgba(10, 132, 255, 0.2) !important; border-left: 1.5px solid var(--mac-blue) !important; border-right: 1.5px solid var(--mac-blue) !important; }
 
-        .marquee-wrapper { overflow: hidden; white-space: nowrap; position: relative; width: 100%; display: flex; justify-content: center; }
-        .marquee-active { animation: marquee 15s linear infinite; display: inline-block; padding-left: 100%; }
-        @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
+        /* 跑馬燈樣式 */
+        .marquee-container { overflow: hidden; white-space: nowrap; position: relative; }
+        .marquee-text { display: inline-block; padding-left: 100%; animation: marquee-scroll 10s linear infinite; }
+        @keyframes marquee-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-200%); } }
     </style>
 </head>
 <body>
@@ -106,7 +105,6 @@
         const Icon = memo(({ name, className = "w-4 h-4" }) => {
             const icons = {
                 refresh: <React.Fragment><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" /><path d="M16 21h5v-5" /></React.Fragment>,
-                check: <path d="M20 6 9 17l-5-5" />,
                 info: <React.Fragment><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></React.Fragment>,
                 sun: <path d="M12 2v2m0 16v2m10-10h-2M4 12H2m15.364-7.364l-1.414 1.414M7.05 16.95l-1.414 1.414M16.95 16.95l1.414 1.414M5.636 5.636l1.414 1.414M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z" />,
                 briefcase: <React.Fragment><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></React.Fragment>,
@@ -124,9 +122,8 @@
             const dotClass = info?.type === "Special" ? "bg-[var(--special-dot)]" : info?.gender === "F" ? "bg-[var(--women-dot)]" : "bg-[var(--men-dot)]";
             const fontSize = mode === "tiny" ? "text-[14px]" : (mode === "small" ? (isALong ? "text-[14px]" : "text-[18px]") : (mode === "master" ? "text-[16px]" : (isALong ? "text-[22px]" : "text-[26px]")));
             const btnClass = `${mode === "small" || mode === "master" ? 'h-8' : 'h-10'} ${fontSize} rounded-[0.6rem] ${(isBShift && showGlow) ? 'b-shift-glow' : ''}`;
-            const handleClick = (e) => { e.stopPropagation(); if(onClick) onClick(name); };
             return (
-                <button onClick={handleClick} className={`w-full ${btnClass} font-normal tracking-tight border border-white/10 bg-white/10 flex items-center justify-center gap-1 shadow-sm ${colorClass} leading-none truncate shrink-0 active:scale-95 transition-transform`} title={disp}>
+                <button onClick={(e) => { e.stopPropagation(); if(onClick) onClick(name); }} className={`w-full ${btnClass} font-normal tracking-tight border border-white/10 bg-white/10 flex items-center justify-center gap-1 shadow-sm ${colorClass} leading-none truncate shrink-0 active:scale-95 transition-transform`} title={disp}>
                     <span className={`w-1 h-1 rounded-full ${dotClass} shadow-[0_0_5px_currentColor]`}></span>{disp}
                 </button>
             );
@@ -136,31 +133,21 @@
             const [dates, setDates] = useState([]), [schedule, setSchedule] = useState({ roster: {}, statuses: {}, shows: {}, notes: {}, updated: null });
             const [dateIdx, setDateIdx] = useState(0), [isUnlocked, setIsUnlocked] = useState(false), [user, setUser] = useState(null);
             const [aliasMap, setAliasMap] = useState({}), [queryStaff, setQueryStaff] = useState(null), [queryVenue, setQueryVenue] = useState(null);
-            const [showMasterModal, setShowMasterModal] = useState(false), [toast, setToast] = useState(null), [diag, setDiag] = useState("正在同步中...");
+            const [showMasterModal, setShowMasterModal] = useState(false);
 
-            // 定位對位功能修正版
             const scrollToElement = useCallback((fullKey, containerId) => {
                 setTimeout(() => {
                     const container = document.getElementById(containerId);
                     if (!container) return;
-                    
-                    let elId = `nav-date-${fullKey}`;
-                    if (containerId === "master-scroll-container") elId = `master-nav-date-${fullKey}`;
-                    if ((queryStaff || queryVenue) && containerId.includes("-scroll-container")) elId = `modal-row-${fullKey}`;
-                    
+                    let elId = containerId === "nav-scroll-container" ? `nav-date-${fullKey}` : containerId === "master-scroll-container" ? `master-nav-date-${fullKey}` : `modal-row-${fullKey}`;
                     const el = document.getElementById(elId);
                     if (el) {
-                        const isHorizontal = containerId === "nav-scroll-container" || containerId === "master-scroll-container";
-                        if (isHorizontal) {
-                            const left = el.offsetLeft - (container.offsetWidth / 2) + (el.offsetWidth / 2);
-                            container.scrollTo({ left, behavior: 'smooth' });
-                        } else {
-                            const top = el.offsetTop - (container.offsetHeight / 2) + (el.offsetHeight / 2);
-                            container.scrollTo({ top, behavior: 'smooth' });
-                        }
+                        const isHorizontal = containerId.includes("nav") || containerId === "master-scroll-container";
+                        if (isHorizontal) { container.scrollTo({ left: el.offsetLeft - (container.offsetWidth / 2) + (el.offsetWidth / 2), behavior: 'smooth' }); }
+                        else { container.scrollTo({ top: el.offsetTop - (container.offsetHeight / 2) + (el.offsetHeight / 2), behavior: 'smooth' }); }
                     }
                 }, 200);
-            }, [queryStaff, queryVenue]);
+            }, []);
 
             const handleBackToday = useCallback(() => {
                 const tK = formatK(new Date()), idx = dates.findIndex(d => d.fullKey === tK); 
@@ -191,7 +178,7 @@
                         Firebase.signInAnonymously(Firebase.getAuth(app)).then(() => {
                             Firebase.onAuthStateChanged(Firebase.getAuth(app), async (u) => { 
                                 if(u) {
-                                    setUser(u); setDiag("LINKING...");
+                                    setUser(u);
                                     const mapSnap = await Firebase.getDoc(Firebase.doc(Firebase.getFirestore(app), 'artifacts', 'tpac-schedule', 'public', 'data', 'configs', 'name_mapping'));
                                     if (mapSnap.exists()) setAliasMap(mapSnap.data().maps || {});
                                 }
@@ -207,18 +194,17 @@
                 const db = Firebase.getFirestore();
                 return Firebase.onSnapshot(Firebase.doc(db, 'artifacts', 'tpac-schedule', 'public', 'data', 'rosters', 'master'), (snap) => {
                     if (snap.exists()) {
-                        const data = snap.data(), roster = JSON.parse(data.roster || '{}');
+                        const data = snap.data(), roster = JSON.parse(data.roster || '{}'), statuses = JSON.parse(data.statuses || '{}'), shows = JSON.parse(data.shows || '{}'), notes = JSON.parse(data.notes || '{}');
                         const keys = Object.keys(roster).sort();
                         const sd = keys.map(k => { const d = new Date(k); return { d: `${d.getMonth()+1}/${d.getDate()}`, w: ['日','一','二','三','四','五','六'][d.getDay()], fullKey: k }; });
-                        setSchedule({ roster, statuses: JSON.parse(data.statuses || '{}'), shows: JSON.parse(data.shows || '{}'), notes: JSON.parse(data.notes || '{}'), updated: data.lastUpdated });
-                        setDates(sd); setDiag("CONNECTED"); setIsUnlocked(true); 
+                        setSchedule({ roster, statuses, shows, notes, updated: data.lastUpdated });
+                        setDates(sd); setIsUnlocked(true); 
                         const tK = formatK(new Date()), match = keys.indexOf(tK);
                         if (match !== -1) { setDateIdx(match); setTimeout(() => scrollToElement(tK, "nav-scroll-container"), 500); }
                     }
                 });
             }, [user, scrollToElement]);
 
-            // 當彈窗打開時自動觸發一次對位
             useEffect(() => { if (showMasterModal) scrollToElement(dates[dateIdx]?.fullKey, "master-scroll-container"); }, [showMasterModal, dateIdx, dates, scrollToElement]);
             useEffect(() => { if (queryVenue) scrollToElement(dates[dateIdx]?.fullKey, "venue-scroll-container"); }, [queryVenue, dateIdx, dates, scrollToElement]);
             useEffect(() => { if (queryStaff) scrollToElement(dates[dateIdx]?.fullKey, "staff-scroll-container"); }, [queryStaff, dateIdx, dates, scrollToElement]);
@@ -248,7 +234,6 @@
             return (
                 <div className="h-screen flex flex-col overflow-hidden relative text-white bg-[var(--mac-bg)]">
                     <div className="aura-bg"></div>
-                    
                     <header className="mac-glass pt-10 pb-3 px-4 flex items-center justify-between shrink-0 z-50">
                         <button onClick={handleBackToday} className="bg-blue-600 px-4 h-7 rounded-full text-[10px] font-black shadow-lg active:scale-95 transition-transform">Today</button>
                         <h1 className="text-xl font-black italic cursor-pointer hover:text-blue-400" onClick={() => setShowMasterModal(true)}>視聽班表系統</h1>
@@ -271,10 +256,11 @@
                                 })}
                             </div>
                             <div className="mt-3 px-1">
+                                {/* 提醒事項外框改為粉紅色 */}
                                 <div className={`bg-[#3a3a3c] border border-white/20 rounded-xl px-4 py-3 flex items-start gap-3 shadow-2xl transition-all ${hasNote ? 'reminder-active-glow' : ''}`}>
-                                    <span className={`${hasNote ? 'text-red-400' : 'text-blue-400'} mt-1 transition-colors`}><Icon name="info" /></span>
+                                    <span className={`${hasNote ? 'text-[var(--reminder-pink)]' : 'text-blue-400'} mt-1 transition-colors`}><Icon name="info" /></span>
                                     <div className="flex flex-col">
-                                        <span className={`text-[10px] font-black uppercase ${hasNote ? 'text-red-400' : 'text-blue-400'}`}>今日重要提醒</span>
+                                        <span className={`text-[10px] font-black uppercase ${hasNote ? 'text-[var(--reminder-pink)]' : 'text-blue-400'}`}>今日重要提醒</span>
                                         <p className={`text-[15px] font-bold ${hasNote ? 'text-white' : 'text-white/40'}`}>{hasNote ? todayNote : "今日尚無重要記事。"}</p>
                                     </div>
                                 </div>
@@ -313,7 +299,6 @@
                                         <button onClick={() => shiftWeek(1)} className="p-1 hover:text-white transition-colors"><Icon name="chevronRight" /></button>
                                     </div>
                                 </div>
-                                
                                 <div className="flex-1 overflow-hidden relative">
                                     <div className="master-left-column">
                                         <div className="master-header-height flex items-center justify-center border-b border-white/20 text-[9px] font-black text-white/40">STAFF</div>
@@ -370,13 +355,65 @@
                                     {dates.map((d) => {
                                         const isS = d.fullKey === dates[dateIdx]?.fullKey, isW = d.w === '六' || d.w === '日';
                                         const blockClass = `day-block-card ${isS ? 'day-block-today' : ''}`;
-                                        if (queryVenue) return (
-                                            <div key={d.fullKey} id={`modal-row-${d.fullKey}`} className={`flex flex-col ${blockClass}`}><div className="mb-2 pb-2 border-b border-white/10 text-sm font-bold italic opacity-60">{schedule.shows[d.fullKey]?.[queryVenue] || "—"}</div><div className="flex items-start gap-4"><div className="flex flex-col text-left pr-3 border-r border-white/10 w-16 leading-none"><span className={`text-[9px] font-black ${isW ? 'text-red-400' : 'opacity-40'}`}>週{d.w}</span><span className="text-lg font-bold">{d.d}</span></div><div className="flex-1 grid grid-cols-2 gap-2">{['A','B'].map(sh => (<div key={sh} className="bg-black/20 rounded-xl p-1 min-h-[40px] flex flex-col gap-1">{Object.entries(schedule.roster[d.fullKey]?.[queryVenue]||{}).filter(([_,v])=>v.shift===sh).map(([n])=><StaffButton key={n} name={n} aliasMap={aliasMap} onClick={(s) => { setQueryVenue(null); setQueryStaff(s); }} mode="small" isBShift={sh === 'B'} showGlow={true} />)}</div>))}</div></div></div>
-                                        );
-                                        let st = "辦公", co = "#FF9500", hasS = false, isB = false;
-                                        ['GT','BB','GP'].forEach(v => { if (schedule.roster[d.fullKey]?.[v]?.[queryStaff]) { const sh = schedule.roster[d.fullKey][v][queryStaff].shift; st = `${v}-${sh}`; co = v==='GP'?'#32DE84':v==='BB'?'#00FFFF':'#FF2D55'; hasS = true; if (sh === 'B') isB = true; } }); 
+                                        
+                                        if (queryVenue) {
+                                            const venueShowName = schedule.shows[d.fullKey]?.[queryVenue] || "—";
+                                            return (
+                                                <div key={d.fullKey} id={`modal-row-${d.fullKey}`} className={`flex flex-col ${blockClass}`}>
+                                                    {/* 場館週表：演出內容靠右 */}
+                                                    <div className="mb-2 pb-2 border-b border-white/10 text-sm font-bold italic opacity-60 text-right">{venueShowName}</div>
+                                                    <div className="flex items-start gap-4">
+                                                        {/* 精簡日期區塊 */}
+                                                        <div className="flex flex-col text-left pr-2 border-r border-white/10 w-12 leading-none">
+                                                            <span className={`text-[8px] font-black ${isW ? 'text-red-400' : 'opacity-40'}`}>週{d.w}</span>
+                                                            <span className="text-base font-bold">{d.d.split('/')[1]}</span>
+                                                        </div>
+                                                        <div className="flex-1 grid grid-cols-2 gap-2">
+                                                            {['A','B'].map(sh => (
+                                                                <div key={sh} className="bg-black/20 rounded-xl p-1 min-h-[40px] flex flex-col gap-1">
+                                                                    {Object.entries(schedule.roster[d.fullKey]?.[queryVenue]||{}).filter(([_,v])=>v.shift===sh).map(([n])=><StaffButton key={n} name={n} aliasMap={aliasMap} onClick={(s) => { setQueryVenue(null); setQueryStaff(s); }} mode="small" isBShift={sh === 'B'} showGlow={true} />)}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+
+                                        // 個人週表處理
+                                        let st = "辦公", co = "#FF9500", hasS = false, isB = false, activeV = "";
+                                        ['GT','BB','GP'].forEach(v => { 
+                                            if (schedule.roster[d.fullKey]?.[v]?.[queryStaff]) { 
+                                                const sh = schedule.roster[d.fullKey][v][queryStaff].shift;
+                                                st = `${v}-${sh}`; co = v==='GP'?'#32DE84':v==='BB'?'#00FFFF':'#FF2D55'; hasS = true; activeV = v; if (sh === 'B') isB = true;
+                                            } 
+                                        }); 
                                         if (schedule.statuses[d.fullKey]?.[queryStaff]?.match(/休|例|假/)) { st = "休假"; co = "#8E8E93"; }
-                                        return (<div key={d.fullKey} id={`modal-row-${d.fullKey}`} className={`flex items-center justify-between ${blockClass}`}><div className="flex flex-col text-left pr-3 border-r border-white/10 w-16 leading-none"><span className={`text-[9px] font-black ${isW ? 'text-red-400' : 'opacity-40'}`}>週{d.w}</span><span className="text-lg font-bold">{d.d}</span></div><span className={`text-lg font-black px-3 py-1 rounded-lg ${isB ? 'b-shift-glow' : ''}`} style={{ color: co }}>{st}</span></div>);
+                                        
+                                        const showName = hasS ? (schedule.shows[d.fullKey]?.[activeV] || "") : "";
+                                        const isLongShow = showName.length > 8;
+
+                                        return (
+                                            <div key={d.fullKey} id={`modal-row-${d.fullKey}`} className={`flex items-center gap-3 ${blockClass}`}>
+                                                <div className="flex flex-col text-left pr-3 border-r border-white/10 w-16 leading-none shrink-0">
+                                                    <span className={`text-[9px] font-black ${isW ? 'text-red-400' : 'opacity-40'}`}>週{d.w}</span>
+                                                    <span className="text-lg font-bold">{d.d}</span>
+                                                </div>
+                                                
+                                                {/* 個人週表：中間插入演出內容 */}
+                                                <div className="flex-1 marquee-container text-xs font-light text-white opacity-50 italic">
+                                                    {showName ? (
+                                                        isLongShow ? (
+                                                            <div className="marquee-text">{showName}</div>
+                                                        ) : (
+                                                            <span>{showName}</span>
+                                                        )
+                                                    ) : null}
+                                                </div>
+
+                                                <span className={`text-lg font-black px-3 py-1 rounded-lg shrink-0 ${isB ? 'b-shift-glow' : ''}`} style={{ color: co }}>{st}</span>
+                                            </div>
+                                        );
                                     })}
                                 </div>
                             </div>
