@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>視聽班表系統 | V6.7 Master B-Glow Refined</title>
+    <title>視聽班表系統 | V6.8 Master UI Fix</title>
 
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -114,7 +114,7 @@
             return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>{icons[name] || icons.refresh}</svg>;
         });
 
-        const StaffButton = memo(({ name, aliasMap = {}, forceName = null, onClick, mode = "normal", isBShift = false, showGlow = false }) => {
+        const StaffButton = memo(({ name, aliasMap = {}, forceName = null, onClick, mode = "normal" }) => {
             const info = STAFF_INFO[name] || { gender: 'M' };
             const disp = forceName || aliasMap[name] || name;
             const isALong = name === "廖俊龍";
@@ -122,9 +122,8 @@
             const dotClass = info?.type === "Special" ? "bg-[var(--special-dot)]" : info?.gender === "F" ? "bg-[var(--women-dot)]" : "bg-[var(--men-dot)]";
             const fontSize = mode === "tiny" ? "text-[14px]" : (mode === "small" ? (isALong ? "text-[14px]" : "text-[18px]") : (mode === "master" ? "text-[16px]" : (isALong ? "text-[22px]" : "text-[26px]")));
             
-            // 修正：主按鈕不具備 B 班外框與呼吸燈，保持乾淨
-            let borderClass = "border-white/10";
-            
+            // 修正：總表左側人名按鈕，強制還原為統一邊框樣式，移除呼吸燈邏輯
+            const borderClass = "border-white/10";
             const btnClass = `${mode === "small" || mode === "master" ? 'h-8' : 'h-10'} ${fontSize} rounded-[0.6rem]`;
             
             return (
@@ -218,7 +217,6 @@
                 const d = dates[dateIdx]; if (!d) return null;
                 const res = { s: { GT:{A:[],B:[]}, BB:{A:[],B:[]}, GP:{A:[],B:[]}, "辦公":[], "休假":[] } };
                 const rawR = schedule.roster[d.fullKey] || {}, rawS = schedule.statuses[d.fullKey] || {};
-                const hasShift = new Set();
                 STAFF_ORDER.forEach(n => {
                     let onDuty = false;
                     ['GT','BB','GP'].forEach(v => {
@@ -284,7 +282,7 @@
                                     <div key={v} className="bg-[var(--mac-card)] rounded-[1.5rem] overflow-hidden flex flex-col shadow-lg border-2 transition-all venue-card-border" style={{ borderColor: vColor, boxShadow: `0 0 10px ${vColor}40` }}>
                                         <button onClick={() => setQueryVenue(v)} className="py-2 font-black text-xl bg-white/[0.05]" style={{color: vColor}}>{v}</button>
                                         <div className="px-1 py-1 min-h-[30px] flex items-center justify-center border-b border-white/5 bg-black/20 text-center overflow-hidden"><p className="text-[13px] font-bold italic truncate">{schedule.shows?.[dates[dateIdx]?.fullKey]?.[v]||""}</p></div>
-                                        <div className="p-1 space-y-1">{['A','B'].map(shift=>(<div key={shift} className="bg-white/5 rounded-[1rem] p-1 flex flex-col gap-1 min-h-[60px]">{dData?.s[v][shift].map(n=><StaffButton key={n} name={n} aliasMap={aliasMap} mode="small" onClick={setQueryStaff} isBShift={shift === 'B'} showGlow={false} />)}</div>))}</div>
+                                        <div className="p-1 space-y-1">{['A','B'].map(shift=>(<div key={shift} className="bg-white/5 rounded-[1rem] p-1 flex flex-col gap-1 min-h-[60px]">{dData?.s[v][shift].map(n=><StaffButton key={n} name={n} aliasMap={aliasMap} mode="small" onClick={setQueryStaff} />)}</div>))}</div>
                                     </div>
                                 );
                             })}
@@ -314,6 +312,7 @@
                                         <div className="master-header-height flex items-center justify-center border-b border-white/20 text-[9px] font-black text-white/40">STAFF</div>
                                         {STAFF_ORDER.map(staff => (
                                             <div key={staff} className="master-row-height px-1 border-b border-white/5 flex items-center justify-center">
+                                                {/* 修正：總表左側人名按鈕固定樣式，移除呼吸燈參數 */}
                                                 <StaffButton name={staff} aliasMap={aliasMap} mode="master" forceName={staff === "廖俊龍" ? "阿龍" : null} onClick={(s) => { setShowMasterModal(false); setQueryStaff(s); }} />
                                             </div>
                                         ))}
@@ -345,7 +344,7 @@
                                                         if (schedule.statuses[dk]?.[staff]?.match(/辦公|其他/)) { label = "辦"; cls = "bg-orange-500/40 text-orange-200 text-[14px]"; } 
                                                         else if (!hasS && (schedule.statuses[dk]?.[staff] === "" || schedule.statuses[dk]?.[staff]?.match(/休|例|假|病|補|事|公/))) { label = "休"; cls = "bg-gray-700/80 text-white/50 text-[14px]"; }
                                                         
-                                                        // 關鍵修正：B 班時，發光效果作用在格子單元上而非 StaffButton
+                                                        // 保持：右側 B 班格子具備框線與呼吸燈
                                                         return (
                                                             <div key={dk} className={`master-cell-unit p-1 ${dk === todayK ? 'master-today-highlight' : ''}`}>
                                                                 <div className={`w-full h-8 flex items-center justify-center rounded-md ${cls} ${isB ? 'b-shift-glow border border-white' : ''}`}>{label}</div>
@@ -394,7 +393,7 @@
                                                         <div className="flex-1 grid grid-cols-2 gap-2">
                                                             {['A','B'].map(sh => (
                                                                 <div key={sh} className="bg-black/20 rounded-xl p-1 min-h-[40px] flex flex-col gap-1">
-                                                                    {Object.entries(schedule.roster[d.fullKey]?.[queryVenue]||{}).filter(([_,v])=>v.shift===sh).map(([n])=><StaffButton key={n} name={n} aliasMap={aliasMap} onClick={(s) => { setQueryVenue(null); setQueryStaff(s); }} mode="small" isBShift={sh === 'B'} showGlow={false} />)}
+                                                                    {Object.entries(schedule.roster[d.fullKey]?.[queryVenue]||{}).filter(([_,v])=>v.shift===sh).map(([n])=><StaffButton key={n} name={n} aliasMap={aliasMap} onClick={(s) => { setQueryVenue(null); setQueryStaff(s); }} mode="small" />)}
                                                                 </div>
                                                             ))}
                                                         </div>
@@ -409,7 +408,7 @@
                                         return (
                                             <div key={d.fullKey} id={`modal-row-${d.fullKey}`} className={`flex items-center gap-3 ${blockClass}`}>
                                                 <div className="flex flex-col text-left pr-3 border-r border-white/10 w-20 leading-none shrink-0 justify-center">
-                                                    <span className={`font-black mb-1 ${isW ? 'text-[9px] text-red-400' : 'text-[11px] text-white/50'}`}>週{d.w}</span>
+                                                    <span className={`font-black mb-1 ${isW ? 'text-[10px] text-red-400' : 'text-[12px] text-white/50'}`}>週{d.w}</span>
                                                     <span className="text-[32px] font-black tracking-tighter">{d.d}</span>
                                                 </div>
                                                 <div className="flex-1 marquee-container text-[18px] font-light text-white opacity-50 italic">
