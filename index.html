@@ -120,9 +120,10 @@
             const isALong = name === "廖俊龍";
             const colorClass = info?.type === "Special" ? "text-[var(--special-text)]" : info?.gender === "F" ? "text-[var(--women-text)]" : "text-[var(--men-text)]";
             const dotClass = info?.type === "Special" ? "bg-[var(--special-dot)]" : info?.gender === "F" ? "bg-[var(--women-dot)]" : "bg-[var(--men-dot)]";
-            const fontSize = mode === "tiny" ? "text-[14px]" : (mode === "small" ? (isALong ? "text-[14px]" : "text-[18px]") : (mode === "master" ? "text-[16px]" : (isALong ? "text-[22px]" : "text-[26px]")));
             
-            // 修正：總表左側人名按鈕，強制還原為統一邊框樣式，移除呼吸燈邏輯
+            // 修改點 1：A-Long 在 small 模式下字體改為 16px
+            const fontSize = mode === "tiny" ? "text-[14px]" : (mode === "small" ? (isALong ? "text-[16px]" : "text-[18px]") : (mode === "master" ? "text-[16px]" : (isALong ? "text-[22px]" : "text-[26px]")));
+            
             const borderClass = "border-white/10";
             const btnClass = `${mode === "small" || mode === "master" ? 'h-8' : 'h-10'} ${fontSize} rounded-[0.6rem]`;
             
@@ -312,7 +313,6 @@
                                         <div className="master-header-height flex items-center justify-center border-b border-white/20 text-[9px] font-black text-white/40">STAFF</div>
                                         {STAFF_ORDER.map(staff => (
                                             <div key={staff} className="master-row-height px-1 border-b border-white/5 flex items-center justify-center">
-                                                {/* 修正：總表左側人名按鈕固定樣式，移除呼吸燈參數 */}
                                                 <StaffButton name={staff} aliasMap={aliasMap} mode="master" forceName={staff === "廖俊龍" ? "阿龍" : null} onClick={(s) => { setShowMasterModal(false); setQueryStaff(s); }} />
                                             </div>
                                         ))}
@@ -344,7 +344,6 @@
                                                         if (schedule.statuses[dk]?.[staff]?.match(/辦公|其他/)) { label = "辦"; cls = "bg-orange-500/40 text-orange-200 text-[14px]"; } 
                                                         else if (!hasS && (schedule.statuses[dk]?.[staff] === "" || schedule.statuses[dk]?.[staff]?.match(/休|例|假|病|補|事|公/))) { label = "休"; cls = "bg-gray-700/80 text-white/50 text-[14px]"; }
                                                         
-                                                        // 保持：右側 B 班格子具備框線與呼吸燈
                                                         return (
                                                             <div key={dk} className={`master-cell-unit p-1 ${dk === todayK ? 'master-today-highlight' : ''}`}>
                                                                 <div className={`w-full h-8 flex items-center justify-center rounded-md ${cls} ${isB ? 'b-shift-glow border border-white' : ''}`}>{label}</div>
@@ -386,9 +385,10 @@
                                                 <div key={d.fullKey} id={`modal-row-${d.fullKey}`} className={`flex flex-col ${blockClass}`}>
                                                     <div className="mb-2 pb-2 border-b border-white/10 text-sm font-light italic opacity-60 text-right">{venueShowName}</div>
                                                     <div className="flex items-start gap-4">
-                                                        <div className="flex flex-col text-left pr-2 border-r border-white/10 w-16 leading-none justify-center">
+                                                        {/* 修改點 2：場地週表日期顯示月份，大小固定 28px */}
+                                                        <div className="flex flex-col text-left pr-2 border-r border-white/10 w-20 leading-none justify-center">
                                                             <span className={`font-black mb-1 ${isW ? 'text-[10px] text-red-400' : 'text-[12px] text-white/50'}`}>週{d.w}</span>
-                                                            <span className="text-[32px] font-black tracking-tighter">{d.d.split('/')[1]}</span>
+                                                            <span className="text-[28px] font-black tracking-tighter">{d.d}</span>
                                                         </div>
                                                         <div className="flex-1 grid grid-cols-2 gap-2">
                                                             {['A','B'].map(sh => (
@@ -407,9 +407,10 @@
                                         const showName = hasS ? (schedule.shows[d.fullKey]?.[activeV] || "") : "";
                                         return (
                                             <div key={d.fullKey} id={`modal-row-${d.fullKey}`} className={`flex items-center gap-3 ${blockClass}`}>
+                                                {/* 修改點 3：個人週表日期數字大小固定 28px */}
                                                 <div className="flex flex-col text-left pr-3 border-r border-white/10 w-20 leading-none shrink-0 justify-center">
                                                     <span className={`font-black mb-1 ${isW ? 'text-[10px] text-red-400' : 'text-[12px] text-white/50'}`}>週{d.w}</span>
-                                                    <span className="text-[32px] font-black tracking-tighter">{d.d}</span>
+                                                    <span className="text-[28px] font-black tracking-tighter">{d.d}</span>
                                                 </div>
                                                 <div className="flex-1 marquee-container text-[18px] font-light text-white opacity-50 italic">
                                                     {showName ? (showName.length > 8 ? <div className="marquee-text">{showName}</div> : <span>{showName}</span>) : null}
