@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>視聽班表系統 | V6.0 Zero Border</title>
+    <title>視聽班表系統 | V6.1 Focus Polish</title>
 
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -24,7 +24,7 @@
     </script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;400;700;900&family=Noto+Sans+TC:wght@100;400;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;300;400;700;900&family=Noto+Sans+TC:wght@100;300;400;700;900&display=swap');
         :root { 
             --mac-bg: #1c1c1e; --mac-card: #2c2c2e; --mac-card-light: #3a3a3c; --mac-blue: #0A84FF; 
             --women-text: #FFD6E0; --men-text: #E0F7FF; --special-text: #FFFFE0;
@@ -41,9 +41,7 @@
         
         @keyframes b-glow-adaptive {
             0% { box-shadow: 0 0 2px rgba(255,255,255,0.4); }
-            100% { 
-                box-shadow: 0 0 8px #fff, 0 0 15px rgba(255,255,255,0.6), 0 0 30px rgba(255,255,255,0.4); 
-            }
+            100% { box-shadow: 0 0 8px #fff, 0 0 15px rgba(255,255,255,0.6), 0 0 30px rgba(255,255,255,0.4); }
         }
 
         @media (max-width: 768px) {
@@ -79,7 +77,8 @@
         .master-today-highlight { background: rgba(10, 132, 255, 0.2) !important; border-left: 1.5px solid var(--mac-blue) !important; border-right: 1.5px solid var(--mac-blue) !important; }
 
         .marquee-container { overflow: hidden; white-space: nowrap; position: relative; }
-        .marquee-text { display: inline-block; padding-left: 100%; animation: marquee-scroll 20s linear infinite; }
+        /* 修改：個人週表跑馬燈速度再放慢 (30s) */
+        .marquee-text { display: inline-block; padding-left: 100%; animation: marquee-scroll 30s linear infinite; }
         @keyframes marquee-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-200%); } }
     </style>
 </head>
@@ -121,7 +120,6 @@
             const dotClass = info?.type === "Special" ? "bg-[var(--special-dot)]" : info?.gender === "F" ? "bg-[var(--women-dot)]" : "bg-[var(--men-dot)]";
             const fontSize = mode === "tiny" ? "text-[14px]" : (mode === "small" ? (isALong ? "text-[14px]" : "text-[18px]") : (mode === "master" ? "text-[16px]" : (isALong ? "text-[22px]" : "text-[26px]")));
             
-            // 修正：針對首頁模式，拿掉 B 班按鈕的外框線，僅保留發光動畫
             const borderClass = (mode === "small" && isBShift) ? "border-transparent" : "border-white/10";
             const btnClass = `${mode === "small" || mode === "master" ? 'h-8' : 'h-10'} ${fontSize} rounded-[0.6rem] ${(isBShift && showGlow) ? 'b-shift-glow' : ''}`;
             
@@ -365,7 +363,8 @@
                                             const venueShowName = schedule.shows[d.fullKey]?.[queryVenue] || "—";
                                             return (
                                                 <div key={d.fullKey} id={`modal-row-${d.fullKey}`} className={`flex flex-col ${blockClass}`}>
-                                                    <div className="mb-2 pb-2 border-b border-white/10 text-sm font-extralight italic opacity-60 text-right">{venueShowName}</div>
+                                                    {/* 修改：廳院週表演出內容字體稍微加粗 (font-light) */}
+                                                    <div className="mb-2 pb-2 border-b border-white/10 text-sm font-light italic opacity-60 text-right">{venueShowName}</div>
                                                     <div className="flex items-start gap-4">
                                                         <div className="flex flex-col text-left pr-2 border-r border-white/10 w-12 leading-none">
                                                             <span className={`font-black ${isW ? 'text-[8px] text-red-400' : 'text-[10px] text-white/50'}`}>週{d.w}</span>
@@ -393,7 +392,8 @@
                                                     <span className={`font-black ${isW ? 'text-[9px] text-red-400' : 'text-[11px] text-white/50'}`}>週{d.w}</span>
                                                     <span className="text-lg font-bold">{d.d}</span>
                                                 </div>
-                                                <div className="flex-1 marquee-container text-xs font-light text-white opacity-50 italic">
+                                                {/* 修改：個人週表演出內容字體放大 1.5 倍 (text-[18px]) */}
+                                                <div className="flex-1 marquee-container text-[18px] font-light text-white opacity-50 italic">
                                                     {showName ? (isLongShow ? <div className="marquee-text">{showName}</div> : <span>{showName}</span>) : null}
                                                 </div>
                                                 <span className={`text-lg font-black px-3 py-1 rounded-lg shrink-0 ${isB ? 'b-shift-glow' : ''}`} style={{ color: co }}>{st}</span>
