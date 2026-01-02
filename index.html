@@ -120,8 +120,6 @@
             const isALong = name === "廖俊龍";
             const colorClass = info?.type === "Special" ? "text-[var(--special-text)]" : info?.gender === "F" ? "text-[var(--women-text)]" : "text-[var(--men-text)]";
             const dotClass = info?.type === "Special" ? "bg-[var(--special-dot)]" : info?.gender === "F" ? "bg-[var(--women-dot)]" : "bg-[var(--men-dot)]";
-            
-            // 修改點 1：A-Long 在 small 模式下字體改為 16px
             const fontSize = mode === "tiny" ? "text-[14px]" : (mode === "small" ? (isALong ? "text-[16px]" : "text-[18px]") : (mode === "master" ? "text-[16px]" : (isALong ? "text-[22px]" : "text-[26px]")));
             
             const borderClass = "border-white/10";
@@ -385,10 +383,9 @@
                                                 <div key={d.fullKey} id={`modal-row-${d.fullKey}`} className={`flex flex-col ${blockClass}`}>
                                                     <div className="mb-2 pb-2 border-b border-white/10 text-sm font-light italic opacity-60 text-right">{venueShowName}</div>
                                                     <div className="flex items-start gap-4">
-                                                        {/* 修改點 2：場地週表日期顯示月份，大小固定 28px */}
                                                         <div className="flex flex-col text-left pr-2 border-r border-white/10 w-20 leading-none justify-center">
-                                                            <span className={`font-black mb-1 ${isW ? 'text-[10px] text-red-400' : 'text-[12px] text-white/50'}`}>週{d.w}</span>
-                                                            <span className="text-[28px] font-black tracking-tighter">{d.d}</span>
+                                                            <span className={`font-black mb-1 ${isW ? 'text-[12px] text-red-400' : 'text-[14px] text-white/50'}`}>週{d.w}</span>
+                                                            <span className="text-[24px] font-black tracking-tighter">{d.d}</span>
                                                         </div>
                                                         <div className="flex-1 grid grid-cols-2 gap-2">
                                                             {['A','B'].map(sh => (
@@ -407,10 +404,9 @@
                                         const showName = hasS ? (schedule.shows[d.fullKey]?.[activeV] || "") : "";
                                         return (
                                             <div key={d.fullKey} id={`modal-row-${d.fullKey}`} className={`flex items-center gap-3 ${blockClass}`}>
-                                                {/* 修改點 3：個人週表日期數字大小固定 28px */}
                                                 <div className="flex flex-col text-left pr-3 border-r border-white/10 w-20 leading-none shrink-0 justify-center">
-                                                    <span className={`font-black mb-1 ${isW ? 'text-[10px] text-red-400' : 'text-[12px] text-white/50'}`}>週{d.w}</span>
-                                                    <span className="text-[28px] font-black tracking-tighter">{d.d}</span>
+                                                    <span className={`font-black mb-1 ${isW ? 'text-[12px] text-red-400' : 'text-[14px] text-white/50'}`}>週{d.w}</span>
+                                                    <span className="text-[24px] font-black tracking-tighter">{d.d}</span>
                                                 </div>
                                                 <div className="flex-1 marquee-container text-[18px] font-light text-white opacity-50 italic">
                                                     {showName ? (showName.length > 8 ? <div className="marquee-text">{showName}</div> : <span>{showName}</span>) : null}
