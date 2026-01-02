@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>視聽班表系統 | V4.7</title>
+    <title>視聽班表系統 | V4.8 Stable</title>
 
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -40,12 +40,19 @@
         .mac-glass { background: rgba(18, 18, 20, 0.85); backdrop-filter: blur(40px) saturate(200%); border-bottom: 0.5px solid rgba(255,255,255,0.12); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         
+        /* Master Roster 專用結構 */
+        .master-grid { display: flex; flex-direction: column; width: fit-content; min-width: 100%; }
+        .master-row { display: flex; border-bottom: 1.5px solid rgba(255,255,255,0.05); }
+        .master-sticky-col { 
+            position: sticky; left: 0; z-index: 40; 
+            background: #121214; width: 75px; flex-shrink: 0;
+            border-right: 2px solid rgba(255,255,255,0.15);
+        }
+        .master-cell { width: 80px; flex-shrink: 0; padding: 4px; display: flex; align-items: center; justify-content: center; border-left: 1px solid rgba(255,255,255,0.05); }
+
         .today-column-highlight { 
-            position: relative;
-            background: rgba(10, 132, 255, 0.15) !important; 
-            border-left: 1.5px solid rgba(10, 132, 255, 1) !important;
-            border-right: 1.5px solid rgba(10, 132, 255, 1) !important;
-            box-shadow: inset 0 0 20px rgba(10, 132, 255, 0.2);
+            background: rgba(10, 132, 255, 0.12) !important; 
+            box-shadow: inset 0 0 15px rgba(10, 132, 255, 0.2);
         }
 
         .b-shift-glow { animation: b-glow-strong 1.5s infinite alternate; border: 1.5px solid #FFFFFF !important; }
@@ -54,16 +61,6 @@
         .marquee-wrapper { overflow: hidden; white-space: nowrap; position: relative; width: 100%; display: flex; justify-content: center; }
         .marquee-active { animation: marquee 15s linear infinite; display: inline-block; padding-left: 100%; }
         @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
-        
-        /* 修改左側鎖定欄位 CSS */
-        .master-sticky-col { 
-            position: sticky; 
-            left: 0; 
-            z-index: 50; /* 提升層級 */
-            background: #121214; 
-            min-width: 75px; 
-            border-right: 1.5px solid rgba(255,255,255,0.2); 
-        }
     </style>
 </head>
 <body>
@@ -86,15 +83,15 @@
 
         const Icon = memo(({ name, className = "w-4 h-4" }) => {
             const icons = {
-                refresh: <React.Fragment><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" /><path d="M16 21h5v-5" /></React.Fragment>,
+                refresh: <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8 M3 3v5h5 M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16 M16 21h5v-5" />,
                 check: <path d="M20 6 9 17l-5-5" />,
-                cloud: <path d="M17.5 19c2.5 0 4.5-2 4.5-4.5 0-2.2-1.6-4-3.7-4.4-.5-3.1-3.2-5.6-6.3-5.6-2.5 0-4.7 1.5-5.7 3.6-2 .4-3.3 2.1-3.3 4.1C3 15.2 5.2 18 8 18h9.5z" />,
                 info: <React.Fragment><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></React.Fragment>,
-                sun: <path d="M12 2v2m0 16v2m10-10h-2M4 12H2m15.364-7.364l-1.414 1.414M7.05 16.95l-1.414 1.414M16.95 16.95l1.414 1.414M5.636 5.636l1.414 1.414M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z" />,
                 briefcase: <React.Fragment><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></React.Fragment>,
-                copy: <path d="M8 4v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7.242a2 2 0 0 0-.602-1.43L16.083 2.57A2 2 0 0 0 14.685 2H10a2 2 0 0 0-2 2z M16 2v4h4 M4 8H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1"/>,
+                sun: <path d="M12 2v2m0 16v2m10-10h-2M4 12H2m15.364-7.364l-1.414 1.414M7.05 16.95l-1.414 1.414M16.95 16.95l1.414 1.414M5.636 5.636l1.414 1.414M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z" />,
+                chevronLeft: <path d="m15 18-6-6 6-6" />,
+                chevronRight: <path d="m9 18 6-6-6-6" />
             };
-            return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>{icons[name] || icons.cloud}</svg>;
+            return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>{icons[name]}</svg>;
         });
 
         const StaffButton = memo(({ name, aliasMap = {}, forceName = null, onClick, mode = "normal", isBShift = false, showGlow = false }) => {
@@ -102,10 +99,9 @@
             const disp = forceName || aliasMap[name] || name;
             const colorClass = info?.type === "Special" ? "text-[var(--special-text)]" : info?.gender === "F" ? "text-[var(--women-text)]" : "text-[var(--men-text)]";
             const dotClass = info?.type === "Special" ? "bg-[var(--special-dot)]" : info?.gender === "F" ? "bg-[var(--women-dot)]" : "bg-[var(--men-dot)]";
-            const fontSize = mode === "tiny" ? "text-[14px]" : (mode === "small" ? (name === "廖俊龍" ? "text-[14px]" : "text-[18px]") : (mode === "master" ? "text-[16px]" : (name === "廖俊龍" ? "text-[22px]" : "text-[26px]")));
-            const btnClass = `${mode === "small" || mode === "master" ? 'h-8' : 'h-10'} ${fontSize} rounded-[0.6rem] ${(isBShift && showGlow) ? 'b-shift-glow' : ''}`;
+            const fontSize = mode === "tiny" ? "text-[14px]" : (mode === "small" ? (name === "廖俊龍" ? "text-[14px]" : "text-[18px]") : (mode === "master" ? "text-[14px]" : (name === "廖俊龍" ? "text-[22px]" : "text-[26px]")));
             return (
-                <button onClick={(e) => { e.stopPropagation(); if(onClick) onClick(name); }} className={`w-full ${btnClass} font-normal tracking-tight border border-white/5 bg-white/[0.06] flex items-center justify-center gap-1 shadow-sm ${colorClass} leading-none truncate shrink-0 active:scale-95 transition-transform`} title={disp}>
+                <button onClick={(e) => { e.stopPropagation(); if(onClick) onClick(name); }} className={`w-full ${mode === "small" || mode === "master" ? 'h-8' : 'h-10'} ${fontSize} rounded-[0.6rem] ${(isBShift && showGlow) ? 'b-shift-glow' : ''} font-normal border border-white/5 bg-white/[0.06] flex items-center justify-center gap-1 shadow-sm ${colorClass} leading-none truncate shrink-0 active:scale-95 transition-transform`}>
                     <span className={`w-1 h-1 rounded-full ${dotClass} shadow-[0_0_5px_currentColor]`}></span>{disp}
                 </button>
             );
@@ -118,33 +114,41 @@
             const [showMasterModal, setShowMasterModal] = useState(false), [toast, setToast] = useState(null);
             const dateScrollRef = useRef(null);
 
-            const scrollToCenter = useCallback((fullKey, containerId) => {
+            const scrollDateToCenter = useCallback((fullKey, containerId) => {
                 setTimeout(() => {
                     const container = document.getElementById(containerId);
-                    const el = document.getElementById(`modal-row-${fullKey}`) || document.getElementById(`master-col-${fullKey}`);
+                    const el = document.getElementById(`nav-date-${fullKey}`) || document.getElementById(`master-col-${fullKey}`) || document.getElementById(`modal-row-${fullKey}`);
                     if (el && container) {
-                        const isHorizontal = containerId === "master-scroll-container";
-                        const target = isHorizontal 
+                        const isHorizontal = containerId.includes("scroll-container") && (containerId === "master-scroll-container" || containerId === "nav-scroll-container");
+                        const pos = isHorizontal 
                             ? el.offsetLeft - (container.offsetWidth / 2) + (el.offsetWidth / 2)
                             : el.offsetTop - (container.offsetHeight / 2) + (el.offsetHeight / 2);
-                        container.scrollTo({ [isHorizontal ? 'left' : 'top']: target, behavior: 'smooth' });
+                        container.scrollTo({ [isHorizontal ? 'left' : 'top']: pos, behavior: 'smooth' });
                     }
-                }, 100);
+                }, 150);
             }, []);
 
             const handleBackToday = useCallback(() => {
-                const tK = formatK(new Date()), idx = dates.findIndex(d => d.fullKey === tK); 
+                const tK = formatK(new Date());
+                const idx = dates.findIndex(d => d.fullKey === tK); 
                 if(idx !== -1) {
                     setDateIdx(idx);
-                    const el = document.getElementById(`nav-date-${tK}`);
-                    if (el && dateScrollRef.current) {
-                        dateScrollRef.current.scrollTo({ left: el.offsetLeft - (dateScrollRef.current.offsetWidth/2) + (el.offsetWidth/2), behavior: 'smooth' });
-                    }
-                    if (showMasterModal) scrollToCenter(tK, "master-scroll-container");
-                    if (queryVenue) scrollToCenter(tK, "venue-scroll-container");
-                    if (queryStaff) scrollToCenter(tK, "staff-scroll-container");
+                    scrollDateToCenter(tK, "nav-scroll-container");
+                    if (showMasterModal) scrollDateToCenter(tK, "master-scroll-container");
+                    if (queryVenue) scrollDateToCenter(tK, "venue-scroll-container");
+                    if (queryStaff) scrollDateToCenter(tK, "staff-scroll-container");
                 } 
-            }, [dates, showMasterModal, queryVenue, queryStaff, scrollToCenter]);
+            }, [dates, showMasterModal, queryVenue, queryStaff, scrollDateToCenter]);
+
+            const jumpWeek = useCallback((direction) => {
+                const nextIdx = Math.max(0, Math.min(dates.length - 1, dateIdx + (direction * 7)));
+                setDateIdx(nextIdx);
+                const targetKey = dates[nextIdx].fullKey;
+                scrollDateToCenter(targetKey, "nav-scroll-container");
+                if (showMasterModal) scrollDateToCenter(targetKey, "master-scroll-container");
+                if (queryVenue) scrollDateToCenter(targetKey, "venue-scroll-container");
+                if (queryStaff) scrollDateToCenter(targetKey, "staff-scroll-container");
+            }, [dateIdx, dates, showMasterModal, queryVenue, queryStaff, scrollDateToCenter]);
 
             useEffect(() => {
                 const checkFirebase = setInterval(() => {
@@ -176,23 +180,14 @@
                         setSchedule({ roster, statuses: JSON.parse(data.statuses || '{}'), shows: JSON.parse(data.shows || '{}'), notes: JSON.parse(data.notes || '{}'), updated: data.lastUpdated });
                         setDates(sd); setIsUnlocked(true); 
                         const tK = formatK(new Date()), match = keys.indexOf(tK);
-                        if (match !== -1) setDateIdx(match);
+                        if (match !== -1) {
+                            setDateIdx(match);
+                            // 初始化定位
+                            setTimeout(() => scrollDateToCenter(tK, "nav-scroll-container"), 500);
+                        }
                     }
                 });
-            }, [user]);
-
-            useEffect(() => {
-                if (isUnlocked && dates[dateIdx]) {
-                    const el = document.getElementById(`nav-date-${dates[dateIdx].fullKey}`);
-                    if (el && dateScrollRef.current) {
-                        dateScrollRef.current.scrollTo({ left: el.offsetLeft - (dateScrollRef.current.offsetWidth/2) + (el.offsetWidth/2), behavior: 'smooth' });
-                    }
-                }
-            }, [isUnlocked, dates]);
-
-            useEffect(() => { if (showMasterModal) scrollToCenter(dates[dateIdx]?.fullKey, "master-scroll-container"); }, [showMasterModal, dateIdx, dates, scrollToCenter]);
-            useEffect(() => { if (queryVenue) scrollToCenter(dates[dateIdx]?.fullKey, "venue-scroll-container"); }, [queryVenue, dateIdx, dates, scrollToCenter]);
-            useEffect(() => { if (queryStaff) scrollToCenter(dates[dateIdx]?.fullKey, "staff-scroll-container"); }, [queryStaff, dateIdx, dates, scrollToCenter]);
+            }, [user, scrollDateToCenter]);
 
             const dData = useMemo(() => {
                 const d = dates[dateIdx]; if (!d) return null;
@@ -204,34 +199,32 @@
                 }));
                 STAFF_ORDER.forEach(n => {
                     const code = rawS[n] || "";
-                    if (code.match(/辦公|其他|其它/)) res.s["辦公"].push(n);
-                    else if (!hasShift.has(n) && (code === "" || code.match(/休假|無排班|公假|婚假|喪假|病假|事假|特休|補休/))) res.s["休假"].push(n);
+                    if (code.match(/辦公|其他/)) res.s["辦公"].push(n);
+                    else if (!hasShift.has(n) && (code === "" || code.match(/休假|無排班|公假|病假|事假|特休/))) res.s["休假"].push(n);
                 });
                 return res;
             }, [dateIdx, dates, schedule]);
 
-            const todayNote = schedule.notes?.[dates[dateIdx]?.fullKey];
-            const hasNote = todayNote && todayNote.trim() !== "";
-
-            if (!isUnlocked) return (
-                <div className="h-screen flex items-center justify-center bg-black relative"><div className="aura-bg"><div className="aura-orb"></div></div><div className="text-center z-10"><div className="w-20 h-20 border-t-2 border-blue-500 rounded-full animate-spin mx-auto mb-4"></div><h2 className="text-blue-500 font-black tracking-widest animate-pulse">CONNECTING...</h2></div></div>
-            );
+            if (!isUnlocked) return <div className="h-screen flex items-center justify-center bg-black relative"><div className="aura-bg"><div className="aura-orb"></div></div><div className="text-center z-10"><div className="w-20 h-20 border-t-2 border-blue-500 rounded-full animate-spin mx-auto mb-4"></div><h2 className="text-blue-500 font-black tracking-widest animate-pulse">CONNECTING...</h2></div></div>;
 
             return (
                 <div className="h-screen flex flex-col overflow-hidden relative text-white bg-black">
                     <div className="aura-bg"><div className="aura-orb"></div></div>
-                    {toast && <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[1000] bg-zinc-800/90 border border-white/20 px-6 py-2 rounded-full text-xs font-bold flex items-center gap-2 animate-bounce"><Icon name="check" className="text-green-400 w-3 h-3" /> {toast}</div>}
-
+                    
                     <header className="mac-glass pt-10 pb-3 px-4 flex items-center justify-between shrink-0 z-50">
-                        <button onClick={handleBackToday} className="bg-blue-600 px-4 h-7 rounded-full text-[10px] font-black uppercase text-white active:scale-95 transition-transform">Today</button>
-                        <div className="flex items-center gap-2 cursor-pointer" onClick={() => setShowMasterModal(true)}><h1 className="text-xl font-black tracking-widest uppercase italic text-zinc-100 hover:text-blue-400">視聽班表系統</h1></div>
+                        <button onClick={handleBackToday} className="bg-blue-600 px-4 h-7 rounded-full text-[10px] font-black uppercase text-white shadow-lg active:scale-95">Today</button>
+                        <div className="flex items-center gap-2 cursor-pointer" onClick={() => setShowMasterModal(true)}><h1 className="text-xl font-black tracking-widest uppercase italic text-zinc-100 hover:text-blue-400 transition-colors">視聽班表系統</h1></div>
                         <button onClick={()=>window.location.reload()} className="h-7 w-7 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/50 active:scale-90"><Icon name="refresh" className="w-3 h-3" /></button>
                     </header>
 
                     <main className="flex-1 overflow-y-auto px-2 py-3 no-scrollbar pb-24 z-10">
                         <div className="mac-glass sticky top-0 -mx-2 px-2 py-3 mb-4 z-20 shadow-2xl">
-                            <div className="flex items-center justify-between mb-2 px-1 text-[10px] font-bold text-white/40 tracking-widest uppercase"><span>Timeline Scroller</span><span>{dates[dateIdx]?.fullKey}</span></div>
-                            <div ref={dateScrollRef} className="flex gap-2 overflow-x-auto no-scrollbar scroll-smooth px-1">
+                            <div className="flex items-center justify-between mb-2 px-1 text-[10px] font-bold text-white/40 tracking-widest uppercase">
+                                <button onClick={()=>jumpWeek(-1)} className="hover:text-white transition-colors">◀ Last Week</button>
+                                <span>Timeline Scroller</span>
+                                <button onClick={()=>jumpWeek(1)} className="hover:text-white transition-colors">Next Week ▶</button>
+                            </div>
+                            <div id="nav-scroll-container" className="flex gap-2 overflow-x-auto no-scrollbar scroll-smooth px-1">
                                 {dates.map((d, idx) => {
                                     const active = dateIdx === idx, isW = d.w === '六' || d.w === '日';
                                     return (
@@ -244,19 +237,18 @@
                             </div>
                             <div className="mt-4 px-1">
                                 <div className="bg-[#0A0A0A] border border-white/20 rounded-xl px-4 py-3 flex items-start gap-3 shadow-2xl relative overflow-hidden">
-                                    <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${hasNote ? 'bg-[#FF2D55] shadow-[0_0_10px_#FF2D55]' : 'bg-blue-500'}`}></div>
-                                    <span className={`shrink-0 mt-1 ${hasNote ? 'text-[#FF2D55] animate-pulse' : 'text-blue-500'}`}><Icon name="info" /></span>
-                                    <div className="flex flex-col"><span className={`text-[10px] font-black uppercase mb-0.5 ${hasNote ? 'text-[#FF2D55]' : 'text-blue-500'}`}>今日重要提醒</span><p className={`text-[15px] font-bold leading-relaxed ${hasNote ? 'text-white' : 'text-white/30'}`}>{hasNote ? todayNote : "今日尚無備註事項"}</p></div>
+                                    <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${schedule.notes?.[dates[dateIdx]?.fullKey] ? 'bg-[#FF2D55] shadow-[0_0_10px_#FF2D55]' : 'bg-blue-500'}`}></div>
+                                    <span className={`shrink-0 mt-1 ${schedule.notes?.[dates[dateIdx]?.fullKey] ? 'text-[#FF2D55] animate-pulse' : 'text-blue-500'}`}><Icon name="info" /></span>
+                                    <div className="flex flex-col"><span className={`text-[10px] font-black uppercase mb-0.5 ${schedule.notes?.[dates[dateIdx]?.fullKey] ? 'text-[#FF2D55]' : 'text-blue-500'}`}>今日重要提醒</span><p className={`text-[15px] font-bold leading-relaxed ${schedule.notes?.[dates[dateIdx]?.fullKey] ? 'text-white' : 'text-white/30'}`}>{schedule.notes?.[dates[dateIdx]?.fullKey] || "今日尚無備註事項"}</p></div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* 修改場館邊框亮度 */}
                         <div className="grid grid-cols-3 gap-2 mb-6">
                             {['GT','BB','GP'].map(v=>{
-                                const vColor = v==='GT'?'#FF2D55':v==='BB'?'cyan':'#32DE84';
+                                const vColor = v==='GT'?'#FF2D55':v==='BB'?'#00FFFF':'#32DE84';
                                 return (
-                                    <div key={v} className="bg-[#121214] rounded-[1.5rem] overflow-hidden flex flex-col shadow-lg border-2 transition-all" style={{ borderColor: `${vColor}80` }}>
+                                    <div key={v} className="bg-[#121214] rounded-[1.5rem] overflow-hidden flex flex-col shadow-lg border-2" style={{ borderColor: `${vColor}99` }}>
                                         <button onClick={() => setQueryVenue(v)} className="py-2 font-black text-xl bg-white/[0.02]" style={{color: vColor}}>{v}</button>
                                         <div className="px-1 py-1 min-h-[30px] flex items-center justify-center border-b border-white/5 bg-black/40 text-center overflow-hidden"><div className="marquee-wrapper"><p className={`text-[13px] font-bold text-white/70 italic ${schedule.shows?.[dates[dateIdx]?.fullKey]?.[v]?.length > 8 ? 'marquee-active' : ''}`}>{schedule.shows?.[dates[dateIdx]?.fullKey]?.[v]||""}</p></div></div>
                                         <div className="p-1 space-y-1">{['A','B'].map(shift=>(<div key={shift} className="bg-zinc-900/40 rounded-[1.2rem] p-1 flex flex-col gap-1 min-h-[60px]">{dData?.s[v][shift].map(n=><StaffButton key={n} name={n} aliasMap={aliasMap} mode="small" onClick={setQueryStaff} isBShift={shift === 'B'} showGlow={false} />)}</div>))}</div>
@@ -274,27 +266,30 @@
                         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-2 bg-black/95 backdrop-blur-3xl" onClick={() => setShowMasterModal(false)}>
                             <div className="bg-[#121214] border border-white/10 w-full max-w-4xl rounded-[2rem] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
                                 <div className="p-4 border-b border-white/10 flex items-center justify-between bg-zinc-900/40">
-                                    <div className="flex items-center gap-4">
+                                    <div className="flex items-center gap-3">
                                         <button onClick={() => setShowMasterModal(false)} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-xl shrink-0">×</button>
-                                        <h3 className="text-lg font-black uppercase italic text-white">Master Roster</h3>
+                                        <h3 className="text-lg font-black italic">Master Roster</h3>
+                                        <div className="flex gap-1 ml-4 bg-white/5 rounded-full p-1">
+                                            <button onClick={()=>jumpWeek(-1)} className="p-1 hover:text-blue-400"><Icon name="chevronLeft" /></button>
+                                            <button onClick={()=>jumpWeek(1)} className="p-1 hover:text-blue-400"><Icon name="chevronRight" /></button>
+                                        </div>
                                     </div>
-                                    {/* 修正 Today 功能 */}
-                                    <button onClick={handleBackToday} className="bg-blue-600 hover:bg-blue-500 active:scale-95 px-5 py-1.5 rounded-full text-[12px] font-black uppercase text-white transition-all shadow-lg">Today</button>
+                                    <button onClick={handleBackToday} className="bg-blue-600 px-5 py-1.5 rounded-full text-[12px] font-black uppercase text-white shadow-lg">Today</button>
                                 </div>
-                                <div id="master-scroll-container" className="flex-1 overflow-auto p-1 no-scrollbar scroll-smooth relative">
-                                    <div className="master-table-container">
-                                        <div className="flex sticky top-0 z-[60] bg-[#1a1a1c]">
-                                            <div className="master-sticky-col p-2 text-[9px] font-black text-white/40 uppercase text-center flex items-center justify-center border-b border-white/20">STAFF</div>
+                                <div id="master-scroll-container" className="flex-1 overflow-auto no-scrollbar scroll-smooth">
+                                    <div className="master-grid">
+                                        <div className="master-row sticky top-0 z-[60] bg-[#1a1a1c]">
+                                            <div className="master-sticky-col p-2 text-[10px] font-black text-white/40 uppercase text-center flex items-center justify-center border-b-2 border-white/10">STAFF</div>
                                             {dates.map((d) => (
-                                                <div key={d.fullKey} id={`master-col-${d.fullKey}`} className={`min-w-[75px] flex-1 p-2 text-center border-b border-white/20 ${d.fullKey === formatK(new Date()) ? 'today-column-highlight' : 'border-l border-white/10'}`}>
-                                                    <div className={`text-[8px] uppercase ${d.w === '六' || d.w === '日' ? 'text-[#FFD1DC] font-black' : 'opacity-40'}`}>週{d.w}</div>
-                                                    <div className={`text-[13px] font-bold ${d.w === '六' || d.w === '日' ? 'text-[#FFD1DC]' : 'text-white'}`}>{d.d}</div>
+                                                <div key={d.fullKey} id={`master-col-${d.fullKey}`} className={`master-cell flex-col border-b-2 border-white/10 ${d.fullKey === formatK(new Date()) ? 'today-column-highlight' : ''}`}>
+                                                    <span className={`text-[8px] uppercase ${d.w === '六' || d.w === '日' ? 'text-[#FFD1DC]' : 'opacity-40'}`}>週{d.w}</span>
+                                                    <span className={`text-[12px] font-bold ${d.w === '六' || d.w === '日' ? 'text-[#FFD1DC]' : ''}`}>{d.d}</span>
                                                 </div>
                                             ))}
                                         </div>
-                                        {STAFF_ORDER.map((staff, sIdx) => (
-                                            <div key={staff} className="flex border-b border-white/[0.04]">
-                                                <div className="master-sticky-col py-2 px-1 flex items-center">
+                                        {STAFF_ORDER.map((staff) => (
+                                            <div key={staff} className="master-row">
+                                                <div className="master-sticky-col py-2 px-1 flex items-center justify-center">
                                                     <StaffButton name={staff} aliasMap={aliasMap} mode="master" forceName={staff === "廖俊龍" ? "阿龍" : null} onClick={(s) => { setShowMasterModal(false); setQueryStaff(s); }} />
                                                 </div>
                                                 {dates.map((d) => {
@@ -304,15 +299,15 @@
                                                         if (schedule.roster[dk]?.[v]?.[staff]) { 
                                                             const sh = schedule.roster[dk][v][staff].shift;
                                                             label = `${v}-${sh}`;
-                                                            cls = `bg-[${v === 'GT' ? 'var(--master-gt)' : v === 'BB' ? 'var(--master-bb)' : 'var(--master-gp)'}] bg-opacity-30 text-white text-[13px] ${sh==='B' ? 'b-shift-glow' : ''}`;
+                                                            cls = `bg-[${v === 'GT' ? 'var(--master-gt)' : v === 'BB' ? 'var(--master-bb)' : 'var(--master-gp)'}] bg-opacity-30 text-white text-[11px] ${sh==='B' ? 'b-shift-glow' : ''}`;
                                                             hasS = true;
                                                         } 
                                                     });
                                                     const st = schedule.statuses[dk]?.[staff] || "";
-                                                    if (st.match(/辦公|其他/)) { label = "辦"; cls = "bg-[#B36200]/40 text-[#FF9500] text-[16px]"; } 
-                                                    else if (!hasS && (st === "" || st.match(/休假|公假|病假|事假|特休/))) { label = "休"; cls = "bg-[#444444] text-white/80 text-[16px]"; }
+                                                    if (st.match(/辦公|其他/)) { label = "辦"; cls = "bg-[#B36200]/40 text-[#FF9500] text-[15px]"; } 
+                                                    else if (!hasS && (st === "" || st.match(/休假|公假|病假|事假|特休/))) { label = "休"; cls = "bg-[#444444] text-white/80 text-[15px]"; }
                                                     return (
-                                                        <div key={dk} className={`min-w-[75px] flex-1 p-1 flex items-center justify-center border-l border-white/[0.05] ${isToday ? 'today-column-highlight' : ''}`}><div className={`w-full h-9 flex items-center justify-center rounded-md ${cls}`}>{label}</div></div>
+                                                        <div key={dk} className={`master-cell ${isToday ? 'today-column-highlight' : ''}`}><div className={`w-full h-8 flex items-center justify-center rounded-md border border-white/5 ${cls}`}>{label}</div></div>
                                                     );
                                                 })}
                                             </div>
@@ -327,18 +322,24 @@
                         <div className="fixed inset-0 z-[2000] flex items-center justify-center p-6 bg-black/90 backdrop-blur-2xl text-white" onClick={() => { setQueryStaff(null); setQueryVenue(null); }}>
                             <div className="bg-[#121214] border border-white/10 w-full max-w-lg rounded-[2.5rem] shadow-2xl flex flex-col max-h-[85vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
                                 <div className="p-4 border-b border-white/10 flex items-center justify-between bg-zinc-900/40">
-                                    <div className="flex items-center gap-3">
-                                        <button onClick={() => { setQueryStaff(null); setQueryVenue(null); }} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-2xl">×</button>
-                                        <h3 className="text-xl font-black italic">{queryVenue ? `${queryVenue} Weekly` : (aliasMap[queryStaff] || queryStaff)}</h3>
+                                    <div className="flex flex-col">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <button onClick={() => { setQueryStaff(null); setQueryVenue(null); }} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-xl">×</button>
+                                            <h3 className="text-xl font-black italic">{queryVenue ? `${queryVenue} Weekly` : (aliasMap[queryStaff] || queryStaff)}</h3>
+                                        </div>
+                                        <div className="flex gap-4 ml-10">
+                                            <button onClick={()=>jumpWeek(-1)} className="text-[10px] text-white/40 hover:text-white flex items-center gap-1"><Icon name="chevronLeft" className="w-3 h-3"/> Last Week</button>
+                                            <button onClick={()=>jumpWeek(1)} className="text-[10px] text-white/40 hover:text-white flex items-center gap-1">Next Week <Icon name="chevronRight" className="w-3 h-3"/></button>
+                                        </div>
                                     </div>
-                                    <button onClick={handleBackToday} className="bg-blue-600 hover:bg-blue-500 px-4 py-1 rounded-full text-[10px] font-black uppercase text-white transition-all shadow-lg active:scale-95">Today</button>
+                                    <button onClick={handleBackToday} className="bg-blue-600 px-4 py-1.5 rounded-full text-[10px] font-black uppercase text-white shadow-lg">Today</button>
                                 </div>
                                 <div id={queryVenue ? "venue-scroll-container" : "staff-scroll-container"} className="flex-1 overflow-y-auto p-3 space-y-3 no-scrollbar scroll-smooth">
                                     {dates.map((d) => {
                                         const active = d.fullKey === dates[dateIdx]?.fullKey, isW = d.w === '六' || d.w === '日';
                                         if (queryVenue) return (
                                             <div key={d.fullKey} id={`modal-row-${d.fullKey}`} className={`flex flex-col p-3 rounded-2xl border ${active ? 'bg-blue-600/20 border-blue-500 shadow-xl' : 'bg-white/5 border-white/5'}`}>
-                                                <div className="mb-2 pb-2 border-b border-white/10 text-sm font-bold text-white/50 italic">{schedule.shows[d.fullKey]?.[queryVenue] || "無演出"}</div>
+                                                <div className="mb-2 pb-2 border-b border-white/10 text-sm font-bold text-white/50 italic truncate">{schedule.shows[d.fullKey]?.[queryVenue] || "—"}</div>
                                                 <div className="flex items-start gap-4">
                                                     <div className="flex flex-col w-12 shrink-0 border-r border-white/10"><span className={`text-[9px] font-black ${isW ? 'text-[#FFD1DC]' : 'opacity-40'}`}>週{d.w}</span><span className={`text-lg font-bold ${isW ? 'text-[#FFD1DC]' : 'text-white'}`}>{d.d}</span></div>
                                                     <div className="flex-1 grid grid-cols-2 gap-2">
