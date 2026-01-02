@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>視聽班表系統 | V5.5 Precision Align</title>
+    <title>視聽班表系統 | V5.6 B-Shift Glow</title>
 
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -120,30 +120,22 @@
             const [aliasMap, setAliasMap] = useState({}), [queryStaff, setQueryStaff] = useState(null), [queryVenue, setQueryVenue] = useState(null);
             const [showMasterModal, setShowMasterModal] = useState(false), [toast, setToast] = useState(null), [diag, setDiag] = useState("正在同步中...");
 
-            // 修正版捲動定位：精確處理 Master Roster 的偏移
             const scrollToElement = useCallback((fullKey, containerId) => {
                 setTimeout(() => {
                     const container = document.getElementById(containerId);
                     if (!container) return;
                     
                     let elId = `nav-date-${fullKey}`;
-                    // 總表使用專屬導覽 ID
                     if (containerId === "master-scroll-container") elId = `master-nav-date-${fullKey}`;
-                    // 週表使用 Row ID
                     if ((queryStaff || queryVenue) && containerId.includes("-scroll-container")) elId = `modal-row-${fullKey}`;
                     
                     const el = document.getElementById(elId);
                     if (el) {
-                        if (containerId === "nav-scroll-container") {
-                            // 主頁面導覽列居中
-                            const left = el.offsetLeft - (container.offsetWidth / 2) + (el.offsetWidth / 2);
-                            container.scrollTo({ left, behavior: 'smooth' });
-                        } else if (containerId === "master-scroll-container") {
-                            // 總表對位修復：offsetLeft 是相對於內容起點，不需扣除 85，但置中計算要正確
+                        const isHorizontal = containerId === "nav-scroll-container" || containerId === "master-scroll-container";
+                        if (isHorizontal) {
                             const left = el.offsetLeft - (container.offsetWidth / 2) + (el.offsetWidth / 2);
                             container.scrollTo({ left, behavior: 'smooth' });
                         } else {
-                            // 垂直捲動置中
                             const top = el.offsetTop - (container.offsetHeight / 2) + (el.offsetHeight / 2);
                             container.scrollTo({ top, behavior: 'smooth' });
                         }
@@ -207,10 +199,6 @@
                 });
             }, [user, scrollToElement]);
 
-            useEffect(() => { if (showMasterModal) scrollToElement(dates[dateIdx]?.fullKey, "master-scroll-container"); }, [showMasterModal, dateIdx, dates, scrollToElement]);
-            useEffect(() => { if (queryVenue) scrollToElement(dates[dateIdx]?.fullKey, "venue-scroll-container"); }, [queryVenue, dateIdx, dates, scrollToElement]);
-            useEffect(() => { if (queryStaff) scrollToElement(dates[dateIdx]?.fullKey, "staff-scroll-container"); }, [queryStaff, dateIdx, dates, scrollToElement]);
-
             const dData = useMemo(() => {
                 const d = dates[dateIdx]; if (!d) return null;
                 const res = { s: { GT:{A:[],B:[]}, BB:{A:[],B:[]}, GP:{A:[],B:[]}, "辦公":[], "休假":[] } };
@@ -236,7 +224,8 @@
             return (
                 <div className="h-screen flex flex-col overflow-hidden relative text-white bg-[var(--mac-bg)]">
                     <div className="aura-bg"></div>
-                    
+                    {toast && <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[1000] bg-zinc-800 border border-white/20 px-6 py-2 rounded-full text-xs font-bold animate-bounce">{toast}</div>}
+
                     <header className="mac-glass pt-10 pb-3 px-4 flex items-center justify-between shrink-0 z-50">
                         <button onClick={handleBackToday} className="bg-blue-600 px-4 h-7 rounded-full text-[10px] font-black shadow-lg active:scale-95 transition-transform">Today</button>
                         <h1 className="text-xl font-black italic cursor-pointer hover:text-blue-400" onClick={() => setShowMasterModal(true)}>視聽班表系統</h1>
@@ -276,7 +265,7 @@
                                     <div key={v} className="bg-[var(--mac-card)] rounded-[1.5rem] overflow-hidden flex flex-col shadow-lg border-2 transition-all" style={{ borderColor: vColor, boxShadow: `0 0 10px ${vColor}40` }}>
                                         <button onClick={() => setQueryVenue(v)} className="py-2 font-black text-xl bg-white/[0.05]" style={{color: vColor}}>{v}</button>
                                         <div className="px-1 py-1 min-h-[30px] flex items-center justify-center border-b border-white/5 bg-black/20 text-center overflow-hidden"><p className="text-[13px] font-bold italic truncate">{schedule.shows?.[dates[dateIdx]?.fullKey]?.[v]||""}</p></div>
-                                        <div className="p-1 space-y-1">{['A','B'].map(shift=>(<div key={shift} className="bg-white/5 rounded-[1rem] p-1 flex flex-col gap-1 min-h-[60px]">{dData?.s[v][shift].map(n=><StaffButton key={n} name={n} aliasMap={aliasMap} mode="small" onClick={setQueryStaff} isBShift={shift === 'B'} showGlow={false} />)}</div>))}</div>
+                                        <div className="p-1 space-y-1">{['A','B'].map(shift=>(<div key={shift} className="bg-white/5 rounded-[1rem] p-1 flex flex-col gap-1 min-h-[60px]">{dData?.s[v][shift].map(n=><StaffButton key={n} name={n} aliasMap={aliasMap} mode="small" onClick={setQueryStaff} isBShift={shift === 'B'} showGlow={true} />)}</div>))}</div>
                                     </div>
                                 );
                             })}
@@ -301,7 +290,6 @@
                                         <button onClick={() => shiftWeek(1)} className="p-1 hover:text-white transition-colors"><Icon name="chevronRight" /></button>
                                     </div>
                                 </div>
-                                
                                 <div className="flex-1 overflow-hidden relative">
                                     <div className="master-left-column">
                                         <div className="master-header-height flex items-center justify-center border-b border-white/20 text-[9px] font-black text-white/40">STAFF</div>
@@ -311,7 +299,6 @@
                                             </div>
                                         ))}
                                     </div>
-                                    {/* 修正：增加專屬 master-nav-date ID 用於對位 */}
                                     <div id="master-scroll-container" className="master-right-content h-full overflow-y-auto no-scrollbar scroll-smooth">
                                         <div style={{ width: 'fit-content' }}>
                                             <div className="flex bg-[var(--mac-card-light)] border-b border-white/20 sticky top-0 z-40 master-header-height">
@@ -360,12 +347,29 @@
                                         const isS = d.fullKey === dates[dateIdx]?.fullKey, isW = d.w === '六' || d.w === '日';
                                         const blockClass = `day-block-card ${isS ? 'day-block-today' : ''}`;
                                         if (queryVenue) return (
-                                            <div key={d.fullKey} id={`modal-row-${d.fullKey}`} className={`flex flex-col ${blockClass}`}><div className="mb-2 pb-2 border-b border-white/10 text-sm font-bold italic opacity-60">{schedule.shows[d.fullKey]?.[queryVenue] || "—"}</div><div className="flex items-start gap-4"><div className="flex flex-col text-left pr-3 border-r border-white/10 w-16 leading-none"><span className={`text-[9px] font-black ${isW ? 'text-red-400' : 'opacity-40'}`}>週{d.w}</span><span className="text-lg font-bold">{d.d}</span></div><div className="flex-1 grid grid-cols-2 gap-2">{['A','B'].map(sh => (<div key={sh} className="bg-black/20 rounded-xl p-1 min-h-[40px] flex flex-col gap-1">{Object.entries(schedule.roster[d.fullKey]?.[queryVenue]||{}).filter(([_,v])=>v.shift===sh).map(([n])=><StaffButton key={n} name={n} aliasMap={aliasMap} onClick={(s) => { setQueryVenue(null); setQueryStaff(s); }} mode="small" isBShift={sh === 'B'} />)}</div>))}</div></div></div>
+                                            <div key={d.fullKey} id={`modal-row-${d.fullKey}`} className={`flex flex-col ${blockClass}`}><div className="mb-2 pb-2 border-b border-white/10 text-sm font-bold italic opacity-60">{schedule.shows[d.fullKey]?.[queryVenue] || "—"}</div><div className="flex items-start gap-4"><div className="flex flex-col text-left pr-3 border-r border-white/10 w-16 leading-none"><span className={`text-[9px] font-black ${isW ? 'text-red-400' : 'opacity-40'}`}>週{d.w}</span><span className="text-lg font-bold">{d.d}</span></div><div className="flex-1 grid grid-cols-2 gap-2">{['A','B'].map(sh => (<div key={sh} className="bg-black/20 rounded-xl p-1 min-h-[40px] flex flex-col gap-1">{Object.entries(schedule.roster[d.fullKey]?.[queryVenue]||{}).filter(([_,v])=>v.shift===sh).map(([n])=><StaffButton key={n} name={n} aliasMap={aliasMap} onClick={(s) => { setQueryVenue(null); setQueryStaff(s); }} mode="small" isBShift={sh === 'B'} showGlow={true} />)}</div>))}</div></div></div>
                                         );
-                                        let st = "辦公", co = "#FF9500", hasS = false;
-                                        ['GT','BB','GP'].forEach(v => { if (schedule.roster[d.fullKey]?.[v]?.[queryStaff]) { st = `${v}-${schedule.roster[d.fullKey][v][queryStaff].shift}`; co = v==='GP'?'#32DE84':v==='BB'?'#00FFFF':'#FF2D55'; hasS = true; } }); 
+                                        let st = "辦公", co = "#FF9500", hasS = false, isB = false;
+                                        ['GT','BB','GP'].forEach(v => { 
+                                            if (schedule.roster[d.fullKey]?.[v]?.[queryStaff]) { 
+                                                const sh = schedule.roster[d.fullKey][v][queryStaff].shift;
+                                                st = `${v}-${sh}`; 
+                                                co = v==='GP'?'#32DE84':v==='BB'?'#00FFFF':'#FF2D55'; 
+                                                hasS = true; 
+                                                if (sh === 'B') isB = true; // 標記為 B 班
+                                            } 
+                                        }); 
                                         if (schedule.statuses[d.fullKey]?.[queryStaff]?.match(/休|例|假/)) { st = "休假"; co = "#8E8E93"; }
-                                        return (<div key={d.fullKey} id={`modal-row-${d.fullKey}`} className={`flex items-center justify-between ${blockClass}`}><div className="flex flex-col text-left pr-3 border-r border-white/10 w-16 leading-none"><span className={`text-[9px] font-black ${isW ? 'text-red-400' : 'opacity-40'}`}>週{d.w}</span><span className="text-lg font-bold">{d.d}</span></div><span className="text-lg font-black" style={{ color: co }}>{st}</span></div>);
+                                        return (
+                                            <div key={d.fullKey} id={`modal-row-${d.fullKey}`} className={`flex items-center justify-between ${blockClass}`}>
+                                                <div className="flex flex-col text-left pr-3 border-r border-white/10 w-16 leading-none">
+                                                    <span className={`text-[9px] font-black ${isW ? 'text-red-400' : 'opacity-40'}`}>週{d.w}</span>
+                                                    <span className="text-lg font-bold">{d.d}</span>
+                                                </div>
+                                                {/* 修復：個人週表內 B 班文字發亮效果 */}
+                                                <span className={`text-lg font-black px-3 py-1 rounded-lg ${isB ? 'b-shift-glow' : ''}`} style={{ color: co }}>{st}</span>
+                                            </div>
+                                        );
                                     })}
                                 </div>
                             </div>
