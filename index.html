@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>視聽班表系統 | V4.5 Cleaned</title>
+
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#000000">
+    <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22%E8%A6%96%E8%81%BD%E7%8F%AD%E8%A1%A8%E7%B3%BB%E7%B5%B1%22%2C%22short_name%22%3A%22%E8%A6%96%E8%81%BD%E7%8F%AD%E8%A1%A8%22%2C%22display%22%3A%22standalone%22%2C%22start_url%22%3A%22.%22%2C%22background_color%22%3A%22%23000000%22%2C%22theme_color%22%3A%22%23000000%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F2665%2F2665123.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%2C%22purpose%22%3A%22any%20maskable%22%7D%5D%7D" />
+
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -41,11 +48,9 @@
         }
         .note-active-text { animation: note-breath 3s infinite ease-in-out; }
 
-        /* B班呼吸燈效果 */
         .b-shift-glow { animation: b-glow-strong 1.5s infinite alternate; border: 1.5px solid #FFFFFF !important; }
         @keyframes b-glow-strong { 0% { box-shadow: 0 0 2px rgba(255,255,255,0.4); } 100% { box-shadow: 0 0 15px rgba(255,255,255,1); } }
 
-        /* VIP 1: 加強型文字呼吸燈 (不帶邊框) */
         .vip-1-text-breath { animation: vip-text-pulse 1.8s infinite alternate ease-in-out; font-weight: 900 !important; }
         @keyframes vip-text-pulse {
             0% { text-shadow: 0 0 4px rgba(255,255,255,0.2); filter: brightness(1); }
@@ -124,7 +129,6 @@
             const [showMasterModal, setShowMasterModal] = useState(false);
             const [toast, setToast] = useState(null), [diag, setDiag] = useState("正在同步中...");
 
-            // 回到今天的邏輯
             const handleBackToday = useCallback(() => {
                 const now = new Date(), tK = formatK(now), idx = dates.findIndex(d => d.fullKey === tK); 
                 if(idx!==-1) {
@@ -266,8 +270,16 @@
                                 {currentWeek.map(d => {
                                     const realIdx = dates.findIndex(ad => ad.fullKey === d.fullKey);
                                     const active = dateIdx === realIdx, isW = d.w === '六' || d.w === '日', isDisabled = realIdx === -1;
+                                    const isUnselectedWeekday = !active && !isW;
                                     return (
-                                        <button key={d.fullKey} disabled={isDisabled} onClick={()=>setDateIdx(realIdx)} className={`flex-1 min-w-[45px] py-2 rounded-xl transition-all flex flex-col items-center justify-center border-2 ${active ? 'border-blue-500 bg-blue-500/10 shadow-[0_0_10px_rgba(10,132,255,0.3)]' : 'border-transparent bg-white/5'} ${isDisabled ? 'opacity-20' : ''}`}>
+                                        <button key={d.fullKey} disabled={isDisabled} onClick={()=>setDateIdx(realIdx)} 
+                                            className={`flex-1 min-w-[45px] py-2 rounded-xl transition-all flex flex-col items-center justify-center border-2 
+                                            ${active 
+                                                ? 'border-blue-500 bg-blue-500/10 shadow-[0_0_10px_rgba(10,132,255,0.3)]' 
+                                                : (isUnselectedWeekday ? 'border-transparent bg-white/[0.02] opacity-40' : 'border-transparent bg-white/5')
+                                            } 
+                                            ${isDisabled ? 'opacity-20' : ''}`}
+                                        >
                                             <span className={`text-[9px] font-black uppercase ${isW ? 'text-[#FFD1DC]' : 'text-white/50'}`}>週{d.w}</span>
                                             <span className={`text-base font-black leading-none ${active ? 'text-white' : isW ? 'text-[#FFD1DC]' : 'text-white/80'}`}>{d.d}</span>
                                         </button>
@@ -349,7 +361,7 @@
                                                     <div key={d.fullKey} id={`master-col-${d.fullKey}`} className={`min-w-[75px] flex-1 p-2 text-center border-l border-white/20 ${isToday ? 'bg-blue-900/20' : ''}`}>
                                                         <div className={`text-[8px] uppercase ${isW ? 'text-[#FFD1DC] font-black' : 'opacity-40'}`}>週{d.w}</div>
                                                         <div className={`text-[13px] font-bold ${isW ? 'text-[#FFD1DC]' : 'text-white'}`}>{d.d}</div>
-                                                        {isToday && <div className="h-1 w-1 bg-blue-500 rounded-full mx-auto mt-1"></div>}
+                                                        {isToday && <div className="h-2 w-2 bg-cyan-400 rounded-full mx-auto mt-1 shadow-[0_0_10px_cyan] animate-pulse"></div>}
                                                     </div>
                                                 );
                                             })}
