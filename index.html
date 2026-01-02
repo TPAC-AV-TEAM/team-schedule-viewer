@@ -1,15 +1,22 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-TW" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>視聽班表系統 | V6.1 Stable</title>
+    <title>視聽班表系統 | V6.2 PC Fixed</title>
 
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta id="theme-meta" name="theme-color" content="#000000">
     <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22%E8%A6%96%E8%81%BD%E7%8F%AD%E8%A1%A8%E7%B3%BB%E7%B5%B1%22%2C%22short_name%22%3A%22%E8%A6%96%E8%81%BD%E7%8F%AD%E8%A1%A8%22%2C%22display%22%3A%22standalone%22%2C%22start_url%22%3A%22.%22%2C%22background_color%22%3A%22%23000000%22%2C%22theme_color%22%3A%22%23000000%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F2665%2F2665123.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%2C%22purpose%22%3A%22any%20maskable%22%7D%5D%7D" />
+
+    <script>
+        try {
+            var localTheme = localStorage.getItem('app-theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', localTheme);
+        } catch (e) {}
+    </script>
 
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -27,8 +34,9 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;400;700;900&family=Noto+Sans+TC:wght@100;400;700;900&display=swap');
         
+        /* === CSS 變數定義 (核心控制) === */
         :root { 
-            /* === 黑夜模式 (預設) === */
+            /* [黑夜模式 - 預設] */
             --bg-app: #000000;
             --bg-card: #121214;
             --bg-glass: rgba(18, 18, 20, 0.85);
@@ -36,55 +44,51 @@
             --text-dim: rgba(255,255,255,0.4);
             --border-light: rgba(255,255,255,0.1);
             --btn-bg: rgba(255,255,255,0.06);
-            --orb-color: #0a183d;
-            --aura-op: 0.15;
             
-            /* 功能色 */
-            --col-gt: #FF2D55; 
-            --col-bb: #00FFFF; 
-            --col-gp: #32DE84;
+            /* 文字顏色 (黑夜) */
+            --col-gt: #FF2D55; --col-bb: #00FFFF; --col-gp: #32DE84;
             --col-men: #E0F7FF; --dot-men: #00FFFF;
             --col-women: #FFD6E0; --dot-women: #FF375F;
             --col-special: #FFFFE0; --dot-special: #FFD60A;
             
-            /* Shift Block (黑夜模式: 半透明背景) */
-            --shift-bg-opacity: 0.2;
-            --shift-border: transparent;
+            /* 特效與背景 */
+            --orb-color: #0a183d; --aura-op: 0.15;
+            --shift-bg-opacity: 0.2; /* 黑夜有背景色塊 */
+            --shift-border-opacity: 0;
         }
 
-        body.light-mode {
-            /* === 白天模式 (純白高對比) === */
+        /* [白天模式 - 屬性選擇器，權重更高] */
+        [data-theme='light'] {
             --bg-app: #FFFFFF;
-            --bg-card: #F5F5F7;
+            --bg-card: #F2F2F7;
             --bg-glass: rgba(255, 255, 255, 0.95);
             --text-main: #000000;
             --text-dim: rgba(0,0,0,0.5);
             --border-light: rgba(0,0,0,0.1);
             --btn-bg: #FFFFFF;
-            --orb-color: #F0F0F0;
-            --aura-op: 0.05;
-
-            /* 功能色 (加深以利閱讀) */
-            --col-gt: #D70015; 
-            --col-bb: #008B8B; 
-            --col-gp: #006400;
+            
+            /* 文字顏色 (白天 - 加深飽和度) */
+            --col-gt: #D00000; --col-bb: #008B8B; --col-gp: #006400;
             --col-men: #004080; --dot-men: #0055FF;
             --col-women: #B00020; --dot-women: #D70015;
             --col-special: #8B6508; --dot-special: #FFCC00;
 
-            /* Shift Block (白天模式: 無背景，僅邊框與文字) */
-            --shift-bg-opacity: 0.05;
-            --shift-border: 1px solid;
+            /* 特效與背景 */
+            --orb-color: #E5E5EA; --aura-op: 0.05;
+            --shift-bg-opacity: 0; /* 白天無背景色塊，只留文字 */
+            --shift-border-opacity: 0.2; /* 白天加強邊框 */
         }
 
-        /* 核心樣式 */
-        html, body { height: 100%; overflow: hidden; }
+        /* 全域重置 */
+        html { height: 100%; -webkit-text-size-adjust: 100%; }
         body { 
+            margin: 0; padding: 0; 
             font-family: 'Inter', 'Noto Sans TC', sans-serif; 
             background-color: var(--bg-app); 
             color: var(--text-main); 
-            transition: background-color 0.3s ease, color 0.3s ease; 
-            -webkit-font-smoothing: antialiased;
+            height: 100vh; height: 100dvh; 
+            overflow: hidden; 
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
         
         .aura-bg { position: fixed; inset: 0; background: radial-gradient(circle at 50% 50%, var(--orb-color) 0%, var(--bg-app) 100%); z-index: 0; pointer-events: none; }
@@ -94,7 +98,6 @@
         .mac-glass { background: var(--bg-glass); backdrop-filter: blur(30px); border-bottom: 1px solid var(--border-light); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         
-        /* 動畫 */
         @keyframes note-breath { 0%, 100% { opacity: 1; } 50% { color: #FF3B30; opacity: 0.7; } }
         .note-active-text { animation: note-breath 3s infinite ease-in-out; }
         
@@ -151,7 +154,8 @@
         const StaffButton = memo(({ name, aliasMap = {}, forceName = null, onClick, mode = "normal", isBShift = false, showGlow = false }) => {
             const info = STAFF_INFO[name] || { gender: 'M' };
             const disp = forceName || aliasMap[name] || name;
-            // 使用 CSS 變數定義顏色，避免 JS 邏輯錯誤
+            
+            // 使用 CSS 變數來控制顏色，確保切換時不需 JS 重算
             const colorVar = info?.type === "Special" ? "var(--col-special)" : info?.gender === "F" ? "var(--col-women)" : "var(--col-men)";
             const dotVar = info?.type === "Special" ? "var(--dot-special)" : info?.gender === "F" ? "var(--dot-women)" : "var(--dot-men)";
             
@@ -176,25 +180,20 @@
             const [toast, setToast] = useState(null), [diag, setDiag] = useState("正在同步中...");
             const [theme, setTheme] = useState(localStorage.getItem('app-theme') || 'dark');
 
+            // 初始化時套用主題 (電腦版關鍵修正)
+            useEffect(() => {
+                document.documentElement.setAttribute('data-theme', theme);
+                document.getElementById('theme-meta').setAttribute('content', theme === 'dark' ? '#000000' : '#FFFFFF');
+            }, [theme]);
+
             const toggleTheme = () => {
                 const newTheme = theme === 'dark' ? 'light' : 'dark';
                 setTheme(newTheme);
                 localStorage.setItem('app-theme', newTheme);
             };
 
-            // 確保主題切換對應到 body class，這是最穩定的跨平台做法
-            useEffect(() => {
-                if (theme === 'light') {
-                    document.body.classList.add('light-mode');
-                    document.getElementById('theme-meta').setAttribute('content', '#FFFFFF');
-                } else {
-                    document.body.classList.remove('light-mode');
-                    document.getElementById('theme-meta').setAttribute('content', '#000000');
-                }
-            }, [theme]);
-
             const handleBackToday = useCallback(() => {
-                if (!dates.length) return;
+                if (dates.length === 0) return;
                 const now = new Date(), tK = formatK(now), idx = dates.findIndex(d => d.fullKey === tK); 
                 if(idx!==-1) {
                     setDateIdx(idx); const mK = getMonK(dates[0].fullKey), tMon = getMonK(tK); 
@@ -248,9 +247,9 @@
                 }, 300);
             }, []);
 
-            useEffect(() => { if (showMasterModal) scrollToModalCenter(dates[dateIdx]?.fullKey, "master-scroll-container"); }, [showMasterModal, dateIdx, dates, scrollToModalCenter]);
-            useEffect(() => { if (queryVenue) scrollToModalCenter(dates[dateIdx]?.fullKey, "venue-scroll-container"); }, [queryVenue, dateIdx, dates, scrollToModalCenter]);
-            useEffect(() => { if (queryStaff) scrollToModalCenter(dates[dateIdx]?.fullKey, "staff-scroll-container"); }, [queryStaff, dateIdx, dates, scrollToModalCenter]);
+            useEffect(() => { if (showMasterModal && dates[dateIdx]) scrollToModalCenter(dates[dateIdx].fullKey, "master-scroll-container"); }, [showMasterModal, dateIdx, dates, scrollToModalCenter]);
+            useEffect(() => { if (queryVenue && dates[dateIdx]) scrollToModalCenter(dates[dateIdx].fullKey, "venue-scroll-container"); }, [queryVenue, dateIdx, dates, scrollToModalCenter]);
+            useEffect(() => { if (queryStaff && dates[dateIdx]) scrollToModalCenter(dates[dateIdx].fullKey, "staff-scroll-container"); }, [queryStaff, dateIdx, dates, scrollToModalCenter]);
 
             const currentWeek = useMemo(() => {
                 if (!dates.length) return [];
@@ -260,7 +259,7 @@
 
             const dData = useMemo(() => {
                 const d = dates[dateIdx]; if (!d) return null;
-                const res = { s: { GT:{A:[],B:[]}, GP:{A:[],B:[]}, "辦公":[], "休假":[] } };
+                const res = { s: { GT:{A:[],B:[]}, BB:{A:[],B:[]}, GP:{A:[],B:[]}, "辦公":[], "休假":[] } };
                 const rawR = schedule.roster[d.fullKey] || {}, rawS = schedule.statuses[d.fullKey] || {};
                 const hasShift = new Set();
                 ['GT','BB','GP'].forEach(v => Object.entries(rawR[v]||{}).forEach(([n,val]) => { if(res.s[v][val.shift]) { res.s[v][val.shift].push(n); hasShift.add(n); } }));
@@ -272,6 +271,7 @@
                 return res;
             }, [dateIdx, dates, schedule]);
 
+            // 防呆保護：若資料未載入，顯示 Loading
             if (!isUnlocked || dates.length === 0) return (
                 <div className="h-screen flex items-center justify-center bg-black overflow-hidden relative">
                     <div className="aura-bg"></div>
@@ -392,13 +392,12 @@
                                                         const shift = schedule.roster[dk][v][staff].shift; 
                                                         const color = v === 'GT' ? 'var(--col-gt)' : v === 'BB' ? 'var(--col-bb)' : 'var(--col-gp)'; 
                                                         label = `${v}-${shift}`; 
-                                                        // Master Roster 樣式優化: 白天不使用色塊背景，改用文字顏色與邊框
-                                                        cls = `bg-[${color}]/[var(--shift-bg-opacity)] text-[var(--text-main)] font-black text-[13px] shadow-sm border border-[${color}]/30 ${shift === 'B' ? 'b-shift-glow' : ''}`; 
-                                                        // 如果是白天模式，強制覆寫樣式為「無背景、深色字」 (透過 CSS 變數 --shift-bg-opacity 控制)
+                                                        // 使用 CSS 變數控制背景透明度，確保白天/黑夜視覺邏輯一致但對比度不同
+                                                        cls = `bg-[${color}]/[var(--shift-bg-opacity)] text-[var(--text-main)] font-black text-[13px] shadow-sm border border-[${color}]/[var(--shift-border-opacity)] ${shift === 'B' ? 'b-shift-glow' : ''}`; 
                                                         hasShift = true; 
                                                     } });
                                                     const st = schedule.statuses[dk]?.[staff] || "";
-                                                    if (st.match(/辦公|其他|其它/)) { label = "辦"; cls = "bg-orange-500/20 text-orange-500 font-black text-[16px]"; } else if (!hasShift && (st === "" || st.match(/休假|無排班|公假|特休|補休/))) { label = "休"; cls = "bg-[var(--border-light)] text-[var(--text-dim)] font-black text-[16px]"; }
+                                                    if (st.match(/辦公|其他|其它/)) { label = "辦"; cls = "bg-orange-500/20 text-orange-500 font-black text-[16px]"; } else if (!hasShift && (st === "" || st.match(/休假|無排班|公假|特休/))) { label = "休"; cls = "bg-[var(--border-light)] text-[var(--text-dim)] font-black text-[16px]"; }
                                                     return (<div key={dk} className={`min-w-[75px] flex-1 p-1 flex items-center justify-center border-l border-[var(--border-light)] ${dk === dates[dateIdx]?.fullKey ? 'bg-blue-500/5' : ''}`}><div className={`w-full h-9 flex items-center justify-center rounded-md ${cls}`}>{label}</div></div>);
                                                 })}
                                             </div>
