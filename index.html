@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>視聽班表系統 | V7.1 Expert Fix</title>
+    <title>視聽班表系統 | V7.2 Final Fix</title>
 
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,9 +13,9 @@
 
     <script>
         try {
-            var saved = localStorage.getItem('app-theme') || 'dark';
-            document.documentElement.setAttribute('data-theme', saved);
-        } catch(e) {}
+            var savedTheme = localStorage.getItem('app-theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        } catch (e) {}
     </script>
 
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -24,18 +24,19 @@
     <script src="https://cdn.tailwindcss.com"></script>
     
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, doc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        window.Firebase = { initializeApp, getFirestore, doc, onSnapshot, getDoc, getAuth, signInAnonymously, onAuthStateChanged };
+        window.Firebase = { initializeApp, getApps, getApp, getFirestore, doc, onSnapshot, getDoc, getAuth, signInAnonymously, onAuthStateChanged };
         window.isFirebaseReady = true;
     </script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;400;700;900&family=Noto+Sans+TC:wght@100;400;700;900&display=swap');
         
+        /* === 核心變數 === */
         :root { 
-            /* [黑夜模式] V4.5 原始配色 */
+            /* [黑夜模式] */
             --bg-app: #000000;
             --bg-card: #121214;
             --bg-glass: rgba(18, 18, 20, 0.85);
@@ -43,19 +44,16 @@
             --text-dim: rgba(255,255,255,0.4);
             --border-light: rgba(255,255,255,0.1);
             --btn-staff: rgba(255,255,255,0.06);
-            
-            /* 文字顏色 (黑夜螢光感) */
             --col-gt: #FF2D55; --col-bb: #00FFFF; --col-gp: #32DE84;
             --col-men: #E0F7FF; --dot-men: #00FFFF;
             --col-women: #FFD6E0; --dot-women: #FF375F;
             --col-special: #FFFFE0; --dot-special: #FFD60A;
-            
             --orb-color: #0a183d; --aura-op: 0.15;
-            --master-bg-op: 0.2; /* 色塊透明度 */
+            --shift-bg-op: 0.2;
         }
 
         [data-theme='light'] {
-            /* [白天模式] 純白高對比 */
+            /* [白天模式] 純白、高對比、無色塊 */
             --bg-app: #FFFFFF !important;
             --bg-card: #F9F9F9;
             --bg-glass: rgba(255, 255, 255, 0.98);
@@ -63,17 +61,12 @@
             --text-dim: rgba(0,0,0,0.5);
             --border-light: #E5E5E5;
             --btn-staff: #FFFFFF;
-            
-            /* 文字顏色 (白天加深版) */
-            --col-gt: #CC0000;  /* 深紅 */
-            --col-bb: #008080;  /* 深青 */
-            --col-gp: #006400;  /* 深綠 */
+            --col-gt: #D00000; --col-bb: #008B8B; --col-gp: #006400;
             --col-men: #003366; --dot-men: #0055FF;
-            --col-women: #990033; --dot-women: #D70015;
+            --col-women: #B00020; --dot-women: #D70015;
             --col-special: #8B6508; --dot-special: #FFCC00;
-
             --orb-color: #F0F0F0; --aura-op: 0.05;
-            --master-bg-op: 0.05; /* 白天色塊極淡，靠文字區分 */
+            --shift-bg-op: 0; /* 白天模式下，班表無背景色 */
         }
 
         html, body { height: 100%; width: 100%; margin: 0; background-color: var(--bg-app); color: var(--text-main); }
@@ -89,8 +82,8 @@
         @keyframes note-breath { 0%, 100% { opacity: 1; } 50% { color: #FF3B30; opacity: 0.8; } }
         .note-active-text { animation: note-breath 3s infinite ease-in-out; }
         
-        .b-shift-glow { animation: b-glow-strong 1.5s infinite alternate; border: 1.5px solid var(--text-main) !important; }
-        @keyframes b-glow-strong { 0% { box-shadow: 0 0 2px rgba(255,255,255,0.2); } 100% { box-shadow: 0 0 10px #0A84FF; } }
+        .b-shift-glow { animation: b-glow 1.5s infinite alternate; border: 1.5px solid var(--text-main) !important; }
+        @keyframes b-glow { 0% { box-shadow: 0 0 2px var(--text-dim); } 100% { box-shadow: 0 0 10px #0A84FF; } }
 
         .vip-1-text-breath { animation: vip-pulse 1.8s infinite alternate ease-in-out; font-weight: 900 !important; }
         @keyframes vip-pulse { 0% { text-shadow: none; } 100% { text-shadow: 0 0 8px var(--text-main); } }
@@ -161,7 +154,7 @@
             }, [theme]);
 
             const handleBackToday = useCallback(() => {
-                if (!dates.length) return;
+                if (dates.length === 0) return;
                 const now = new Date(), tK = formatK(now), idx = dates.findIndex(d => d.fullKey === tK); 
                 if(idx!==-1) {
                     setDateIdx(idx); 
@@ -209,11 +202,11 @@
                 setTimeout(() => {
                     const container = document.getElementById(containerId);
                     const el = document.getElementById(`modal-row-${fullKey}`) || document.getElementById(`master-col-${fullKey}`);
-                    if (el && container) {
+                    if (container && el) {
                         if (containerId === "master-scroll-container") {
                              container.scrollTo({ left: el.offsetLeft - (container.offsetWidth / 2) + (el.offsetWidth / 2), behavior: 'smooth' });
                         } else {
-                            container.scrollTo({ top: el.offsetTop - (container.offsetHeight / 2) + (el.offsetHeight / 2), behavior: 'smooth' });
+                            container.scrollTo({ top: el.offsetTop - (container.offsetHeight / 2) + (el.offsetHeight / 2), behavior: 'smooth' }); 
                         }
                     }
                 }, 300);
@@ -229,17 +222,15 @@
                 return Array.from({length:7}, (_, i) => { const c = new Date(anchor); c.setDate(c.getDate() + i); const k = formatK(c); return dates.find(d => d.fullKey === k) || { d: `${c.getMonth()+1}/${c.getDate()}`, w: ['日','一','二','三','四','五','六'][c.getDay()], fullKey: k, isPlaceholder: true }; });
             }, [dates, weekOffset]);
 
-            // ==========================================
-            // 專家級防護：如果資料還沒好，顯示載入動畫，避免黑畫面
-            // ==========================================
+            // ============================================
+            // [專家級修復]：絕對不黑畫面的關鍵防守
+            // 只要資料還沒準備好，就顯示 Loading 動畫，不執行渲染邏輯
+            // ============================================
             if (!isUnlocked || dates.length === 0 || !dates[dateIdx]) return (
-                <div className="h-screen flex items-center justify-center bg-black relative">
-                    <div className="aura-bg"></div>
-                    <div className="text-center z-10"><div className="w-16 h-16 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div><p className="text-white text-xs font-black tracking-widest animate-pulse">{diag}</p></div>
-                </div>
+                <div className="h-screen flex items-center justify-center bg-black relative"><div className="text-center z-10"><div className="w-16 h-16 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div><p className="text-white text-xs font-black tracking-widest animate-pulse">{diag}</p></div></div>
             );
 
-            // 資料安全存取
+            // 資料運算 (確保 dates[dateIdx] 存在才執行)
             const dData = (function() {
                 const res = { s: { GT:{A:[],B:[]}, BB:{A:[],B:[]}, GP:{A:[],B:[]}, "辦公":[], "休假":[] } };
                 const dk = dates[dateIdx].fullKey;
@@ -254,7 +245,7 @@
                 return res;
             })();
 
-            const hasNote = dates[dateIdx] && schedule.notes?.[dates[dateIdx].fullKey];
+            const hasNote = schedule.notes?.[dates[dateIdx].fullKey];
 
             return (
                 <div className="h-screen flex flex-col overflow-hidden relative">
@@ -263,7 +254,7 @@
 
                     <header className="mac-glass pt-10 pb-3 px-4 flex items-center justify-between shrink-0 z-50">
                         <button onClick={handleBackToday} className="bg-blue-600 px-4 h-7 rounded-full text-[10px] font-black uppercase shadow-lg text-white active:scale-95 transition-all">Today</button>
-                        <div className="flex items-center gap-2 cursor-pointer group" onClick={() => setShowMasterModal(true)}><h1 className="text-xl font-black tracking-widest uppercase italic hover:text-[#0A84FF] transition-colors text-[var(--text-main)]">視聽班表系統</h1></div>
+                        <h1 onClick={() => setShowMasterModal(true)} className="text-xl font-black tracking-widest uppercase italic hover:text-[#0A84FF] transition-colors text-[var(--text-main)] cursor-pointer">視聽班表系統</h1>
                         <div className="flex gap-2">
                             <button onClick={()=>setTheme(theme==='dark'?'light':'dark')} className="h-7 w-7 rounded-full bg-[var(--btn-staff)] border border-[var(--border-light)] flex items-center justify-center text-[var(--text-main)] active:scale-90 transition-all"><Icon name={theme==='dark'?'sun':'moon'} /></button>
                             <button onClick={()=>window.location.reload()} className="h-7 w-7 rounded-full bg-[var(--btn-staff)] border border-[var(--border-light)] flex items-center justify-center text-[var(--text-main)] active:scale-90 transition-all"><Icon name="refresh" /></button>
@@ -280,13 +271,13 @@
                             <div className="flex gap-2 overflow-x-auto no-scrollbar justify-between">
                                 {currentWeek.map(d => {
                                     const realIdx = dates.findIndex(ad => ad.fullKey === d.fullKey);
-                                    const active = dateIdx === realIdx, isW = d.w === '六' || d.w === '日', isDisabled = realIdx === -1;
+                                    const active = dateIdx === realIdx, isW = d.w === '六' || d.w === '日';
                                     return (
-                                        <button key={d.fullKey} disabled={isDisabled} onClick={()=>setDateIdx(realIdx)} 
+                                        <button key={d.fullKey} disabled={realIdx===-1} onClick={()=>setDateIdx(realIdx)} 
                                             className={`flex-1 min-w-[45px] py-2 rounded-xl transition-all flex flex-col items-center justify-center border-2 
-                                            ${active ? 'border-blue-500 bg-blue-500/10 shadow-[0_0_10px_rgba(10,132,255,0.4)]' : 'border-transparent bg-[var(--btn-staff)]'} ${isDisabled ? 'opacity-20' : ''}`}>
-                                            <span className={`text-[9px] font-black uppercase ${isW ? 'text-[var(--col-women)]' : 'text-[var(--text-dim)]'}`}>週{d.w}</span>
-                                            <span className={`text-base font-black leading-none ${active ? 'text-[#0A84FF]' : isW ? 'text-[var(--col-women)]' : 'text-[var(--text-main)]'}`}>{d.d}</span>
+                                            ${active ? 'border-blue-500 bg-blue-500/10 shadow-[0_0_10px_rgba(10,132,255,0.4)]' : 'border-transparent bg-[var(--btn-staff)]'} ${realIdx===-1?'opacity-10':''}`}>
+                                            <span className={`text-[9px] font-black uppercase ${isW ? 'text-[var(--col-gt)]' : 'text-[var(--text-dim)]'}`}>週{d.w}</span>
+                                            <span className={`text-base font-black leading-none ${active ? 'text-[#0A84FF]' : isW ? 'text-[var(--col-gt)]' : 'text-[var(--text-main)]'}`}>{d.d}</span>
                                         </button>
                                     );
                                 })}
@@ -306,15 +297,15 @@
                                             <div className="marquee-wrapper"><p className={`text-[13px] font-black italic ${schedule.shows?.[dates[dateIdx]?.fullKey]?.[v]?.length > 8 ? 'marquee-active' : ''}`}>{schedule.shows?.[dates[dateIdx]?.fullKey]?.[v]||""}</p></div>
                                         </div>
                                         <div className="p-1 space-y-1">
-                                            {['A','B'].map(shift=>(<div key={shift} className="bg-[var(--bg-app)] rounded-[1.2rem] p-1 flex flex-col gap-1 min-h-[60px] border border-[var(--border-light)]">{dData?.s[v][shift].map(n=><StaffButton key={n} name={n} aliasMap={aliasMap} onClick={setQueryStaff} mode="small" isBShift={shift==='B'} />)}</div>))}
+                                            {['A','B'].map(shift=>(<div key={shift} className="bg-[var(--bg-app)] rounded-[1.2rem] p-1 flex flex-col gap-1 min-h-[60px] border border-[var(--border-light)]">{dData.s[v][shift].map(n=><StaffButton key={n} name={n} aliasMap={aliasMap} onClick={setQueryStaff} mode="small" isBShift={shift==='B'} />)}</div>))}
                                         </div>
                                     </div>
                                 );
                             })}
                         </div>
                         <div className="space-y-4 px-1">
-                            <section className="bg-[var(--bg-card)] border border-[var(--border-light)] rounded-[1.5rem] p-4 shadow-sm"><h4 className="text-orange-500 text-[14px] font-black uppercase mb-3 flex items-center gap-2"><Icon name="briefcase" /> 辦公人員</h4><div className="grid grid-cols-4 gap-2">{dData?.s?.["辦公"]?.map(n=>(<StaffButton key={n} name={n} aliasMap={aliasMap} onClick={setQueryStaff} mode="tiny" />))}</div></section>
-                            <section className="bg-[var(--bg-card)] border border-[var(--border-light)] rounded-[1.5rem] p-4 shadow-sm"><h4 className="text-[var(--text-dim)] text-[14px] font-black uppercase mb-3 flex items-center gap-2"><Icon name="sun" /> 今日休假</h4><div className="grid grid-cols-4 gap-2">{dData?.s?.["休假"]?.map(n=>(<StaffButton key={n} name={n} aliasMap={aliasMap} onClick={setQueryStaff} mode="tiny" />))}</div></section>
+                            <section className="bg-[var(--bg-card)] border border-[var(--border-light)] rounded-[1.5rem] p-4 shadow-sm"><h4 className="text-orange-500 text-[14px] font-black uppercase mb-3 flex items-center gap-2"><Icon name="briefcase" /> 辦公人員</h4><div className="grid grid-cols-4 gap-2">{dData.s["辦公"].map(n=>(<StaffButton key={n} name={n} aliasMap={aliasMap} onClick={setQueryStaff} mode="tiny" />))}</div></section>
+                            <section className="bg-[var(--bg-card)] border border-[var(--border-light)] rounded-[1.5rem] p-4 shadow-sm"><h4 className="text-[var(--text-dim)] text-[14px] font-black uppercase mb-3 flex items-center gap-2"><Icon name="sun" /> 今日休假</h4><div className="grid grid-cols-4 gap-2">{dData.s["休假"].map(n=>(<StaffButton key={n} name={n} aliasMap={aliasMap} onClick={setQueryStaff} mode="tiny" />))}</div></section>
                         </div>
                     </main>
 
@@ -331,8 +322,8 @@
                                 </div>
                                 <div id="master-scroll-container" className="flex-1 overflow-auto p-1 no-scrollbar scroll-smooth bg-[var(--bg-app)]">
                                     <div className="master-table-container">
-                                        <div className="flex bg-[var(--btn-staff)] border-b border-[var(--border-light)] sticky top-0 z-40 text-[var(--text-main)]">
-                                            <div className="master-sticky-col p-2 text-[9px] font-black opacity-30 uppercase text-center flex items-center justify-center border-b border-[var(--border-light)]">STAFF</div>
+                                        <div className="flex bg-[var(--btn-staff)] sticky top-0 z-40 text-[var(--text-main)] border-b border-[var(--border-light)]">
+                                            <div className="master-sticky-col p-2 text-[9px] font-black opacity-30 text-center flex items-center justify-center">STAFF</div>
                                             {currentWeek.map(d => (
                                                 <div key={d.fullKey} id={`master-col-${d.fullKey}`} className={`min-w-[75px] flex-1 p-2 text-center border-l border-[var(--border-light)] ${d.fullKey===dates[dateIdx]?.fullKey?'bg-blue-500/10':''}`}>
                                                     <div className={`text-[8px] uppercase ${d.w==='六'||d.w==='日'?'text-[var(--col-gt)]':'opacity-40'}`}>週{d.w}</div>
@@ -348,11 +339,10 @@
                                                     ['GT','BB','GP'].forEach(v => { if (schedule.roster[dk]?.[v]?.[staff]) { 
                                                         const color = v === 'GT' ? 'var(--col-gt)' : v === 'BB' ? 'var(--col-bb)' : 'var(--col-gp)'; 
                                                         label = `${v}-${schedule.roster[dk][v][staff].shift}`; 
-                                                        // Master Roster 在白天模式下的關鍵修正：透明背景 + 有色邊框 + 粗體文字
                                                         cls = `bg-[${color}]/[var(--master-bg-op)] text-[var(--text-main)] font-black text-[12px] border border-[${color}]/20 ${schedule.roster[dk][v][staff].shift==='B'?'b-shift-glow':''}`; hasShift = true; 
                                                     } });
                                                     const st = schedule.statuses[dk]?.[staff] || "";
-                                                    if (st.match(/辦公|其他/)) { label = "辦"; cls = "bg-orange-500/20 text-orange-600 font-black"; } else if (!hasShift && (st === "" || st.match(/休假|無排班/))) { label = "休"; cls = "bg-[var(--border-light)] text-[var(--text-dim)] font-black"; }
+                                                    if (st.match(/辦公|其他/)) { label = "辦"; cls = "bg-orange-500/10 text-orange-600 font-black"; } else if (!hasShift && (st === "" || st.match(/休假|無排班/))) { label = "休"; cls = "text-[var(--text-dim)]"; }
                                                     return (<div key={dk} className={`min-w-[75px] flex-1 p-1 flex items-center justify-center border-l border-[var(--border-light)] ${dk===dates[dateIdx]?.fullKey?'bg-blue-500/5':''}`}><div className={`w-full h-9 flex items-center justify-center rounded-md ${cls}`}>{label}</div></div>);
                                                 })}
                                             </div>
