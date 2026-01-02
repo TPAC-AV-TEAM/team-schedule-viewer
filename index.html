@@ -1,9 +1,23 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-TW" data-theme="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>視聽班表系統 | V4.5 Cleaned</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>視聽班表系統 | V7.2 Final Fix</title>
+
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta id="theme-meta" name="theme-color" content="#000000">
+    <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22%E8%A6%96%E8%81%BD%E7%8F%AD%E8%A1%A8%E7%B3%BB%E7%B5%B1%22%2C%22short_name%22%3A%22%E8%A6%96%E8%81%BD%E7%8F%AD%E8%A1%A8%22%2C%22display%22%3A%22standalone%22%2C%22start_url%22%3A%22.%22%2C%22background_color%22%3A%22%23000000%22%2C%22theme_color%22%3A%22%23000000%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F2665%2F2665123.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%2C%22purpose%22%3A%22any%20maskable%22%7D%5D%7D" />
+
+    <script>
+        try {
+            var savedTheme = localStorage.getItem('app-theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        } catch (e) {}
+    </script>
+
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -13,52 +27,70 @@
         import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, doc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        
         window.Firebase = { initializeApp, getApps, getApp, getFirestore, doc, onSnapshot, getDoc, getAuth, signInAnonymously, onAuthStateChanged };
         window.isFirebaseReady = true;
     </script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;400;700;900&family=Noto+Sans+TC:wght@100;400;700;900&display=swap');
+        
+        /* === 核心變數 === */
         :root { 
-            --mac-bg: #000000; --mac-card: #121214; --mac-blue: #0A84FF; 
-            --vip-text: #FFFFFF; --women-text: #FFD6E0; --men-text: #E0F7FF; --special-text: #FFFFE0;
-            --women-dot: #FF375F; --men-dot: #00FFFF; --special-dot: #FFD60A;
-            --master-gt: #8B0000; --master-bb: #008B8B; --master-gp: #006400; 
-            --ios-red: #FF3B30;
+            /* [黑夜模式] */
+            --bg-app: #000000;
+            --bg-card: #121214;
+            --bg-glass: rgba(18, 18, 20, 0.85);
+            --text-main: #FFFFFF;
+            --text-dim: rgba(255,255,255,0.4);
+            --border-light: rgba(255,255,255,0.1);
+            --btn-staff: rgba(255,255,255,0.06);
+            --col-gt: #FF2D55; --col-bb: #00FFFF; --col-gp: #32DE84;
+            --col-men: #E0F7FF; --dot-men: #00FFFF;
+            --col-women: #FFD6E0; --dot-women: #FF375F;
+            --col-special: #FFFFE0; --dot-special: #FFD60A;
+            --orb-color: #0a183d; --aura-op: 0.15;
+            --shift-bg-op: 0.2;
         }
-        body { font-family: 'Inter', 'Noto Sans TC', sans-serif; height: 100vh; overflow: hidden; background: #000000; color: #FFFFFF; -webkit-font-smoothing: antialiased; }
-        .aura-bg { position: fixed; inset: 0; background: radial-gradient(circle at 50% 50%, #0a183d 0%, #000000 100%); z-index: 0; pointer-events: none; }
-        .aura-orb { position: absolute; width: 700px; height: 700px; background: radial-gradient(circle, rgba(10, 132, 255, 0.08) 0%, transparent 70%); filter: blur(80px); animation: orb-move 25s infinite alternate ease-in-out; }
+
+        [data-theme='light'] {
+            /* [白天模式] 純白、高對比、無色塊 */
+            --bg-app: #FFFFFF !important;
+            --bg-card: #F9F9F9;
+            --bg-glass: rgba(255, 255, 255, 0.98);
+            --text-main: #000000;
+            --text-dim: rgba(0,0,0,0.5);
+            --border-light: #E5E5E5;
+            --btn-staff: #FFFFFF;
+            --col-gt: #D00000; --col-bb: #008B8B; --col-gp: #006400;
+            --col-men: #003366; --dot-men: #0055FF;
+            --col-women: #B00020; --dot-women: #D70015;
+            --col-special: #8B6508; --dot-special: #FFCC00;
+            --orb-color: #F0F0F0; --aura-op: 0.05;
+            --shift-bg-op: 0; /* 白天模式下，班表無背景色 */
+        }
+
+        html, body { height: 100%; width: 100%; margin: 0; background-color: var(--bg-app); color: var(--text-main); }
+        body { font-family: 'Inter', 'Noto Sans TC', sans-serif; overflow: hidden; -webkit-font-smoothing: antialiased; transition: background-color 0.3s ease; }
+        
+        .aura-bg { position: fixed; inset: 0; background: radial-gradient(circle at 50% 50%, var(--orb-color) 0%, var(--bg-app) 100%); z-index: 0; pointer-events: none; }
+        .aura-orb { position: absolute; width: 700px; height: 700px; background: radial-gradient(circle, #0A84FF 0%, transparent 70%); opacity: var(--aura-op); filter: blur(80px); animation: orb-move 25s infinite alternate ease-in-out; }
         @keyframes orb-move { 0% { transform: translate(-15%, -15%); } 100% { transform: translate(15%, 15%); } }
-        .mac-glass { background: rgba(18, 18, 20, 0.85); backdrop-filter: blur(40px) saturate(200%); border-bottom: 0.5px solid rgba(255,255,255,0.12); }
+        
+        .mac-glass { background: var(--bg-glass); backdrop-filter: blur(30px); border-bottom: 1px solid var(--border-light); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         
-        @keyframes note-breath {
-            0% { color: #FFFFFF; opacity: 1; }
-            50% { color: #FFD1DC; opacity: 0.8; }
-            100% { color: #FFFFFF; opacity: 1; }
-        }
+        @keyframes note-breath { 0%, 100% { opacity: 1; } 50% { color: #FF3B30; opacity: 0.8; } }
         .note-active-text { animation: note-breath 3s infinite ease-in-out; }
+        
+        .b-shift-glow { animation: b-glow 1.5s infinite alternate; border: 1.5px solid var(--text-main) !important; }
+        @keyframes b-glow { 0% { box-shadow: 0 0 2px var(--text-dim); } 100% { box-shadow: 0 0 10px #0A84FF; } }
 
-        /* B班呼吸燈效果 */
-        .b-shift-glow { animation: b-glow-strong 1.5s infinite alternate; border: 1.5px solid #FFFFFF !important; }
-        @keyframes b-glow-strong { 0% { box-shadow: 0 0 2px rgba(255,255,255,0.4); } 100% { box-shadow: 0 0 15px rgba(255,255,255,1); } }
+        .vip-1-text-breath { animation: vip-pulse 1.8s infinite alternate ease-in-out; font-weight: 900 !important; }
+        @keyframes vip-pulse { 0% { text-shadow: none; } 100% { text-shadow: 0 0 8px var(--text-main); } }
 
-        /* VIP 1: 加強型文字呼吸燈 (不帶邊框) */
-        .vip-1-text-breath { animation: vip-text-pulse 1.8s infinite alternate ease-in-out; font-weight: 900 !important; }
-        @keyframes vip-text-pulse {
-            0% { text-shadow: 0 0 4px rgba(255,255,255,0.2); filter: brightness(1); }
-            100% { text-shadow: 0 0 8px #fff, 0 0 15px var(--mac-blue), 0 0 25px var(--mac-blue); filter: brightness(1.3); }
-        }
-
-        .marquee-wrapper { overflow: hidden; white-space: nowrap; position: relative; width: 100%; display: flex; justify-content: center; }
-        .marquee-active { animation: marquee 15s linear infinite; display: inline-block; padding-left: 100%; }
-        @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
-        .master-sticky-col { position: sticky; left: 0; z-index: 30; background: #121214; min-width: 75px; border-right: 1.5px solid rgba(255,255,255,0.15); }
-        .unlock-glow-container { position: relative; width: 340px; height: 400px; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 60; }
-        .core-pulse { animation: pulse-blue 2s infinite; }
-        @keyframes pulse-blue { 0% { transform: scale(0.95); opacity: 0.5; } 50% { transform: scale(1.05); opacity: 0.8; } 100% { transform: scale(0.95); opacity: 0.5; } }
+        .master-sticky-col { position: sticky; left: 0; z-index: 30; background-color: var(--bg-card); min-width: 75px; border-right: 1px solid var(--border-light); transition: background-color 0.3s ease; }
+        .core-pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { transform: scale(0.95); opacity: 0.5; } 50% { transform: scale(1.05); opacity: 0.8; } }
     </style>
 </head>
 <body>
@@ -70,11 +102,9 @@
         const FIREBASE_CONFIG = { apiKey: "AIzaSyAx2aYlfqHBUe3V7a3sT5ZPVNYyr2JY8OA", authDomain: "tpac-schedule.firebaseapp.com", projectId: "tpac-schedule", storageBucket: "tpac-schedule.firebasestorage.app", messagingSenderId: "70955835780", appId: "1:70955835780:web:9d3b0958738557d1f7fdd1" };
         const STAFF_ORDER = ["王志剛", "張國飛", "張劭如", "謝祥玄", "張懷德", "楊淯舒", "黎祐甄", "廖俊龍", "曾健洋", "劉智敏"];
         const STAFF_INFO = { 
-            "廖俊龍": { type: "Normal", gender: "M", vipTag: "VIP1" }, 
-            "張劭如": { type: "Normal", gender: "F" }, 
+            "廖俊龍": { type: "Normal", gender: "M", vipTag: "VIP1" }, "張劭如": { type: "Normal", gender: "F" }, 
             "楊淯舒": { type: "Normal", gender: "F" }, "黎祐甄": { type: "Normal", gender: "F" }, 
-            "劉智敏": { type: "Special", gender: "M" }, 
-            "曾健洋": { type: "Special", gender: "M" }, 
+            "劉智敏": { type: "Special", gender: "M" }, "曾健洋": { type: "Special", gender: "M" }, 
             "王志剛": { type: "Normal", gender: "M" }, "張國飛": { type: "Normal", gender: "M" }, 
             "張懷德": { type: "Normal", gender: "M" }, "謝祥玄": { type: "Normal", gender: "M" } 
         };
@@ -85,47 +115,46 @@
         const Icon = memo(({ name, className = "w-4 h-4" }) => {
             const icons = {
                 refresh: <React.Fragment><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" /><path d="M16 21h5v-5" /></React.Fragment>,
-                check: <path d="M20 6 9 17l-5-5" />,
+                sun: <path d="M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />,
+                moon: <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />,
                 cloud: <path d="M17.5 19c2.5 0 4.5-2 4.5-4.5 0-2.2-1.6-4-3.7-4.4-.5-3.1-3.2-5.6-6.3-5.6-2.5 0-4.7 1.5-5.7 3.6-2 .4-3.3 2.1-3.3 4.1C3 15.2 5.2 18 8 18h9.5z" />,
                 info: <React.Fragment><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></React.Fragment>,
-                sun: <path d="M12 2v2m0 16v2m10-10h-2M4 12H2m15.364-7.364l-1.414 1.414M7.05 16.95l-1.414 1.414M16.95 16.95l1.414 1.414M5.636 5.636l1.414 1.414M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z" />,
                 briefcase: <React.Fragment><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></React.Fragment>,
                 copy: <path d="M8 4v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7.242a2 2 0 0 0-.602-1.43L16.083 2.57A2 2 0 0 0 14.685 2H10a2 2 0 0 0-2 2z M16 2v4h4 M4 8H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1"/>,
-                chevronLeft: <path d="m15 18-6-6 6-6" />,
-                chevronRight: <path d="m9 18 6-6-6-6" />
+                chevronLeft: <path d="m15 18-6-6 6-6" />, chevronRight: <path d="m9 18 6-6-6-6" />, check: <path d="M20 6 9 17l-5-5" />
             };
             return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>{icons[name] || icons.cloud}</svg>;
         });
 
-        const StaffButton = memo(({ name, aliasMap = {}, forceName = null, onClick, mode = "normal", isBShift = false, showGlow = false }) => {
+        const StaffButton = memo(({ name, aliasMap = {}, mode = "normal", isBShift = false, showGlow = false, onClick }) => {
             const info = STAFF_INFO[name] || { gender: 'M' };
-            const disp = forceName || aliasMap[name] || name;
-            const isALong = name === "廖俊龍";
-            const vipClass = info.vipTag === "VIP1" ? "vip-1-text-breath" : "";
-            const colorClass = info?.type === "Special" ? "text-[var(--special-text)]" : info?.gender === "F" ? "text-[var(--women-text)]" : "text-[var(--men-text)]";
-            const weight = "font-normal";
-            const dotClass = info?.type === "Special" ? "bg-[var(--special-dot)]" : info?.gender === "F" ? "bg-[var(--women-dot)]" : "bg-[var(--men-dot)]";
-            const fontSize = mode === "tiny" ? "text-[14px]" : (mode === "small" ? (isALong ? "text-[14px]" : "text-[18px]") : (mode === "master" ? "text-[16px]" : (isALong ? "text-[22px]" : "text-[26px]")));
+            const disp = aliasMap[name] || name;
+            const colorVar = info?.type === "Special" ? "var(--col-special)" : info?.gender === "F" ? "var(--col-women)" : "var(--col-men)";
+            const dotVar = info?.type === "Special" ? "var(--dot-special)" : info?.gender === "F" ? "var(--dot-women)" : "var(--dot-men)";
+            const fontSize = mode === "tiny" ? "text-[14px]" : (mode === "small" ? (name === "廖俊龍" ? "text-[14px]" : "text-[18px]") : (mode === "master" ? "text-[16px]" : (name === "廖俊龍" ? "text-[22px]" : "text-[26px]")));
             const btnClass = `${mode === "small" || mode === "master" ? 'h-8' : 'h-10'} ${fontSize} rounded-[0.6rem] ${(isBShift && showGlow) ? 'b-shift-glow' : ''}`;
-            const handleClick = (e) => { e.stopPropagation(); if(onClick) onClick(name); };
-
             return (
-                <button onClick={handleClick} className={`w-full ${btnClass} ${vipClass} ${weight} tracking-tight border border-white/5 bg-white/[0.06] flex items-center justify-center gap-1 shadow-sm ${colorClass} leading-none truncate shrink-0 active:scale-95 transition-transform`} title={disp}>
-                    <span className={`w-1 h-1 rounded-full ${dotClass} shadow-[0_0_5px_currentColor]`}></span>{disp}
+                <button onClick={(e) => { e.stopPropagation(); onClick(name); }} className={`w-full ${btnClass} ${info.vipTag === "VIP1" ? "vip-1-text-breath" : ""} font-black tracking-tight border border-[var(--border-light)] bg-[var(--btn-staff)] flex items-center justify-center gap-1 shadow-sm leading-none truncate shrink-0 active:scale-95 transition-all`} style={{ color: colorVar }}>
+                    <span className="w-1.5 h-1.5 rounded-full shadow-[0_0_5px_currentColor]" style={{ backgroundColor: dotVar }}></span>{disp}
                 </button>
             );
         });
 
         const App = () => {
-            const [dates, setDates] = useState([]), [schedule, setSchedule] = useState({ roster: {}, statuses: {}, shows: {}, notes: {}, updated: null });
+            const [dates, setDates] = useState([]), [schedule, setSchedule] = useState({ roster: {}, statuses: {}, shows: {}, notes: {} });
             const [dateIdx, setDateIdx] = useState(0), [weekOffset, setWeekOffset] = useState(0);
-            const [isUnlocked, setIsUnlocked] = useState(false), [user, setUser] = useState(null);
-            const [aliasMap, setAliasMap] = useState({}), [queryStaff, setQueryStaff] = useState(null), [queryVenue, setQueryVenue] = useState(null);
-            const [showMasterModal, setShowMasterModal] = useState(false);
-            const [toast, setToast] = useState(null), [diag, setDiag] = useState("正在同步中...");
+            const [isUnlocked, setIsUnlocked] = useState(false), [user, setUser] = useState(null), [aliasMap, setAliasMap] = useState({});
+            const [showMasterModal, setShowMasterModal] = useState(false), [toast, setToast] = useState(null), [diag, setDiag] = useState("正在同步中...");
+            const [theme, setTheme] = useState(() => { try { return localStorage.getItem('app-theme') || 'dark'; } catch(e) { return 'dark'; } });
 
-            // 回到今天的邏輯
+            useEffect(() => {
+                document.documentElement.setAttribute('data-theme', theme);
+                localStorage.setItem('app-theme', theme);
+                document.getElementById('theme-meta').setAttribute('content', theme === 'dark' ? '#000000' : '#FFFFFF');
+            }, [theme]);
+
             const handleBackToday = useCallback(() => {
+                if (dates.length === 0) return;
                 const now = new Date(), tK = formatK(now), idx = dates.findIndex(d => d.fullKey === tK); 
                 if(idx!==-1) {
                     setDateIdx(idx); 
@@ -135,10 +164,10 @@
             }, [dates]);
 
             useEffect(() => {
-                const checkFirebase = setInterval(() => {
-                    if (window.isFirebaseReady && window.Firebase) {
-                        clearInterval(checkFirebase);
-                        const app = Firebase.getApps().length === 0 ? Firebase.initializeApp(FIREBASE_CONFIG) : Firebase.getApp();
+                const init = setInterval(() => {
+                    if (window.isFirebaseReady) {
+                        clearInterval(init);
+                        const app = Firebase.initializeApp(FIREBASE_CONFIG);
                         Firebase.signInAnonymously(Firebase.getAuth(app)).then(() => {
                             Firebase.onAuthStateChanged(Firebase.getAuth(app), async (u) => { 
                                 if(u) {
@@ -150,7 +179,7 @@
                         });
                     }
                 }, 200);
-                return () => clearInterval(checkFirebase);
+                return () => clearInterval(init);
             }, []);
 
             useEffect(() => {
@@ -160,16 +189,11 @@
                     if (snap.exists()) {
                         const data = snap.data(), roster = JSON.parse(data.roster || '{}');
                         const keys = Object.keys(roster).sort();
-                        const sd = keys.map(k => { const d = new Date(k); return { d: `${d.getMonth()+1}/${d.getDate()}`, w: ['日','一','二','三','四','五','六'][d.getDay()], fullKey: k }; });
+                        setDates(keys.map(k => { const d = new Date(k); return { d: `${d.getMonth()+1}/${d.getDate()}`, w: ['日','一','二','三','四','五','六'][d.getDay()], fullKey: k }; }));
                         setSchedule({ roster, statuses: JSON.parse(data.statuses || '{}'), shows: JSON.parse(data.shows || '{}'), notes: JSON.parse(data.notes || '{}'), updated: data.lastUpdated });
-                        setDates(sd); setDiag("CONNECTED");
-                        setIsUnlocked(true); 
-                        const tK = formatK(new Date()), match = keys.indexOf(tK);
-                        if (match !== -1) { 
-                            setDateIdx(match); 
-                            const d1 = new Date(getMonK(keys[0])), dt = new Date(getMonK(tK)); 
-                            setWeekOffset(Math.max(0, Math.floor((dt - d1) / (7*24*60*60*1000)))); 
-                        }
+                        setIsUnlocked(true); setDiag("CONNECTED");
+                        const tK = formatK(new Date()), m = keys.indexOf(tK);
+                        if (m !== -1) { setDateIdx(m); setWeekOffset(Math.max(0, Math.floor((new Date(getMonK(tK)) - new Date(getMonK(keys[0]))) / (7*24*60*60*1000)))); }
                     }
                 });
             }, [user]);
@@ -177,210 +201,149 @@
             const scrollToModalCenter = useCallback((fullKey, containerId) => {
                 setTimeout(() => {
                     const container = document.getElementById(containerId);
-                    const el = document.getElementById(`modal-row-${fullKey}`);
-                    if (containerId === "master-scroll-container") {
-                         const col = document.getElementById(`master-col-${fullKey}`);
-                         if (col && container) {
-                             const left = col.offsetLeft - (container.offsetWidth / 2) + (col.offsetWidth / 2);
-                             container.scrollTo({ left, behavior: 'smooth' });
-                         }
-                    } else if (el && container) {
-                        const top = el.offsetTop - (container.offsetHeight / 2) + (el.offsetHeight / 2); 
-                        container.scrollTo({ top, behavior: 'smooth' }); 
+                    const el = document.getElementById(`modal-row-${fullKey}`) || document.getElementById(`master-col-${fullKey}`);
+                    if (container && el) {
+                        if (containerId === "master-scroll-container") {
+                             container.scrollTo({ left: el.offsetLeft - (container.offsetWidth / 2) + (el.offsetWidth / 2), behavior: 'smooth' });
+                        } else {
+                            container.scrollTo({ top: el.offsetTop - (container.offsetHeight / 2) + (el.offsetHeight / 2), behavior: 'smooth' }); 
+                        }
                     }
                 }, 300);
             }, []);
 
-            useEffect(() => { if (showMasterModal) scrollToModalCenter(dates[dateIdx]?.fullKey, "master-scroll-container"); }, [showMasterModal, dateIdx, dates, scrollToModalCenter]);
-            useEffect(() => { if (queryVenue) scrollToModalCenter(dates[dateIdx]?.fullKey, "venue-scroll-container"); }, [queryVenue, dateIdx, dates, scrollToModalCenter]);
-            useEffect(() => { if (queryStaff) scrollToModalCenter(dates[dateIdx]?.fullKey, "staff-scroll-container"); }, [queryStaff, dateIdx, dates, scrollToModalCenter]);
+            useEffect(() => { if (showMasterModal && dates[dateIdx]) scrollToModalCenter(dates[dateIdx].fullKey, "master-scroll-container"); }, [showMasterModal, dateIdx, dates, scrollToModalCenter]);
+            useEffect(() => { if (queryVenue && dates[dateIdx]) scrollToModalCenter(dates[dateIdx].fullKey, "venue-scroll-container"); }, [queryVenue, dateIdx, dates, scrollToModalCenter]);
+            useEffect(() => { if (queryStaff && dates[dateIdx]) scrollToModalCenter(dates[dateIdx].fullKey, "staff-scroll-container"); }, [queryStaff, dateIdx, dates, scrollToModalCenter]);
 
             const currentWeek = useMemo(() => {
                 if (!dates.length) return [];
                 const anchor = new Date(getMonK(dates[0].fullKey)); anchor.setDate(anchor.getDate() + (weekOffset*7));
-                return Array.from({length:7}, (_, i) => {
-                    const c = new Date(anchor); c.setDate(c.getDate() + i); const k = formatK(c);
-                    return dates.find(d => d.fullKey === k) || { d: `${c.getMonth()+1}/${c.getDate()}`, w: ['日','一','二','三','四','五','六'][c.getDay()], fullKey: k, isPlaceholder: true };
-                });
+                return Array.from({length:7}, (_, i) => { const c = new Date(anchor); c.setDate(c.getDate() + i); const k = formatK(c); return dates.find(d => d.fullKey === k) || { d: `${c.getMonth()+1}/${c.getDate()}`, w: ['日','一','二','三','四','五','六'][c.getDay()], fullKey: k, isPlaceholder: true }; });
             }, [dates, weekOffset]);
 
-            const dData = useMemo(() => {
-                const d = dates[dateIdx]; if (!d) return null;
-                const res = { s: { GT:{A:[],B:[]}, BB:{A:[],B:[]}, GP:{A:[],B:[]}, "辦公":[], "休假":[] } };
-                const rawR = schedule.roster[d.fullKey] || {}, rawS = schedule.statuses[d.fullKey] || {};
-                const hasShift = new Set();
-                ['GT','BB','GP'].forEach(v => Object.entries(rawR[v]||{}).forEach(([n,val]) => { 
-                    if(res.s[v][val.shift]) { res.s[v][val.shift].push(n); hasShift.add(n); }
-                }));
-                STAFF_ORDER.forEach(n => {
-                    const code = rawS[n] || "";
-                    if (code.match(/辦公|其他|其它/)) res.s["辦公"].push(n);
-                    else if (!hasShift.has(n) && (code === "" || code.match(/休假|無排班|公假|婚假|喪假|病假|事假|特休|補休/))) res.s["休假"].push(n);
-                });
-                return res;
-            }, [dateIdx, dates, schedule]);
-
-            const todayNote = schedule.notes?.[dates[dateIdx]?.fullKey];
-            const hasNote = todayNote && todayNote.trim() !== "";
-
-            if (!isUnlocked) return (
-                <div className="h-screen flex items-center justify-center bg-black overflow-hidden relative">
-                    <div className="aura-bg"><div className="aura-orb"></div></div>
-                    <div className="unlock-glow-container text-white">
-                        <div className="mb-8 relative">
-                            <div className="absolute inset-0 bg-blue-500/20 blur-3xl rounded-full core-pulse"></div>
-                            <div className="w-32 h-32 border border-white/10 rounded-full flex items-center justify-center relative shadow-inner">
-                                <div className="absolute inset-2 border border-blue-500/30 rounded-full animate-spin" style={{animationDuration:'3s', borderTopColor: 'transparent'}}></div>
-                                <Icon name="cloud" className="w-12 h-12 text-blue-500" />
-                            </div>
-                        </div>
-                        <h2 className="text-2xl font-black uppercase tracking-widest italic mb-2">Connecting</h2>
-                        <p className="text-[10px] font-bold text-blue-500 uppercase tracking-widest opacity-60 animate-pulse">{diag}</p>
-                    </div>
-                </div>
+            // ============================================
+            // [專家級修復]：絕對不黑畫面的關鍵防守
+            // 只要資料還沒準備好，就顯示 Loading 動畫，不執行渲染邏輯
+            // ============================================
+            if (!isUnlocked || dates.length === 0 || !dates[dateIdx]) return (
+                <div className="h-screen flex items-center justify-center bg-black relative"><div className="text-center z-10"><div className="w-16 h-16 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div><p className="text-white text-xs font-black tracking-widest animate-pulse">{diag}</p></div></div>
             );
 
-            return (
-                <div className="h-screen flex flex-col overflow-hidden relative text-white bg-black">
-                    <div className="aura-bg"><div className="aura-orb"></div><div className="aura-orb" style={{right:0, bottom:0, animationDelay: '-12s'}}></div></div>
-                    {toast && <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[1000] bg-zinc-800/90 backdrop-blur border border-white/20 px-6 py-2 rounded-full text-xs font-bold flex items-center gap-2 animate-bounce"><Icon name="check" className="text-green-400 w-3 h-3" /> {toast}</div>}
+            // 資料運算 (確保 dates[dateIdx] 存在才執行)
+            const dData = (function() {
+                const res = { s: { GT:{A:[],B:[]}, BB:{A:[],B:[]}, GP:{A:[],B:[]}, "辦公":[], "休假":[] } };
+                const dk = dates[dateIdx].fullKey;
+                const rawR = schedule.roster[dk] || {}, rawS = schedule.statuses[dk] || {};
+                const hasShift = new Set();
+                ['GT','BB','GP'].forEach(v => Object.entries(rawR[v]||{}).forEach(([n,val]) => { if(res.s[v][val.shift]) { res.s[v][val.shift].push(n); hasShift.add(n); } }));
+                STAFF_ORDER.forEach(n => {
+                    const code = rawS[n] || "";
+                    if (code.match(/辦公|其他/)) res.s["辦公"].push(n);
+                    else if (!hasShift.has(n) && (code === "" || code.match(/休假|無排班|公假/))) res.s["休假"].push(n);
+                });
+                return res;
+            })();
 
-                    <header className="mac-glass pt-10 pb-3 px-4 border-b border-white/10 flex items-center justify-between shrink-0 z-50">
-                        <button onClick={handleBackToday} className="bg-blue-600 px-4 h-7 rounded-full text-[10px] font-black uppercase shadow-lg text-white active:scale-95 transition-transform">Today</button>
-                        
-                        <div className="flex items-center gap-2 cursor-pointer group" onClick={() => setShowMasterModal(true)}>
-                            <h1 className="text-xl font-black tracking-widest uppercase italic text-zinc-100 group-hover:text-blue-400 transition-colors">視聽班表系統</h1>
+            const hasNote = schedule.notes?.[dates[dateIdx].fullKey];
+
+            return (
+                <div className="h-screen flex flex-col overflow-hidden relative">
+                    <div className="aura-bg"><div className="aura-orb"></div></div>
+                    {toast && <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[1000] bg-[var(--bg-card)] backdrop-blur border border-[var(--border-light)] px-6 py-2 rounded-full text-xs font-black flex items-center gap-2 animate-bounce shadow-xl text-[var(--text-main)]"><Icon name="check" className="text-green-500 w-3 h-3" /> {toast}</div>}
+
+                    <header className="mac-glass pt-10 pb-3 px-4 flex items-center justify-between shrink-0 z-50">
+                        <button onClick={handleBackToday} className="bg-blue-600 px-4 h-7 rounded-full text-[10px] font-black uppercase shadow-lg text-white active:scale-95 transition-all">Today</button>
+                        <h1 onClick={() => setShowMasterModal(true)} className="text-xl font-black tracking-widest uppercase italic hover:text-[#0A84FF] transition-colors text-[var(--text-main)] cursor-pointer">視聽班表系統</h1>
+                        <div className="flex gap-2">
+                            <button onClick={()=>setTheme(theme==='dark'?'light':'dark')} className="h-7 w-7 rounded-full bg-[var(--btn-staff)] border border-[var(--border-light)] flex items-center justify-center text-[var(--text-main)] active:scale-90 transition-all"><Icon name={theme==='dark'?'sun':'moon'} /></button>
+                            <button onClick={()=>window.location.reload()} className="h-7 w-7 rounded-full bg-[var(--btn-staff)] border border-[var(--border-light)] flex items-center justify-center text-[var(--text-main)] active:scale-90 transition-all"><Icon name="refresh" /></button>
                         </div>
-                        
-                        <button onClick={()=>window.location.reload()} className="h-7 w-7 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white active:scale-90"><Icon name="refresh" className="w-3 h-3 text-white/50" /></button>
                     </header>
 
-                    <main className="flex-1 overflow-y-auto px-2 py-3 no-scrollbar pb-24 z-10 text-left text-white">
-                        <div className="mac-glass sticky top-0 -mx-2 px-2 py-2 flex flex-col mb-4 z-20 shadow-2xl overflow-hidden">
-                            <div className="flex items-center justify-between mb-2 px-1">
-                                <button onClick={() => setWeekOffset(prev => Math.max(0, prev-1))} className="text-white/30 hover:text-white p-2 text-xs">◀ 上週</button>
-                                <span className="text-[10px] font-bold text-white/40 tracking-widest uppercase">Week View</span>
-                                <button onClick={() => setWeekOffset(prev => prev + 1)} className="text-white/30 hover:text-white p-2 text-xs">下週 ▶</button>
+                    <main className="flex-1 overflow-y-auto px-2 py-3 no-scrollbar pb-24 z-10 text-left">
+                        <div className="mac-glass sticky top-0 -mx-2 px-2 py-2 flex flex-col mb-4 z-20 shadow-xl overflow-hidden">
+                            <div className="flex items-center justify-between mb-2 px-1 text-[var(--text-dim)]">
+                                <button onClick={() => setWeekOffset(prev => Math.max(0, prev-1))} className="hover:text-[var(--text-main)] p-2 text-xs">◀ 上週</button>
+                                <span className="text-[10px] font-black tracking-widest uppercase">Week View</span>
+                                <button onClick={() => setWeekOffset(prev => prev + 1)} className="hover:text-[var(--text-main)] p-2 text-xs">下週 ▶</button>
                             </div>
                             <div className="flex gap-2 overflow-x-auto no-scrollbar justify-between">
                                 {currentWeek.map(d => {
                                     const realIdx = dates.findIndex(ad => ad.fullKey === d.fullKey);
-                                    const active = dateIdx === realIdx, isW = d.w === '六' || d.w === '日', isDisabled = realIdx === -1;
+                                    const active = dateIdx === realIdx, isW = d.w === '六' || d.w === '日';
                                     return (
-                                        <button key={d.fullKey} disabled={isDisabled} onClick={()=>setDateIdx(realIdx)} className={`flex-1 min-w-[45px] py-2 rounded-xl transition-all flex flex-col items-center justify-center border-2 ${active ? 'border-blue-500 bg-blue-500/10 shadow-[0_0_10px_rgba(10,132,255,0.3)]' : 'border-transparent bg-white/5'} ${isDisabled ? 'opacity-20' : ''}`}>
-                                            <span className={`text-[9px] font-black uppercase ${isW ? 'text-[#FFD1DC]' : 'text-white/50'}`}>週{d.w}</span>
-                                            <span className={`text-base font-black leading-none ${active ? 'text-white' : isW ? 'text-[#FFD1DC]' : 'text-white/80'}`}>{d.d}</span>
+                                        <button key={d.fullKey} disabled={realIdx===-1} onClick={()=>setDateIdx(realIdx)} 
+                                            className={`flex-1 min-w-[45px] py-2 rounded-xl transition-all flex flex-col items-center justify-center border-2 
+                                            ${active ? 'border-blue-500 bg-blue-500/10 shadow-[0_0_10px_rgba(10,132,255,0.4)]' : 'border-transparent bg-[var(--btn-staff)]'} ${realIdx===-1?'opacity-10':''}`}>
+                                            <span className={`text-[9px] font-black uppercase ${isW ? 'text-[var(--col-gt)]' : 'text-[var(--text-dim)]'}`}>週{d.w}</span>
+                                            <span className={`text-base font-black leading-none ${active ? 'text-[#0A84FF]' : isW ? 'text-[var(--col-gt)]' : 'text-[var(--text-main)]'}`}>{d.d}</span>
                                         </button>
                                     );
                                 })}
                             </div>
-                            <div className="mt-3 px-1">
-                                <div className="bg-[#0A0A0A] border border-white/20 rounded-xl px-4 py-3 flex items-start gap-3 shadow-2xl relative overflow-hidden group">
-                                    <div className={`absolute left-0 top-0 bottom-0 w-1.5 transition-colors duration-300 ${hasNote ? 'bg-[#FF2D55] shadow-[0_0_10px_#FF2D55]' : 'bg-[var(--mac-blue)]'}`}></div>
-                                    <span className={`shrink-0 mt-1 transition-colors duration-300 ${hasNote ? 'text-[#FF2D55] animate-pulse' : 'text-[var(--mac-blue)]'}`}><Icon name="info" className="w-4 h-4" /></span>
-                                    <div className="flex flex-col">
-                                        <span className={`text-[10px] font-black uppercase tracking-tighter mb-0.5 transition-colors duration-300 ${hasNote ? 'text-[#FF2D55] opacity-100' : 'text-[var(--mac-blue)] opacity-80'}`}>今日重要提醒</span>
-                                        <p className={`text-[15px] font-bold leading-relaxed tracking-wide transition-all duration-300 ${hasNote ? 'note-active-text drop-shadow-[0_0_8px_rgba(255,45,85,0.4)]' : 'text-white/50'}`}>
-                                            {hasNote ? todayNote : ""}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
+                            {hasNote && (
+                                <div className="mt-3 px-1"><div className="bg-[var(--bg-card)] border border-[var(--border-light)] rounded-xl px-4 py-3 flex items-start gap-3 shadow-md relative overflow-hidden"><div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#FF3B30] shadow-[0_0_10px_#FF3B30]"></div><span className="shrink-0 mt-1 text-[#FF3B30] animate-pulse"><Icon name="info" /></span><div className="flex flex-col"><span className="text-[10px] font-black uppercase mb-0.5 text-[#FF3B30]">今日重要提醒</span><p className="text-[15px] font-black leading-relaxed note-active-text" style={{color:'var(--text-main)'}}>{schedule.notes[dates[dateIdx].fullKey]}</p></div></div></div>
+                            )}
                         </div>
 
                         <div className="grid grid-cols-3 gap-2 mb-6">
-                            {['GT','BB','GP'].map(v=>{
-                                const vColor = v==='GT'?'#FF2D55':v==='BB'?'cyan':'#32DE84';
+                            {['GT','BB','GP'].map(v => {
+                                const vColor = v==='GT'?'var(--col-gt)':v==='BB'?'var(--col-bb)':'var(--col-gp)';
                                 return (
-                                    <div key={v} className="bg-[#121214] rounded-[1.5rem] overflow-hidden flex flex-col shadow-lg border transition-all hover:border-white/30" style={{ borderColor: `${vColor}80`, borderWidth: '1.2px' }}>
-                                        <button onClick={() => setQueryVenue(v)} className="py-2 font-black text-xl bg-white/[0.02] active:opacity-50 hover:bg-white/5 transition-colors" style={{color: vColor}}>{v}</button>
-                                        <div className="px-1 py-1 min-h-[30px] flex items-center justify-center border-b border-white/5 bg-black/40 text-center overflow-hidden">
-                                            <div className="marquee-wrapper">
-                                                <p className={`text-[15px] font-bold text-white opacity-70 italic ${schedule.shows?.[dates[dateIdx]?.fullKey]?.[v]?.length > 8 ? 'marquee-active' : ''}`}>
-                                                    {schedule.shows?.[dates[dateIdx]?.fullKey]?.[v]||""}
-                                                </p>
-                                            </div>
+                                    <div key={v} className="bg-[var(--bg-card)] rounded-[1.5rem] overflow-hidden flex flex-col shadow-sm border border-[var(--border-light)] transition-all">
+                                        <button onClick={() => setQueryVenue(v)} className="py-2 font-black text-xl bg-[var(--btn-staff)] active:opacity-50" style={{color: vColor}}>{v}</button>
+                                        <div className="px-1 py-1 min-h-[30px] flex items-center justify-center border-b border-[var(--border-light)] bg-[var(--bg-app)] opacity-70 text-center overflow-hidden text-[var(--text-main)]">
+                                            <div className="marquee-wrapper"><p className={`text-[13px] font-black italic ${schedule.shows?.[dates[dateIdx]?.fullKey]?.[v]?.length > 8 ? 'marquee-active' : ''}`}>{schedule.shows?.[dates[dateIdx]?.fullKey]?.[v]||""}</p></div>
                                         </div>
                                         <div className="p-1 space-y-1">
-                                            {['A','B'].map(shift=>(
-                                                <div key={shift} className="bg-zinc-900/40 rounded-[1.2rem] p-1 flex flex-col gap-1 min-h-[60px]">
-                                                    {dData?.s[v][shift].map(n=><StaffButton key={n} name={n} aliasMap={aliasMap} mode="small" onClick={setQueryStaff} isBShift={shift === 'B'} showGlow={false} />)}
-                                                </div>
-                                            ))}
+                                            {['A','B'].map(shift=>(<div key={shift} className="bg-[var(--bg-app)] rounded-[1.2rem] p-1 flex flex-col gap-1 min-h-[60px] border border-[var(--border-light)]">{dData.s[v][shift].map(n=><StaffButton key={n} name={n} aliasMap={aliasMap} onClick={setQueryStaff} mode="small" isBShift={shift==='B'} />)}</div>))}
                                         </div>
                                     </div>
                                 );
                             })}
                         </div>
                         <div className="space-y-4 px-1">
-                            <section className="bg-white/5 border border-white/10 rounded-[1.5rem] p-4 shadow-sm">
-                                <h4 className="text-orange-400 text-[14px] font-black uppercase mb-3 flex items-center gap-2"><Icon name="briefcase" /> 辦公人員</h4>
-                                <div className="grid grid-cols-4 gap-2">{dData?.s?.["辦公"]?.map(n=>(<StaffButton key={n} name={n} aliasMap={aliasMap} mode="tiny" onClick={setQueryStaff} />))}</div>
-                            </section>
-                            <section className="bg-white/5 border border-white/10 rounded-[1.5rem] p-4 shadow-sm">
-                                <h4 className="text-gray-400 text-[14px] font-black uppercase mb-3 flex items-center gap-2"><Icon name="sun" /> 今日休假</h4>
-                                <div className="grid grid-cols-4 gap-2">{dData?.s?.["休假"]?.map(n=>(<StaffButton key={n} name={n} aliasMap={aliasMap} mode="tiny" onClick={setQueryStaff} />))}</div>
-                            </section>
+                            <section className="bg-[var(--bg-card)] border border-[var(--border-light)] rounded-[1.5rem] p-4 shadow-sm"><h4 className="text-orange-500 text-[14px] font-black uppercase mb-3 flex items-center gap-2"><Icon name="briefcase" /> 辦公人員</h4><div className="grid grid-cols-4 gap-2">{dData.s["辦公"].map(n=>(<StaffButton key={n} name={n} aliasMap={aliasMap} onClick={setQueryStaff} mode="tiny" />))}</div></section>
+                            <section className="bg-[var(--bg-card)] border border-[var(--border-light)] rounded-[1.5rem] p-4 shadow-sm"><h4 className="text-[var(--text-dim)] text-[14px] font-black uppercase mb-3 flex items-center gap-2"><Icon name="sun" /> 今日休假</h4><div className="grid grid-cols-4 gap-2">{dData.s["休假"].map(n=>(<StaffButton key={n} name={n} aliasMap={aliasMap} onClick={setQueryStaff} mode="tiny" />))}</div></section>
                         </div>
                     </main>
 
                     {showMasterModal && (
-                        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-2 bg-black/95 backdrop-blur-3xl" onClick={() => setShowMasterModal(false)}>
-                            <div className="bg-[#121214] border border-white/10 w-full max-w-4xl rounded-[2rem] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
-                                <div className="p-4 border-b border-white/10 flex items-center justify-between bg-zinc-900/40">
-                                    <div className="flex items-center gap-4">
-                                        <button onClick={() => setShowMasterModal(false)} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-xl shrink-0">×</button>
-                                        <h3 className="text-lg font-black uppercase italic text-white">Master Roster</h3>
-                                    </div>
-                                    <div className="flex items-center gap-1 bg-white/5 rounded-full px-1.5 py-1">
-                                        <button onClick={() => setWeekOffset(prev => Math.max(0, prev-1))} className="p-1 text-white/40 hover:text-white"><Icon name="chevronLeft" className="w-4 h-4" /></button>
-                                        <button onClick={handleBackToday} className="text-[9px] text-white/30 hover:text-blue-400 font-black uppercase tracking-tighter px-1 transition-colors">Today</button>
-                                        <button onClick={() => setWeekOffset(prev => prev + 1)} className="p-1 text-white/40 hover:text-white"><Icon name="chevronRight" className="w-4 h-4" /></button>
+                        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-2 bg-black/60 backdrop-blur-xl" onClick={() => setShowMasterModal(false)}>
+                            <div className="bg-[var(--bg-card)] border border-[var(--border-light)] w-full max-w-4xl rounded-[2rem] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
+                                <div className="p-4 border-b border-[var(--border-light)] flex items-center justify-between bg-[var(--btn-staff)] text-[var(--text-main)]">
+                                    <div className="flex items-center gap-4"><button onClick={() => setShowMasterModal(false)} className="w-8 h-8 rounded-full bg-[var(--border-light)] flex items-center justify-center text-xl shrink-0">×</button><h3 className="text-lg font-black uppercase italic">Master Roster</h3></div>
+                                    <div className="flex items-center gap-1 bg-[var(--border-light)] rounded-full px-1.5 py-1">
+                                        <button onClick={() => setWeekOffset(prev => Math.max(0, prev-1))} className="p-1 text-[var(--text-dim)] hover:text-[var(--text-main)]"><Icon name="chevronLeft" /></button>
+                                        <button onClick={handleBackToday} className="text-[9px] text-[var(--text-dim)] hover:text-[#0A84FF] font-black uppercase px-1">Today</button>
+                                        <button onClick={() => setWeekOffset(prev => prev + 1)} className="p-1 text-[var(--text-dim)] hover:text-[var(--text-main)]"><Icon name="chevronRight" /></button>
                                     </div>
                                 </div>
-                                <div id="master-scroll-container" className="flex-1 overflow-auto p-1 no-scrollbar scroll-smooth">
+                                <div id="master-scroll-container" className="flex-1 overflow-auto p-1 no-scrollbar scroll-smooth bg-[var(--bg-app)]">
                                     <div className="master-table-container">
-                                        <div className="flex bg-[#1a1a1c] border-b border-white/20 sticky top-0 z-40">
-                                            <div className="master-sticky-col p-2 text-[9px] font-black text-white/20 uppercase text-center flex items-center justify-center border-b border-white/20">STAFF</div>
-                                            {currentWeek.map((d, i) => {
-                                                const isToday = d.fullKey === dates[dateIdx]?.fullKey;
-                                                const isW = d.w === '六' || d.w === '日';
-                                                return (
-                                                    <div key={d.fullKey} id={`master-col-${d.fullKey}`} className={`min-w-[75px] flex-1 p-2 text-center border-l border-white/20 ${isToday ? 'bg-blue-900/20' : ''}`}>
-                                                        <div className={`text-[8px] uppercase ${isW ? 'text-[#FFD1DC] font-black' : 'opacity-40'}`}>週{d.w}</div>
-                                                        <div className={`text-[13px] font-bold ${isW ? 'text-[#FFD1DC]' : 'text-white'}`}>{d.d}</div>
-                                                        {isToday && <div className="h-1 w-1 bg-blue-500 rounded-full mx-auto mt-1"></div>}
-                                                    </div>
-                                                );
-                                            })}
+                                        <div className="flex bg-[var(--btn-staff)] sticky top-0 z-40 text-[var(--text-main)] border-b border-[var(--border-light)]">
+                                            <div className="master-sticky-col p-2 text-[9px] font-black opacity-30 text-center flex items-center justify-center">STAFF</div>
+                                            {currentWeek.map(d => (
+                                                <div key={d.fullKey} id={`master-col-${d.fullKey}`} className={`min-w-[75px] flex-1 p-2 text-center border-l border-[var(--border-light)] ${d.fullKey===dates[dateIdx]?.fullKey?'bg-blue-500/10':''}`}>
+                                                    <div className={`text-[8px] uppercase ${d.w==='六'||d.w==='日'?'text-[var(--col-gt)]':'opacity-40'}`}>週{d.w}</div>
+                                                    <div className={`text-[13px] font-black ${d.w==='六'||d.w==='日'?'text-[var(--col-gt)]':''}`}>{d.d}</div>
+                                                </div>
+                                            ))}
                                         </div>
                                         {STAFF_ORDER.map((staff, sIdx) => (
-                                            <div key={staff} className={`flex border-b border-white/[0.04] ${sIdx % 2 === 0 ? 'bg-white/[0.02]' : 'bg-transparent'}`}>
-                                                <div className="master-sticky-col py-2 px-1 flex items-center">
-                                                    <StaffButton name={staff} aliasMap={aliasMap} mode="master" forceName={staff === "廖俊龍" ? "阿龍" : null} onClick={(s) => { setShowMasterModal(false); setQueryStaff(s); }} />
-                                                </div>
-                                                {currentWeek.map((d, i) => {
-                                                    const dk = d.fullKey;
-                                                    let label = "—", cls = "bg-white/[0.03] text-white/10";
-                                                    let hasShift = false;
-                                                    ['GT','BB','GP'].forEach(v => { 
-                                                        if (schedule.roster[dk]?.[v]?.[staff]) { 
-                                                            const shift = schedule.roster[dk][v][staff].shift;
-                                                            const isB = shift === 'B';
-                                                            const baseColor = v === 'GT' ? 'var(--master-gt)' : v === 'BB' ? 'var(--master-bb)' : 'var(--master-gp)';
-                                                            label = `${v}-${shift}`;
-                                                            cls = `bg-[${baseColor}] bg-opacity-20 text-white font-normal text-[13px] shadow-sm ${isB ? 'b-shift-glow' : ''}`; 
-                                                            hasShift = true;
-                                                        } 
-                                                    });
-                                                    const status = schedule.statuses[dk]?.[staff] || "";
-                                                    if (status.match(/辦公|其他|其它/)) { label = "辦"; cls = "bg-[#B36200]/40 text-[#FF9500] font-thin text-[16px]"; } 
-                                                    else if (!hasShift && (status === "" || status.match(/休假|無排班|公假|婚假|喪假|病假|事假|特休|補休/))) { label = "休"; cls = "bg-[#444444] text-white/80 font-thin text-[16px]"; }
-                                                    return (
-                                                        <div key={dk} className={`min-w-[75px] flex-1 p-1 flex items-center justify-center border-l border-white/[0.05] text-center text-white ${dk === dates[dateIdx]?.fullKey ? 'bg-blue-900/10' : ''}`}>
-                                                            <div className={`w-full h-9 flex items-center justify-center rounded-md ${cls}`}>{label}</div>
-                                                        </div>
-                                                    );
+                                            <div key={staff} className={`flex border-b border-[var(--border-light)] ${sIdx % 2 === 0 ? 'bg-[var(--btn-staff)] opacity-40' : ''}`}>
+                                                <div className="master-sticky-col py-2 px-1 flex items-center bg-[var(--bg-card)]"><StaffButton name={staff} aliasMap={aliasMap} mode="master" onClick={(s) => { setShowMasterModal(false); setQueryStaff(s); }} /></div>
+                                                {currentWeek.map(d => {
+                                                    const dk = d.fullKey; let label = "—", cls = "opacity-10", hasShift = false;
+                                                    ['GT','BB','GP'].forEach(v => { if (schedule.roster[dk]?.[v]?.[staff]) { 
+                                                        const color = v === 'GT' ? 'var(--col-gt)' : v === 'BB' ? 'var(--col-bb)' : 'var(--col-gp)'; 
+                                                        label = `${v}-${schedule.roster[dk][v][staff].shift}`; 
+                                                        cls = `bg-[${color}]/[var(--master-bg-op)] text-[var(--text-main)] font-black text-[12px] border border-[${color}]/20 ${schedule.roster[dk][v][staff].shift==='B'?'b-shift-glow':''}`; hasShift = true; 
+                                                    } });
+                                                    const st = schedule.statuses[dk]?.[staff] || "";
+                                                    if (st.match(/辦公|其他/)) { label = "辦"; cls = "bg-orange-500/10 text-orange-600 font-black"; } else if (!hasShift && (st === "" || st.match(/休假|無排班/))) { label = "休"; cls = "text-[var(--text-dim)]"; }
+                                                    return (<div key={dk} className={`min-w-[75px] flex-1 p-1 flex items-center justify-center border-l border-[var(--border-light)] ${dk===dates[dateIdx]?.fullKey?'bg-blue-500/5':''}`}><div className={`w-full h-9 flex items-center justify-center rounded-md ${cls}`}>{label}</div></div>);
                                                 })}
                                             </div>
                                         ))}
@@ -389,68 +352,32 @@
                             </div>
                         </div>
                     )}
-                    
+
                     {(queryStaff || queryVenue) && (
-                        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-6 bg-black/90 backdrop-blur-2xl text-white" onClick={() => { setQueryStaff(null); setQueryVenue(null); }}>
-                            <div className="bg-[#121214] border border-white/10 w-full max-w-lg rounded-[2.5rem] shadow-2xl flex flex-col max-h-[85vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
-                                <div className="p-4 border-b border-white/10 flex items-center justify-between bg-zinc-900/40">
-                                    <div className="flex items-center gap-3">
-                                        <button onClick={() => { setQueryStaff(null); setQueryVenue(null); }} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-2xl text-white">×</button>
-                                        <h3 className="text-xl font-black italic text-white" style={{color: queryVenue ? (queryVenue==='GT'?'#FF2D55':queryVenue==='BB'?'cyan':'#32DE84') : '#FFF'}}>
-                                            {queryVenue ? `${queryVenue} Weekly` : (aliasMap[queryStaff] || queryStaff)}
-                                        </h3>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <div className="flex items-center bg-white/10 rounded-full overflow-hidden">
-                                            <button onClick={() => setWeekOffset(prev => Math.max(0, prev-1))} className="p-2 hover:bg-white/10 transition-colors"><Icon name="chevronLeft" className="w-4 h-4 text-white/60" /></button>
-                                            <button onClick={handleBackToday} className="px-2 text-[8px] font-black text-white/30 hover:text-blue-400 transition-colors">TODAY</button>
-                                            <button onClick={() => setWeekOffset(prev => prev + 1)} className="p-2 hover:bg-white/10 transition-colors"><Icon name="chevronRight" className="w-4 h-4 text-white/60" /></button>
+                        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-6 bg-black/70 backdrop-blur-xl" onClick={() => { setQueryStaff(null); setQueryVenue(null); }}>
+                            <div className="bg-[var(--bg-card)] border border-[var(--border-main)] w-full max-w-lg rounded-[2.5rem] shadow-2xl flex flex-col max-h-[85vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
+                                <div className="p-4 border-b border-[var(--border-light)] flex items-center justify-between bg-[var(--btn-staff)] text-[var(--text-main)]">
+                                    <div className="flex items-center gap-3"><button onClick={() => { setQueryStaff(null); setQueryVenue(null); }} className="w-8 h-8 rounded-full bg-[var(--border-light)] flex items-center justify-center text-2xl">×</button><h3 className="text-xl font-black italic" style={{color: queryVenue ? (queryVenue==='GT'?'var(--col-gt)':queryVenue==='BB'?'var(--col-bb)':'var(--col-gp)') : 'var(--text-main)'}}>{queryVenue ? `${queryVenue} Weekly` : (aliasMap[queryStaff] || queryStaff)}</h3></div>
+                                    <div className="flex gap-2">
+                                        <div className="flex items-center bg-[var(--border-light)] rounded-full overflow-hidden">
+                                            <button onClick={() => setWeekOffset(prev => Math.max(0, prev-1))} className="p-2 hover:bg-[var(--border-light)]"><Icon name="chevronLeft" /></button>
+                                            <button onClick={handleBackToday} className="px-2 text-[8px] font-black opacity-30">TODAY</button>
+                                            <button onClick={() => setWeekOffset(prev => prev + 1)} className="p-2 hover:bg-[var(--border-light)]"><Icon name="chevronRight" /></button>
                                         </div>
                                         <button onClick={() => { 
-                                            const text = queryVenue 
-                                                ? `${queryVenue} 週表:\n` + currentWeek.map(d => { const ds = schedule.roster[d.fullKey] || {GT:{},BB:{},GP:{}}, sA = Object.entries(ds[queryVenue]||{}).filter(([_,v])=>v.shift==='A').map(([n])=>aliasMap[n]||n).join('、')||'無', sB = Object.entries(ds[queryVenue]||{}).filter(([_,v])=>v.shift==='B').map(([n])=>aliasMap[n]||n).join('、')||'無'; return `${d.d}(${d.w}): 早[${sA}] 晚[${sB}]`; }).join('\n')
-                                                : `${aliasMap[queryStaff]||queryStaff} 個人週表:\n` + currentWeek.map(d => { const rawR = schedule.roster[d.fullKey] || {}, rawS = schedule.statuses[d.fullKey] || {}; let st = "辦公"; ['GT','BB','GP'].forEach(v => { if(rawR[v]?.[queryStaff]) st = `${v}-${rawR[v][queryStaff].shift}`; }); if(rawS[queryStaff]?.match(/休|例|休息/)) st = "休假"; return `${d.d}(${d.w}): ${st}`; }).join('\n');
-                                            navigator.clipboard.writeText(text); setToast("週表已複製"); setTimeout(()=>setToast(null), 2000);
-                                        }} className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center shadow-lg active:scale-90"><Icon name="copy" /></button>
+                                            const text = queryVenue ? `${queryVenue} 週表:\n` + currentWeek.map(d => { const ds = schedule.roster[d.fullKey] || {GT:{},BB:{},GP:{}}, sA = Object.entries(ds[queryVenue]||{}).filter(([_,v])=>v.shift==='A').map(([n])=>aliasMap[n]||n).join('、')||'無', sB = Object.entries(ds[queryVenue]||{}).filter(([_,v])=>v.shift==='B').map(([n])=>aliasMap[n]||n).join('、')||'無'; return `${d.d}(${d.w}): 早[${sA}] 晚[${sB}]`; }).join('\n') : `${aliasMap[queryStaff]||queryStaff} 個人週表:\n` + currentWeek.map(d => { const rawR = schedule.roster[d.fullKey] || {}, rawS = schedule.statuses[d.fullKey] || {}; let st = "辦公"; ['GT','BB','GP'].forEach(v => { if(rawR[v]?.[queryStaff]) st = `${v}-${rawR[v][queryStaff].shift}`; }); if(rawS[queryStaff]?.match(/休|例|休息/)) st = "休假"; return `${d.d}(${d.w}): ${st}`; }).join('\n');
+                                            navigator.clipboard.writeText(text); setToast("已複製"); setTimeout(()=>setToast(null), 2000);
+                                        }} className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center shadow-lg active:scale-90 text-white"><Icon name="copy" /></button>
                                     </div>
                                 </div>
-                                <div id={queryVenue ? "venue-scroll-container" : "staff-scroll-container"} className="flex-1 overflow-y-auto p-3 space-y-3 no-scrollbar scroll-smooth">
-                                    {currentWeek.map((d, i) => {
+                                <div id={queryVenue ? "venue-scroll-container" : "staff-scroll-container"} className="flex-1 overflow-y-auto p-3 space-y-3 no-scrollbar bg-[var(--bg-app)]">
+                                    {currentWeek.map(d => {
                                         const k = d.fullKey, isS = k === dates[dateIdx]?.fullKey, isW = d.w === '六' || d.w === '日';
-                                        if (queryVenue) return (
-                                            <div key={k} id={`modal-row-${k}`} className={`flex flex-col p-3 rounded-2xl border transition-all ${isS ? 'bg-blue-600/20 border-blue-500 shadow-xl' : 'bg-white/5 border-white/5'}`}>
-                                                <div className="mb-2 pb-2 border-b border-white/10">
-                                                    <p className="text-sm font-bold text-white/50 italic truncate">{schedule.shows[k]?.[queryVenue] || ""}</p>
-                                                </div>
-                                                <div className="flex items-start gap-4">
-                                                     <div className="flex flex-col leading-none w-12 shrink-0 border-r border-white/10 pr-2">
-                                                        <span className={`text-[9px] font-black uppercase mb-1 ${isW ? 'text-[#FFD1DC]' : 'opacity-40'}`}>週{d.w}</span>
-                                                        <span className={`text-lg font-bold ${isW ? 'text-[#FFD1DC]' : 'text-white'}`}>{d.d}</span>
-                                                    </div>
-                                                    <div className="flex-1 grid grid-cols-2 gap-2">
-                                                        {['A','B'].map(sh => (
-                                                            <div key={sh} className="bg-black/20 rounded-xl p-1 min-h-[40px] flex flex-col gap-1">
-                                                                {Object.entries(schedule.roster[k]?.[queryVenue]||{}).filter(([_,v])=>v.shift===sh).map(([n])=><StaffButton key={n} name={n} aliasMap={aliasMap} onClick={(s) => { setQueryVenue(null); setQueryStaff(s); }} mode="small" isBShift={sh === 'B'} showGlow={false} />)}
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        );
-                                        let st = "辦公", co = "#FF9500"; let hasShift = false;
-                                        ['GT','BB','GP'].forEach(v => { if (schedule.roster[k]?.[v]?.[queryStaff]) { st = `${v}-${schedule.roster[k][v][queryStaff].shift}`; co = schedule.roster[k][v][queryStaff].shift==='A' ? (v==='GP' ? '#32DE84' : "#5AC8FA") : "#FF2D55"; hasShift = true; } }); 
-                                        const rawS = schedule.statuses[k]?.[queryStaff] || "";
-                                        if (rawS.match(/辦公|其他|其它/)) { st = "辦公"; co = "#FF9500"; } 
-                                        else if (!hasShift && (rawS === "" || rawS.match(/休假|無排班|公假|婚假|喪假|病假|事假|特休|補休/))) { st = "休假"; co = "#8E8E93"; }
-                                        return (
-                                            <div key={k} id={`modal-row-${k}`} className={`flex items-center justify-between p-3 rounded-2xl border ${isS ? 'bg-blue-600/20 border-blue-500 shadow-xl' : 'bg-white/5 border-white/5'}`}>
-                                                <div className="flex flex-col leading-none text-left">
-                                                    <span className={`text-[9px] font-black ${isW ? 'text-[#FFD1DC]' : 'opacity-40'}`}>週{d.w}</span>
-                                                    <span className={`text-lg font-bold ${isW ? 'text-[#FFD1DC]' : 'text-white'}`}>{d.d}</span>
-                                                </div>
-                                                <span className={`text-lg font-black`} style={{ color: co }}>{st}</span>
-                                            </div>
-                                        );
+                                        if (queryVenue) return (<div key={k} id={`modal-row-${k}`} className={`flex flex-col p-3 rounded-2xl border transition-all ${isS ? 'bg-blue-600/10 border-blue-500 shadow-xl' : 'bg-[var(--bg-card)] border-[var(--border-light)]'}`}><div className="mb-2 pb-2 border-b border-[var(--border-light)]"><p className="text-sm font-black opacity-60 italic truncate text-[var(--text-main)]">{schedule.shows[k]?.[queryVenue] || ""}</p></div><div className="flex items-start gap-4"><div className="flex flex-col leading-none w-12 shrink-0 border-r border-[var(--border-light)] pr-2 text-[var(--text-main)]"><span className={`text-[9px] font-black uppercase mb-1 ${isW ? 'text-[var(--col-women)]' : 'opacity-40'}`}>週{d.w}</span><span className={`text-lg font-black ${isW ? 'text-[var(--col-women)]' : ''}`}>{d.d}</span></div><div className="flex-1 grid grid-cols-2 gap-2">{['A','B'].map(sh => (<div key={sh} className="bg-[var(--bg-card)] rounded-xl p-1 min-h-[40px] flex flex-col gap-1 border border-[var(--border-light)]">{Object.entries(schedule.roster[k]?.[queryVenue]||{}).filter(([_,v])=>v.shift===sh).map(([n])=><StaffButton key={n} name={n} aliasMap={aliasMap} onClick={(s) => { setQueryVenue(null); setQueryStaff(s); }} mode="small" isBShift={sh === 'B'} showGlow={false} />)}</div>))}</div></div></div>);
+                                        let st = "辦公", co = "#FF9500", hasShift = false;
+                                        ['GT','BB','GP'].forEach(v => { if (schedule.roster[k]?.[v]?.[queryStaff]) { st = `${v}-${schedule.roster[k][v][queryStaff].shift}`; co = schedule.roster[k][v][queryStaff].shift==='A' ? (v==='GP' ? '#006400' : "#0055FF") : "#D70015"; hasShift = true; } }); 
+                                        if (schedule.statuses[k]?.[queryStaff]?.match(/辦公|其他/)) { st = "辦公"; co = "#FF9500"; } else if (!hasShift && (schedule.statuses[k]?.[queryStaff] === "" || schedule.statuses[k]?.[queryStaff]?.match(/休|無排班|特休/))) { st = "休假"; co = "var(--text-dim)"; }
+                                        return (<div key={k} id={`modal-row-${k}`} className={`flex items-center justify-between p-3 rounded-2xl border ${isS ? 'bg-blue-600/10 border-blue-500 shadow-xl' : 'bg-[var(--bg-card)] border-[var(--border-light)]'}`}><div className="flex flex-col leading-none text-left text-[var(--text-main)]"><span className={`text-[9px] font-black ${isW ? 'text-[var(--col-women)]' : 'opacity-40'}`}>週{d.w}</span><span className={`text-lg font-black ${isW ? 'text-[var(--col-women)]' : ''}`}>{d.d}</span></div><span className="text-lg font-black" style={{ color: co }}>{st}</span></div>);
                                     })}
                                 </div>
                             </div>
