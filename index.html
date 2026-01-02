@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>視聽班表系統 | V5.2 High Contrast</title>
+    <title>視聽班表系統 | V5.0 Dual Theme</title>
 
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta id="theme-meta" name="theme-color" content="#000000">
-    <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22%E8%A6%96%E8%81%BD%E7%8F%AD%E8%A1%A8%E7%B3%BB%E7%B5%B1%22%2C%22short_name%22%3A%22%E8%A6%96%E8%81%BD%E7%8F%AD%E8%A1%A8%22%2C%22display%22%3A%22standalone%22%2C%22start_url%22%3A%22.%22%2C%22background_color%22%3A%22%23FFFFFF%22%2C%22theme_color%22%3A%22%23FFFFFF%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F2665%2F2665123.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%2C%22purpose%22%3A%22any%20maskable%22%7D%5D%7D" />
+    <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22%E8%A6%96%E8%81%BD%E7%8F%AD%E8%A1%A8%E7%B3%BB%E7%B5%B1%22%2C%22short_name%22%3A%22%E8%A6%96%E8%81%BD%E7%8F%AD%E8%A1%A8%22%2C%22display%22%3A%22standalone%22%2C%22start_url%22%3A%22.%22%2C%22background_color%22%3A%22%23000000%22%2C%22theme_color%22%3A%22%23000000%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F2665%2F2665123.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%2C%22purpose%22%3A%22any%20maskable%22%7D%5D%7D" />
 
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -20,6 +20,7 @@
         import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, doc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        
         window.Firebase = { initializeApp, getApps, getApp, getFirestore, doc, onSnapshot, getDoc, getAuth, signInAnonymously, onAuthStateChanged };
         window.isFirebaseReady = true;
     </script>
@@ -27,50 +28,73 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;400;700;900&family=Noto+Sans+TC:wght@100;400;700;900&display=swap');
         
+        /* 雙風格變數設定 */
         :root { 
-            --mac-blue: #0A84FF; --ios-red: #FF3B30;
-            --master-gt: #8B0000; --master-bb: #008B8B; --master-gp: #006400;
-            /* 暗色模式 (Dark) */
-            --bg-main: #000000; --bg-card: #121214; --bg-glass: rgba(18, 18, 20, 0.85);
-            --text-main: #FFFFFF; --text-dim: rgba(255,255,255,0.4);
-            --border-main: rgba(255,255,255,0.12); --border-light: rgba(255,255,255,0.05);
+            /* 黑夜模式 (Night) - 沿用原 V4.5 設定 */
+            --bg-main: #000000;
+            --bg-card: #121214;
+            --bg-glass: rgba(18, 18, 20, 0.85);
+            --text-main: #FFFFFF;
+            --text-dim: rgba(255,255,255,0.4);
+            --border-main: rgba(255,255,255,0.12);
+            --border-light: rgba(255,255,255,0.05);
             --btn-staff: rgba(255,255,255,0.06);
-            --women-text: #FFD6E0; --men-text: #E0F7FF; --special-text: #FFFFE0;
+            --orb-color: #0a183d;
+            --aura-op: 0.15;
+
+            /* 文字顏色變數 (不變) */
+            --mac-blue: #0A84FF; --ios-red: #FF3B30;
+            --vip-text: #FFFFFF; --women-text: #FFD6E0; --men-text: #E0F7FF; --special-text: #FFFFE0;
             --women-dot: #FF375F; --men-dot: #00FFFF; --special-dot: #FFD60A;
-            --orb-color: #0a183d; --aura-op: 0.15;
+            --master-gt: #8B0000; --master-bb: #008B8B; --master-gp: #006400; 
         }
 
         [data-theme='light'] {
-            /* 陽光下清晰模式 (Pure White) */
-            --bg-main: #FFFFFF; --bg-card: #F2F2F7; --bg-glass: rgba(255, 255, 255, 0.95);
-            --text-main: #000000; --text-dim: rgba(0,0,0,0.6);
-            --border-main: rgba(0,0,0,0.15); --border-light: rgba(0,0,0,0.08);
-            --btn-staff: #F2F2F7;
+            /* 白天模式 (Day) - 淺色系、白色系設計 */
+            --bg-main: #FFFFFF;
+            --bg-card: #F2F2F7;
+            --bg-glass: rgba(255, 255, 255, 0.9);
+            --text-main: #000000;
+            --text-dim: rgba(0,0,0,0.5);
+            --border-main: rgba(0,0,0,0.1);
+            --border-light: rgba(0,0,0,0.05);
+            --btn-staff: #E5E5EA;
+            --orb-color: #E5E5EA;
+            --aura-op: 0.05;
+
+            /* 白天模式下的特殊文字顏色微調 (增加對比度) */
             --women-text: #B00020; --men-text: #004A99; --special-text: #7A5C00;
-            --women-dot: #D70015; --men-dot: #0055FF; --special-dot: #A38000;
-            --orb-color: #E5E5EA; --aura-op: 0.05;
         }
 
-        body { font-family: 'Inter', 'Noto Sans TC', sans-serif; height: 100vh; overflow: hidden; background-color: var(--bg-main); color: var(--text-main); transition: all 0.2s ease; }
-        .aura-bg { position: fixed; inset: 0; background: radial-gradient(circle at 50% 50%, var(--orb-color) 0%, var(--bg-main) 100%); z-index: 0; }
+        body { font-family: 'Inter', 'Noto Sans TC', sans-serif; height: 100vh; overflow: hidden; background-color: var(--bg-main); color: var(--text-main); -webkit-font-smoothing: antialiased; transition: all 0.3s ease; }
+        .aura-bg { position: fixed; inset: 0; background: radial-gradient(circle at 50% 50%, var(--orb-color) 0%, var(--bg-main) 100%); z-index: 0; pointer-events: none; }
         .aura-orb { position: absolute; width: 700px; height: 700px; background: radial-gradient(circle, var(--mac-blue) 0%, transparent 70%); opacity: var(--aura-op); filter: blur(80px); animation: orb-move 25s infinite alternate ease-in-out; }
         @keyframes orb-move { 0% { transform: translate(-15%, -15%); } 100% { transform: translate(15%, 15%); } }
-        
-        .mac-glass { background: var(--bg-glass); backdrop-filter: blur(30px) saturate(180%); border-bottom: 0.5px solid var(--border-main); }
+        .mac-glass { background: var(--bg-glass); backdrop-filter: blur(40px) saturate(200%); border-bottom: 0.5px solid var(--border-main); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         
-        @keyframes note-breath { 0%, 100% { opacity: 1; } 50% { color: var(--ios-red); opacity: 0.8; } }
+        @keyframes note-breath {
+            0%, 100% { opacity: 1; }
+            50% { color: var(--ios-red); opacity: 0.7; }
+        }
         .note-active-text { animation: note-breath 3s infinite ease-in-out; }
 
         .b-shift-glow { animation: b-glow-strong 1.5s infinite alternate; border: 1.5px solid var(--text-main) !important; }
-        @keyframes b-glow-strong { 0% { box-shadow: 0 0 2px var(--text-dim); } 100% { box-shadow: 0 0 12px var(--mac-blue); } }
+        @keyframes b-glow-strong { 0% { box-shadow: 0 0 2px rgba(255,255,255,0.4); } 100% { box-shadow: 0 0 15px var(--mac-blue); } }
 
         .vip-1-text-breath { animation: vip-text-pulse 1.8s infinite alternate ease-in-out; font-weight: 900 !important; }
-        @keyframes vip-text-pulse { 0% { text-shadow: 0 0 4px var(--text-dim); } 100% { text-shadow: 0 0 10px var(--mac-blue); } }
+        @keyframes vip-text-pulse {
+            0% { text-shadow: 0 0 4px var(--border-main); filter: brightness(1); }
+            100% { text-shadow: 0 0 8px var(--text-main), 0 0 15px var(--mac-blue); filter: brightness(1.3); }
+        }
 
+        .marquee-wrapper { overflow: hidden; white-space: nowrap; position: relative; width: 100%; display: flex; justify-content: center; }
+        .marquee-active { animation: marquee 15s linear infinite; display: inline-block; padding-left: 100%; }
+        @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
         .master-sticky-col { position: sticky; left: 0; z-index: 30; background-color: var(--bg-card); min-width: 75px; border-right: 1.5px solid var(--border-main); }
+        .unlock-glow-container { position: relative; width: 340px; height: 400px; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 60; }
         .core-pulse { animation: pulse-blue 2s infinite; }
-        @keyframes pulse-blue { 0%, 100% { transform: scale(0.95); opacity: 0.5; } 50% { transform: scale(1.05); opacity: 0.8; } }
+        @keyframes pulse-blue { 0% { transform: scale(0.95); opacity: 0.5; } 50% { transform: scale(1.05); opacity: 0.8; } 100% { transform: scale(0.95); opacity: 0.5; } }
     </style>
 </head>
 <body data-theme="dark">
@@ -81,7 +105,15 @@
 
         const FIREBASE_CONFIG = { apiKey: "AIzaSyAx2aYlfqHBUe3V7a3sT5ZPVNYyr2JY8OA", authDomain: "tpac-schedule.firebaseapp.com", projectId: "tpac-schedule", storageBucket: "tpac-schedule.firebasestorage.app", messagingSenderId: "70955835780", appId: "1:70955835780:web:9d3b0958738557d1f7fdd1" };
         const STAFF_ORDER = ["王志剛", "張國飛", "張劭如", "謝祥玄", "張懷德", "楊淯舒", "黎祐甄", "廖俊龍", "曾健洋", "劉智敏"];
-        const STAFF_INFO = { "廖俊龍": { type: "Normal", gender: "M", vipTag: "VIP1" }, "張劭如": { type: "Normal", gender: "F" }, "楊淯舒": { type: "Normal", gender: "F" }, "黎祐甄": { type: "Normal", gender: "F" }, "劉智敏": { type: "Special", gender: "M" }, "曾健洋": { type: "Special", gender: "M" }, "王志剛": { type: "Normal", gender: "M" }, "張國飛": { type: "Normal", gender: "M" }, "張懷德": { type: "Normal", gender: "M" }, "謝祥玄": { type: "Normal", gender: "M" } };
+        const STAFF_INFO = { 
+            "廖俊龍": { type: "Normal", gender: "M", vipTag: "VIP1" }, 
+            "張劭如": { type: "Normal", gender: "F" }, 
+            "楊淯舒": { type: "Normal", gender: "F" }, "黎祐甄": { type: "Normal", gender: "F" }, 
+            "劉智敏": { type: "Special", gender: "M" }, 
+            "曾健洋": { type: "Special", gender: "M" }, 
+            "王志剛": { type: "Normal", gender: "M" }, "張國飛": { type: "Normal", gender: "M" }, 
+            "張懷德": { type: "Normal", gender: "M" }, "謝祥玄": { type: "Normal", gender: "M" } 
+        };
 
         const formatK = (d) => `${d.getFullYear()}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getDate().toString().padStart(2,'0')}`;
         const getMonK = (s) => { const d = new Date(s), day = d.getDay(), diff = d.getDate() - day + (day === 0 ? -6 : 1); return formatK(new Date(d.setDate(diff))); };
@@ -106,12 +138,14 @@
             const info = STAFF_INFO[name] || { gender: 'M' };
             const disp = forceName || aliasMap[name] || name;
             const isALong = name === "廖俊龍";
+            const vipClass = info.vipTag === "VIP1" ? "vip-1-text-breath" : "";
             const colorClass = info?.type === "Special" ? "text-[var(--special-text)]" : info?.gender === "F" ? "text-[var(--women-text)]" : "text-[var(--men-text)]";
             const dotClass = info?.type === "Special" ? "bg-[var(--special-dot)]" : info?.gender === "F" ? "bg-[var(--women-dot)]" : "bg-[var(--men-dot)]";
             const fontSize = mode === "tiny" ? "text-[14px]" : (mode === "small" ? (isALong ? "text-[14px]" : "text-[18px]") : (mode === "master" ? "text-[16px]" : (isALong ? "text-[22px]" : "text-[26px]")));
             const btnClass = `${mode === "small" || mode === "master" ? 'h-8' : 'h-10'} ${fontSize} rounded-[0.6rem] ${(isBShift && showGlow) ? 'b-shift-glow' : ''}`;
+
             return (
-                <button onClick={(e) => { e.stopPropagation(); if(onClick) onClick(name); }} className={`w-full ${btnClass} font-bold tracking-tight border border-[var(--border-light)] bg-[var(--btn-staff)] flex items-center justify-center gap-1 shadow-sm ${colorClass} leading-none truncate shrink-0 active:scale-95 transition-all`}>
+                <button onClick={(e) => { e.stopPropagation(); if(onClick) onClick(name); }} className={`w-full ${btnClass} ${vipClass} font-black tracking-tight border border-[var(--border-light)] bg-[var(--btn-staff)] flex items-center justify-center gap-1 shadow-sm ${colorClass} leading-none truncate shrink-0 active:scale-95 transition-all`}>
                     <span className={`w-1 h-1 rounded-full ${dotClass} shadow-[0_0_5px_currentColor]`}></span>{disp}
                 </button>
             );
@@ -124,12 +158,12 @@
             const [aliasMap, setAliasMap] = useState({}), [queryStaff, setQueryStaff] = useState(null), [queryVenue, setQueryVenue] = useState(null);
             const [showMasterModal, setShowMasterModal] = useState(false);
             const [toast, setToast] = useState(null), [diag, setDiag] = useState("正在同步中...");
-            const [theme, setTheme] = useState(localStorage.getItem('user-theme') || 'dark');
+            const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
 
             const toggleTheme = () => {
-                const nt = theme === 'dark' ? 'light' : 'dark';
-                setTheme(nt);
-                localStorage.setItem('user-theme', nt);
+                const newTheme = theme === 'dark' ? 'light' : 'dark';
+                setTheme(newTheme);
+                localStorage.setItem('theme', newTheme);
             };
 
             useEffect(() => {
@@ -140,7 +174,8 @@
             const handleBackToday = useCallback(() => {
                 const now = new Date(), tK = formatK(now), idx = dates.findIndex(d => d.fullKey === tK); 
                 if(idx!==-1) {
-                    setDateIdx(idx); const mK = getMonK(dates[0].fullKey), tMon = getMonK(tK); 
+                    setDateIdx(idx); 
+                    const mK = getMonK(dates[0].fullKey), tMon = getMonK(tK); 
                     setWeekOffset(Math.max(0, Math.floor((new Date(tMon)-new Date(mK))/(7*24*60*60*1000))));
                 } 
             }, [dates]);
@@ -173,9 +208,14 @@
                         const keys = Object.keys(roster).sort();
                         const sd = keys.map(k => { const d = new Date(k); return { d: `${d.getMonth()+1}/${d.getDate()}`, w: ['日','一','二','三','四','五','六'][d.getDay()], fullKey: k }; });
                         setSchedule({ roster, statuses: JSON.parse(data.statuses || '{}'), shows: JSON.parse(data.shows || '{}'), notes: JSON.parse(data.notes || '{}'), updated: data.lastUpdated });
-                        setDates(sd); setDiag("CONNECTED"); setIsUnlocked(true); 
-                        const tK = formatK(new Date()), m = keys.indexOf(tK);
-                        if (m !== -1) { setDateIdx(m); const d1 = new Date(getMonK(keys[0])), dt = new Date(getMonK(tK)); setWeekOffset(Math.max(0, Math.floor((dt - d1) / (7*24*60*60*1000)))); }
+                        setDates(sd); setDiag("CONNECTED");
+                        setIsUnlocked(true); 
+                        const tK = formatK(new Date()), match = keys.indexOf(tK);
+                        if (match !== -1) { 
+                            setDateIdx(match); 
+                            const d1 = new Date(getMonK(keys[0])), dt = new Date(getMonK(tK)); 
+                            setWeekOffset(Math.max(0, Math.floor((dt - d1) / (7*24*60*60*1000)))); 
+                        }
                     }
                 });
             }, [user]);
@@ -186,8 +226,14 @@
                     const el = document.getElementById(`modal-row-${fullKey}`);
                     if (containerId === "master-scroll-container") {
                          const col = document.getElementById(`master-col-${fullKey}`);
-                         if (col && container) { const left = col.offsetLeft - (container.offsetWidth / 2) + (col.offsetWidth / 2); container.scrollTo({ left, behavior: 'smooth' }); }
-                    } else if (el && container) { const top = el.offsetTop - (container.offsetHeight / 2) + (el.offsetHeight / 2); container.scrollTo({ top, behavior: 'smooth' }); }
+                         if (col && container) {
+                             const left = col.offsetLeft - (container.offsetWidth / 2) + (col.offsetWidth / 2);
+                             container.scrollTo({ left, behavior: 'smooth' });
+                         }
+                    } else if (el && container) {
+                        const top = el.offsetTop - (container.offsetHeight / 2) + (el.offsetHeight / 2); 
+                        container.scrollTo({ top, behavior: 'smooth' }); 
+                    }
                 }, 300);
             }, []);
 
@@ -198,7 +244,10 @@
             const currentWeek = useMemo(() => {
                 if (!dates.length) return [];
                 const anchor = new Date(getMonK(dates[0].fullKey)); anchor.setDate(anchor.getDate() + (weekOffset*7));
-                return Array.from({length:7}, (_, i) => { const c = new Date(anchor); c.setDate(c.getDate() + i); const k = formatK(c); return dates.find(d => d.fullKey === k) || { d: `${c.getMonth()+1}/${c.getDate()}`, w: ['日','一','二','三','四','五','六'][c.getDay()], fullKey: k, isPlaceholder: true }; });
+                return Array.from({length:7}, (_, i) => {
+                    const c = new Date(anchor); c.setDate(c.getDate() + i); const k = formatK(c);
+                    return dates.find(d => d.fullKey === k) || { d: `${c.getMonth()+1}/${c.getDate()}`, w: ['日','一','二','三','四','五','六'][c.getDay()], fullKey: k, isPlaceholder: true };
+                });
             }, [dates, weekOffset]);
 
             const dData = useMemo(() => {
@@ -206,7 +255,9 @@
                 const res = { s: { GT:{A:[],B:[]}, BB:{A:[],B:[]}, GP:{A:[],B:[]}, "辦公":[], "休假":[] } };
                 const rawR = schedule.roster[d.fullKey] || {}, rawS = schedule.statuses[d.fullKey] || {};
                 const hasShift = new Set();
-                ['GT','BB','GP'].forEach(v => Object.entries(rawR[v]||{}).forEach(([n,val]) => { if(res.s[v][val.shift]) { res.s[v][val.shift].push(n); hasShift.add(n); } }));
+                ['GT','BB','GP'].forEach(v => Object.entries(rawR[v]||{}).forEach(([n,val]) => { 
+                    if(res.s[v][val.shift]) { res.s[v][val.shift].push(n); hasShift.add(n); }
+                }));
                 STAFF_ORDER.forEach(n => {
                     const code = rawS[n] || "";
                     if (code.match(/辦公|其他|其它/)) res.s["辦公"].push(n);
@@ -222,7 +273,13 @@
                 <div className="h-screen flex items-center justify-center bg-black overflow-hidden relative">
                     <div className="aura-bg"></div>
                     <div className="unlock-glow-container text-white">
-                        <div className="mb-8 relative"><div className="absolute inset-0 bg-blue-500/20 blur-3xl rounded-full core-pulse"></div><div className="w-32 h-32 border border-white/10 rounded-full flex items-center justify-center relative shadow-inner"><div className="absolute inset-2 border border-blue-500/30 rounded-full animate-spin" style={{animationDuration:'3s', borderTopColor: 'transparent'}}></div><Icon name="cloud" className="w-12 h-12 text-blue-500" /></div></div>
+                        <div className="mb-8 relative">
+                            <div className="absolute inset-0 bg-blue-500/20 blur-3xl rounded-full core-pulse"></div>
+                            <div className="w-32 h-32 border border-white/10 rounded-full flex items-center justify-center relative shadow-inner">
+                                <div className="absolute inset-2 border border-blue-500/30 rounded-full animate-spin" style={{animationDuration:'3s', borderTopColor: 'transparent'}}></div>
+                                <Icon name="cloud" className="w-12 h-12 text-blue-500" />
+                            </div>
+                        </div>
                         <h2 className="text-2xl font-black uppercase tracking-widest italic mb-2">Connecting</h2>
                         <p className="text-[10px] font-bold text-blue-500 uppercase tracking-widest opacity-60 animate-pulse">{diag}</p>
                     </div>
@@ -230,20 +287,24 @@
             );
 
             return (
-                <div className="h-screen flex flex-col overflow-hidden relative transition-colors duration-200">
+                <div className="h-screen flex flex-col overflow-hidden relative transition-colors duration-300">
                     <div className="aura-bg"><div className="aura-orb"></div><div className="aura-orb" style={{right:0, bottom:0, animationDelay: '-12s'}}></div></div>
-                    {toast && <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[1000] bg-[var(--bg-card)] backdrop-blur border border-[var(--border-main)] px-6 py-2 rounded-full text-xs font-bold flex items-center gap-2 animate-bounce shadow-xl"><Icon name="check" className="text-green-500 w-3 h-3" /> {toast}</div>}
+                    {toast && <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[1000] bg-[var(--bg-card)] backdrop-blur border border-[var(--border-main)] px-6 py-2 rounded-full text-xs font-black flex items-center gap-2 animate-bounce shadow-xl"><Icon name="check" className="text-green-500 w-3 h-3" /> {toast}</div>}
 
                     <header className="mac-glass pt-10 pb-3 px-4 flex items-center justify-between shrink-0 z-50">
                         <button onClick={handleBackToday} className="bg-blue-600 px-4 h-7 rounded-full text-[10px] font-black uppercase shadow-lg text-white active:scale-95 transition-all">Today</button>
-                        <div className="flex items-center gap-2 cursor-pointer group" onClick={() => setShowMasterModal(true)}><h1 className="text-xl font-black tracking-widest uppercase italic group-hover:text-[var(--mac-blue)] transition-colors">視聽班表系統</h1></div>
+                        
+                        <div className="flex items-center gap-2 cursor-pointer group" onClick={() => setShowMasterModal(true)}>
+                            <h1 className="text-xl font-black tracking-widest uppercase italic group-hover:text-[var(--mac-blue)] transition-colors">視聽班表系統</h1>
+                        </div>
+                        
                         <div className="flex gap-2">
                             <button onClick={toggleTheme} className="h-7 w-7 rounded-full bg-[var(--btn-staff)] border border-[var(--border-main)] flex items-center justify-center active:scale-90 transition-all text-[var(--text-main)]"><Icon name={theme === 'dark' ? 'sun' : 'moon'} className="w-3 h-3" /></button>
                             <button onClick={()=>window.location.reload()} className="h-7 w-7 rounded-full bg-[var(--btn-staff)] border border-[var(--border-main)] flex items-center justify-center active:scale-90 transition-all text-[var(--text-main)]"><Icon name="refresh" className="w-3 h-3" /></button>
                         </div>
                     </header>
 
-                    <main className="flex-1 overflow-y-auto px-2 py-3 no-scrollbar pb-24 z-10">
+                    <main className="flex-1 overflow-y-auto px-2 py-3 no-scrollbar pb-24 z-10 text-left">
                         <div className="mac-glass sticky top-0 -mx-2 px-2 py-2 flex flex-col mb-4 z-20 shadow-xl overflow-hidden">
                             <div className="flex items-center justify-between mb-2 px-1">
                                 <button onClick={() => setWeekOffset(prev => Math.max(0, prev-1))} className="text-[var(--text-dim)] hover:text-[var(--text-main)] p-2 text-xs">◀ 上週</button>
@@ -254,10 +315,16 @@
                                 {currentWeek.map(d => {
                                     const realIdx = dates.findIndex(ad => ad.fullKey === d.fullKey);
                                     const active = dateIdx === realIdx, isW = d.w === '六' || d.w === '日', isDisabled = realIdx === -1;
+                                    const isUnselectedWeekday = !active && !isW;
                                     return (
                                         <button key={d.fullKey} disabled={isDisabled} onClick={()=>setDateIdx(realIdx)} 
                                             className={`flex-1 min-w-[45px] py-2 rounded-xl transition-all flex flex-col items-center justify-center border-2 
-                                            ${active ? 'border-blue-500 bg-blue-500/10 shadow-[0_0_10px_rgba(10,132,255,0.4)]' : (!active && !isW ? 'border-transparent bg-[var(--btn-staff)] opacity-40' : 'border-transparent bg-[var(--btn-staff)]')} ${isDisabled ? 'opacity-20' : ''}`}>
+                                            ${active 
+                                                ? 'border-blue-500 bg-blue-500/10 shadow-[0_0_10px_rgba(10,132,255,0.4)]' 
+                                                : (isUnselectedWeekday ? 'border-transparent bg-[var(--btn-staff)] opacity-40' : 'border-transparent bg-[var(--btn-staff)]')
+                                            } 
+                                            ${isDisabled ? 'opacity-20' : ''}`}
+                                        >
                                             <span className={`text-[9px] font-black uppercase ${isW ? 'text-[var(--women-dot)]' : 'text-[var(--text-dim)]'}`}>週{d.w}</span>
                                             <span className={`text-base font-black leading-none ${active ? 'text-[var(--mac-blue)]' : isW ? 'text-[var(--women-dot)]' : 'text-[var(--text-main)]'}`}>{d.d}</span>
                                         </button>
@@ -281,10 +348,10 @@
                                     <div key={v} className="bg-[var(--bg-card)] rounded-[1.5rem] overflow-hidden flex flex-col shadow-sm border border-[var(--border-main)] transition-all">
                                         <button onClick={() => setQueryVenue(v)} className="py-2 font-black text-xl bg-[var(--btn-staff)] active:opacity-50" style={{color: vColor}}>{v}</button>
                                         <div className="px-1 py-1 min-h-[30px] flex items-center justify-center border-b border-[var(--border-light)] bg-[var(--bg-main)] opacity-70 text-center overflow-hidden">
-                                            <div className="marquee-wrapper"><p className={`text-[13px] font-bold italic text-[var(--text-main)] ${schedule.shows?.[dates[dateIdx]?.fullKey]?.[v]?.length > 8 ? 'marquee-active' : ''}`}>{schedule.shows?.[dates[dateIdx]?.fullKey]?.[v]||""}</p></div>
+                                            <div className="marquee-wrapper"><p className={`text-[13px] font-black italic text-[var(--text-main)] ${schedule.shows?.[dates[dateIdx]?.fullKey]?.[v]?.length > 8 ? 'marquee-active' : ''}`}>{schedule.shows?.[dates[dateIdx]?.fullKey]?.[v]||""}</p></div>
                                         </div>
                                         <div className="p-1 space-y-1">
-                                            {['A','B'].map(sh=>(<div key={sh} className="bg-[var(--bg-main)] rounded-[1.2rem] p-1 flex flex-col gap-1 min-h-[60px] border border-[var(--border-light)]">{dData?.s[v][sh].map(n=><StaffButton key={n} name={n} aliasMap={aliasMap} mode="small" onClick={setQueryStaff} isBShift={sh === 'B'} showGlow={false} />)}</div>))}
+                                            {['A','B'].map(shift=>(<div key={shift} className="bg-[var(--bg-main)] rounded-[1.2rem] p-1 flex flex-col gap-1 min-h-[60px] border border-[var(--border-light)]">{dData?.s[v][shift].map(n=><StaffButton key={n} name={n} aliasMap={aliasMap} mode="small" onClick={setQueryStaff} isBShift={shift === 'B'} showGlow={false} />)}</div>))}
                                         </div>
                                     </div>
                                 );
@@ -305,8 +372,8 @@
                     {showMasterModal && (
                         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-2 bg-black/60 backdrop-blur-xl" onClick={() => setShowMasterModal(false)}>
                             <div className="bg-[var(--bg-card)] border border-[var(--border-main)] w-full max-w-4xl rounded-[2rem] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
-                                <div className="p-4 border-b border-[var(--border-main)] flex items-center justify-between bg-[var(--btn-staff)]">
-                                    <div className="flex items-center gap-4"><button onClick={() => setShowMasterModal(false)} className="w-8 h-8 rounded-full bg-[var(--border-main)] flex items-center justify-center text-xl shrink-0 text-[var(--text-main)]">×</button><h3 className="text-lg font-black uppercase italic text-[var(--text-main)]">Master Roster</h3></div>
+                                <div className="p-4 border-b border-[var(--border-main)] flex items-center justify-between bg-[var(--btn-staff)] text-[var(--text-main)]">
+                                    <div className="flex items-center gap-4"><button onClick={() => setShowMasterModal(false)} className="w-8 h-8 rounded-full bg-[var(--border-main)] flex items-center justify-center text-xl shrink-0">×</button><h3 className="text-lg font-black uppercase italic">Master Roster</h3></div>
                                     <div className="flex items-center gap-1 bg-[var(--border-light)] rounded-full px-1.5 py-1">
                                         <button onClick={() => setWeekOffset(prev => Math.max(0, prev-1))} className="p-1 text-[var(--text-dim)] hover:text-[var(--text-main)]"><Icon name="chevronLeft" className="w-4 h-4" /></button>
                                         <button onClick={handleBackToday} className="text-[9px] text-[var(--text-dim)] hover:text-[var(--mac-blue)] font-black uppercase px-1">Today</button>
@@ -319,7 +386,7 @@
                                             <div className="master-sticky-col p-2 text-[9px] font-black opacity-30 uppercase text-center flex items-center justify-center border-b border-[var(--border-main)] text-[var(--text-main)]">STAFF</div>
                                             {currentWeek.map(d => {
                                                 const isToday = d.fullKey === dates[dateIdx]?.fullKey, isW = d.w === '六' || d.w === '日';
-                                                return (<div key={d.fullKey} id={`master-col-${d.fullKey}`} className={`min-w-[75px] flex-1 p-2 text-center border-l border-[var(--border-light)] ${isToday ? 'bg-blue-500/10' : ''}`}><div className={`text-[8px] uppercase ${isW ? 'text-[var(--women-dot)]' : 'opacity-40'}`}>週{d.w}</div><div className={`text-[13px] font-bold ${isW ? 'text-[var(--women-dot)]' : 'text-[var(--text-main)]'}`}>{d.d}</div>{isToday && <div className="h-2 w-2 bg-cyan-400 rounded-full mx-auto mt-1 shadow-[0_0_10px_cyan] animate-pulse"></div>}</div>);
+                                                return (<div key={d.fullKey} id={`master-col-${d.fullKey}`} className={`min-w-[75px] flex-1 p-2 text-center border-l border-[var(--border-light)] ${isToday ? 'bg-blue-500/10' : ''}`}><div className={`text-[8px] uppercase ${isW ? 'text-[var(--women-dot)]' : 'opacity-40'}`}>週{d.w}</div><div className={`text-[13px] font-black ${isW ? 'text-[var(--women-dot)]' : 'text-[var(--text-main)]'}`}>{d.d}</div>{isToday && <div className="h-2 w-2 bg-cyan-400 rounded-full mx-auto mt-1 shadow-[0_0_10px_cyan] animate-pulse"></div>}</div>);
                                             })}
                                         </div>
                                         {STAFF_ORDER.map((staff, sIdx) => (
@@ -327,9 +394,9 @@
                                                 <div className="master-sticky-col py-2 px-1 flex items-center bg-[var(--bg-card)]"><StaffButton name={staff} aliasMap={aliasMap} mode="master" forceName={staff === "廖俊龍" ? "阿龍" : null} onClick={(s) => { setShowMasterModal(false); setQueryStaff(s); }} /></div>
                                                 {currentWeek.map(d => {
                                                     const dk = d.fullKey; let label = "—", cls = "opacity-10"; let hasShift = false;
-                                                    ['GT','BB','GP'].forEach(v => { if (schedule.roster[dk]?.[v]?.[staff]) { const shift = schedule.roster[dk][v][staff].shift; const isB = shift === 'B', baseColor = v === 'GT' ? 'var(--master-gt)' : v === 'BB' ? 'var(--master-bb)' : 'var(--master-gp)'; label = `${v}-${shift}`; cls = `bg-[${baseColor}] bg-opacity-20 text-[var(--text-main)] font-normal text-[13px] shadow-sm ${isB ? 'b-shift-glow' : ''}`; hasShift = true; } });
+                                                    ['GT','BB','GP'].forEach(v => { if (schedule.roster[dk]?.[v]?.[staff]) { const shift = schedule.roster[dk][v][staff].shift; const isB = shift === 'B', baseColor = v === 'GT' ? 'var(--master-gt)' : v === 'BB' ? 'var(--master-bb)' : 'var(--master-gp)'; label = `${v}-${shift}`; cls = `bg-[${baseColor}] bg-opacity-20 text-[var(--text-main)] font-black text-[13px] shadow-sm ${isB ? 'b-shift-glow' : ''}`; hasShift = true; } });
                                                     const st = schedule.statuses[dk]?.[staff] || "";
-                                                    if (st.match(/辦公|其他|其它/)) { label = "辦"; cls = "bg-orange-500/20 text-orange-600 font-bold text-[16px]"; } else if (!hasShift && (st === "" || st.match(/休假|無排班|公假|婚假|喪假|病假|事假|特休|補休/))) { label = "休"; cls = "bg-[var(--border-light)] text-[var(--text-dim)] font-thin text-[16px]"; }
+                                                    if (st.match(/辦公|其他|其它/)) { label = "辦"; cls = "bg-orange-500/20 text-orange-600 font-black text-[16px]"; } else if (!hasShift && (st === "" || st.match(/休假|無排班|公假|婚假|喪假|病假|事假|特休|補休/))) { label = "休"; cls = "bg-[var(--border-light)] text-[var(--text-dim)] font-black text-[16px]"; }
                                                     return (<div key={dk} className={`min-w-[75px] flex-1 p-1 flex items-center justify-center border-l border-[var(--border-light)] ${dk === dates[dateIdx]?.fullKey ? 'bg-blue-500/5' : ''}`}><div className={`w-full h-9 flex items-center justify-center rounded-md ${cls}`}>{label}</div></div>);
                                                 })}
                                             </div>
@@ -360,12 +427,12 @@
                                 <div id={queryVenue ? "venue-scroll-container" : "staff-scroll-container"} className="flex-1 overflow-y-auto p-3 space-y-3 no-scrollbar scroll-smooth bg-[var(--bg-main)]">
                                     {currentWeek.map(d => {
                                         const k = d.fullKey, isS = k === dates[dateIdx]?.fullKey, isW = d.w === '六' || d.w === '日';
-                                        if (queryVenue) return (<div key={k} id={`modal-row-${k}`} className={`flex flex-col p-3 rounded-2xl border transition-all ${isS ? 'bg-blue-600/10 border-blue-500 shadow-xl' : 'bg-[var(--bg-card)] border-[var(--border-light)]'}`}><div className="mb-2 pb-2 border-b border-[var(--border-light)]"><p className="text-sm font-bold opacity-60 italic truncate text-[var(--text-main)]">{schedule.shows[k]?.[queryVenue] || ""}</p></div><div className="flex items-start gap-4"><div className="flex flex-col leading-none w-12 shrink-0 border-r border-[var(--border-light)] pr-2"><span className={`text-[9px] font-black uppercase mb-1 ${isW ? 'text-[var(--women-dot)]' : 'opacity-40'}`}>週{d.w}</span><span className={`text-lg font-bold ${isW ? 'text-[var(--women-dot)]' : 'text-[var(--text-main)]'}`}>{d.d}</span></div><div className="flex-1 grid grid-cols-2 gap-2">{['A','B'].map(sh => (<div key={sh} className="bg-[var(--bg-card)] rounded-xl p-1 min-h-[40px] flex flex-col gap-1 border border-[var(--border-light)]">{Object.entries(schedule.roster[k]?.[queryVenue]||{}).filter(([_,v])=>v.shift===sh).map(([n])=><StaffButton key={n} name={n} aliasMap={aliasMap} onClick={(s) => { setQueryVenue(null); setQueryStaff(s); }} mode="small" isBShift={sh === 'B'} showGlow={false} />)}</div>))}</div></div></div>);
+                                        if (queryVenue) return (<div key={k} id={`modal-row-${k}`} className={`flex flex-col p-3 rounded-2xl border transition-all ${isS ? 'bg-blue-600/10 border-blue-500 shadow-xl' : 'bg-[var(--bg-card)] border-[var(--border-light)]'}`}><div className="mb-2 pb-2 border-b border-[var(--border-light)]"><p className="text-sm font-black opacity-60 italic truncate text-[var(--text-main)]">{schedule.shows[k]?.[queryVenue] || ""}</p></div><div className="flex items-start gap-4"><div className="flex flex-col leading-none w-12 shrink-0 border-r border-[var(--border-light)] pr-2"><span className={`text-[9px] font-black uppercase mb-1 ${isW ? 'text-[var(--women-dot)]' : 'opacity-40'}`}>週{d.w}</span><span className={`text-lg font-black ${isW ? 'text-[var(--women-dot)]' : 'text-[var(--text-main)]'}`}>{d.d}</span></div><div className="flex-1 grid grid-cols-2 gap-2">{['A','B'].map(sh => (<div key={sh} className="bg-[var(--bg-card)] rounded-xl p-1 min-h-[40px] flex flex-col gap-1 border border-[var(--border-light)]">{Object.entries(schedule.roster[k]?.[queryVenue]||{}).filter(([_,v])=>v.shift===sh).map(([n])=><StaffButton key={n} name={n} aliasMap={aliasMap} onClick={(s) => { setQueryVenue(null); setQueryStaff(s); }} mode="small" isBShift={sh === 'B'} showGlow={false} />)}</div>))}</div></div></div>);
                                         let st = "辦公", co = "#FF9500", hasShift = false;
                                         ['GT','BB','GP'].forEach(v => { if (schedule.roster[k]?.[v]?.[queryStaff]) { st = `${v}-${schedule.roster[k][v][queryStaff].shift}`; co = schedule.roster[k][v][queryStaff].shift==='A' ? (v==='GP' ? '#006400' : "#0055FF") : "#D70015"; hasShift = true; } }); 
                                         const rawS = schedule.statuses[k]?.[queryStaff] || "";
                                         if (rawS.match(/辦公|其他|其它/)) { st = "辦公"; co = "#FF9500"; } else if (!hasShift && (rawS === "" || rawS.match(/休|無排班|公假|特休/))) { st = "休假"; co = "var(--text-dim)"; }
-                                        return (<div key={k} id={`modal-row-${k}`} className={`flex items-center justify-between p-3 rounded-2xl border ${isS ? 'bg-blue-600/10 border-blue-500 shadow-xl' : 'bg-[var(--bg-card)] border-[var(--border-light)]'}`}><div className="flex flex-col leading-none text-left"><span className={`text-[9px] font-black ${isW ? 'text-[var(--women-dot)]' : 'opacity-40'}`}>週{d.w}</span><span className={`text-lg font-bold ${isW ? 'text-[var(--women-dot)]' : 'text-[var(--text-main)]'}`}>{d.d}</span></div><span className="text-lg font-black" style={{ color: co }}>{st}</span></div>);
+                                        return (<div key={k} id={`modal-row-${k}`} className={`flex items-center justify-between p-3 rounded-2xl border ${isS ? 'bg-blue-600/10 border-blue-500 shadow-xl' : 'bg-[var(--btn-staff)] border-[var(--border-light)]'}`}><div className="flex flex-col leading-none text-left"><span className={`text-[9px] font-black ${isW ? 'text-[var(--women-dot)]' : 'opacity-40'}`}>週{d.w}</span><span className={`text-lg font-black ${isW ? 'text-[var(--women-dot)]' : 'text-[var(--text-main)]'}`}>{d.d}</span></div><span className="text-lg font-black" style={{ color: co }}>{st}</span></div>);
                                     })}
                                 </div>
                             </div>
@@ -374,7 +441,8 @@
                 </div>
             );
         };
-        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </body>
 </html>
