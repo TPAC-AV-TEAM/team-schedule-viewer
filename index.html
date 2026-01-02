@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>視聽班表系統 | V6.3 Borderless B-Shift</title>
+    <title>視聽班表系統 | V6.4 Border-Fix</title>
 
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -37,7 +37,8 @@
         .mac-glass { background: rgba(44, 44, 46, 0.9); backdrop-filter: blur(40px) saturate(200%); border-bottom: 0.5px solid rgba(255,255,255,0.15); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         
-        .b-shift-glow { animation: b-glow-adaptive 1.5s infinite alternate; border: 1.5px solid #FFFFFF !important; }
+        /* 修正：移除了 border 強制屬性，交由 React 動態控制 */
+        .b-shift-glow { animation: b-glow-adaptive 1.5s infinite alternate; }
         
         @keyframes b-glow-adaptive {
             0% { box-shadow: 0 0 2px rgba(255,255,255,0.4); }
@@ -104,6 +105,7 @@
         const Icon = memo(({ name, className = "w-4 h-4" }) => {
             const icons = {
                 refresh: <React.Fragment><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" /><path d="M16 21h5v-5" /></React.Fragment>,
+                check: <path d="M20 6 9 17l-5-5" />,
                 info: <React.Fragment><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></React.Fragment>,
                 sun: <path d="M12 2v2m0 16v2m10-10h-2M4 12H2m15.364-7.364l-1.414 1.414M7.05 16.95l-1.414 1.414M16.95 16.95l1.414 1.414M5.636 5.636l1.414 1.414M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z" />,
                 briefcase: <React.Fragment><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></React.Fragment>,
@@ -121,8 +123,16 @@
             const dotClass = info?.type === "Special" ? "bg-[var(--special-dot)]" : info?.gender === "F" ? "bg-[var(--women-dot)]" : "bg-[var(--men-dot)]";
             const fontSize = mode === "tiny" ? "text-[14px]" : (mode === "small" ? (isALong ? "text-[14px]" : "text-[18px]") : (mode === "master" ? "text-[16px]" : (isALong ? "text-[22px]" : "text-[26px]")));
             
-            // 修正：首頁場館卡片與廳院週表內，B 班人名按鈕拿掉實體外框，僅保留呼吸發光效果
-            const borderClass = (mode === "small" && isBShift) ? "border-transparent" : "border-white/10";
+            // 關鍵修正：針對首頁 (mode small) 的 B 班，完全移除邊框樣式類別
+            let borderClass = "border-white/10";
+            if (isBShift) {
+                if (mode === "small") {
+                    borderClass = "border-transparent"; // 首頁 & 廳院週表：隱藏實體框
+                } else {
+                    borderClass = "border-white"; // 總表 & 個人週表：顯示白色框
+                }
+            }
+
             const btnClass = `${mode === "small" || mode === "master" ? 'h-8' : 'h-10'} ${fontSize} rounded-[0.6rem] ${(isBShift && showGlow) ? 'b-shift-glow' : ''}`;
             
             return (
@@ -150,7 +160,7 @@
                         else { container.scrollTo({ top: el.offsetTop - (container.offsetHeight / 2) + (el.offsetHeight / 2), behavior: 'smooth' }); }
                     }
                 }, 200);
-            }, [queryStaff, queryVenue]);
+            }, []);
 
             const handleBackToday = useCallback(() => {
                 const tK = formatK(new Date()), idx = dates.findIndex(d => d.fullKey === tK); 
@@ -368,7 +378,7 @@
                                                     <div className="mb-2 pb-2 border-b border-white/10 text-sm font-light italic opacity-60 text-right">{venueShowName}</div>
                                                     <div className="flex items-start gap-4">
                                                         <div className="flex flex-col text-left pr-2 border-r border-white/10 w-16 leading-none justify-center">
-                                                            <span className={`font-black mb-1 ${isW ? 'text-[10px] text-red-400' : 'text-[12px] text-white/50'}`}>週{d.w}</span>
+                                                            <span className={`font-black mb-1 ${isW ? 'text-[8px] text-red-400' : 'text-[10px] text-white/50'}`}>週{d.w}</span>
                                                             <span className="text-[32px] font-black tracking-tighter">{d.d.split('/')[1]}</span>
                                                         </div>
                                                         <div className="flex-1 grid grid-cols-2 gap-2">
@@ -390,7 +400,7 @@
                                         return (
                                             <div key={d.fullKey} id={`modal-row-${d.fullKey}`} className={`flex items-center gap-3 ${blockClass}`}>
                                                 <div className="flex flex-col text-left pr-3 border-r border-white/10 w-20 leading-none shrink-0 justify-center">
-                                                    <span className={`font-black mb-1 ${isW ? 'text-[10px] text-red-400' : 'text-[12px] text-white/50'}`}>週{d.w}</span>
+                                                    <span className={`font-black mb-1 ${isW ? 'text-[9px] text-red-400' : 'text-[11px] text-white/50'}`}>週{d.w}</span>
                                                     <span className="text-[32px] font-black tracking-tighter">{d.d}</span>
                                                 </div>
                                                 <div className="flex-1 marquee-container text-[18px] font-light text-white opacity-50 italic">
