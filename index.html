@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>視聽班表系統 | V4.7 Fixed</title>
+    <title>視聽班表系統 | V4.8 Optimized</title>
 
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -71,6 +71,19 @@
             border-right: 2px solid var(--mac-blue) !important;
             background: rgba(10, 132, 255, 0.15) !important;
             box-shadow: inset 0 0 10px rgba(10, 132, 255, 0.3);
+            z-index: 10;
+        }
+
+        /* 修正：增加日期區塊底色亮度與邊框顯著度 */
+        .day-block-card {
+            background: rgba(255, 255, 255, 0.08) !important; /* 調升亮度 */
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        .day-block-today {
+            background: rgba(10, 132, 255, 0.18) !important; /* 今日高亮區塊 */
+            border: 1.5px solid var(--mac-blue) !important;
+            box-shadow: 0 0 15px rgba(10, 132, 255, 0.2);
         }
     </style>
 </head>
@@ -420,11 +433,15 @@
                                 <div id={queryVenue ? "venue-scroll-container" : "staff-scroll-container"} className="flex-1 overflow-y-auto p-3 space-y-3 no-scrollbar scroll-smooth">
                                     {dates.map((d, i) => {
                                         const k = d.fullKey, isS = k === dates[dateIdx]?.fullKey, isW = d.w === '六' || d.w === '日';
+                                        
+                                        // 判斷樣式類別：今日與一般日期的底色區隔
+                                        const blockClass = `flex p-3 rounded-2xl transition-all day-block-card ${isS ? 'day-block-today' : ''}`;
+
                                         if (queryVenue) return (
-                                            <div key={k} id={`modal-row-${k}`} className={`flex flex-col p-3 rounded-2xl border transition-all ${isS ? 'bg-blue-600/20 border-blue-500 shadow-xl' : 'bg-white/5 border-white/5'}`}>
+                                            <div key={k} id={`modal-row-${k}`} className={`${blockClass} flex-col`}>
                                                 <div className="mb-2 pb-2 border-b border-white/10"><p className="text-sm font-bold text-white/50 italic truncate">{schedule.shows[k]?.[queryVenue] || ""}</p></div>
                                                 <div className="flex items-start gap-4">
-                                                     <div className="flex flex-col leading-none w-12 shrink-0 border-r border-white/10 pr-2">
+                                                     <div className="flex flex-col leading-none w-12 shrink-0 border-r border-white/20 pr-2">
                                                         <span className={`text-[9px] font-black uppercase mb-1 ${isW ? 'text-[#FFD1DC]' : 'opacity-40'}`}>週{d.w}</span>
                                                         <span className={`text-lg font-bold ${isW ? 'text-[#FFD1DC]' : 'text-white'}`}>{d.d}</span>
                                                     </div>
@@ -444,8 +461,8 @@
                                         if (rawS.match(/辦公|其他|其它/)) { st = "辦公"; co = "#FF9500"; } 
                                         else if (!hasShift && (rawS === "" || rawS.match(/休假|無排班|公假|婚假|喪假|病假|事假|特休|補休/))) { st = "休假"; co = "#8E8E93"; }
                                         return (
-                                            <div key={k} id={`modal-row-${k}`} className={`flex items-center justify-between p-3 rounded-2xl border transition-all ${isS ? 'bg-blue-600/20 border-blue-500 shadow-xl' : 'bg-white/5 border-white/5'}`}>
-                                                <div className="flex flex-col leading-none text-left pr-3 border-r border-white/10 w-16">
+                                            <div key={k} id={`modal-row-${k}`} className={`${blockClass} items-center justify-between`}>
+                                                <div className="flex flex-col leading-none text-left pr-3 border-r border-white/20 w-16">
                                                     <span className={`text-[9px] font-black ${isW ? 'text-[#FFD1DC]' : 'opacity-40'}`}>週{d.w}</span>
                                                     <span className={`text-lg font-bold ${isW ? 'text-[#FFD1DC]' : 'text-white'}`}>{d.d}</span>
                                                 </div>
