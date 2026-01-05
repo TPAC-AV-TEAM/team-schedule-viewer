@@ -2,8 +2,8 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>視聽班表系統 | V6.8 Master UI Fix</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>視聽班表系統 | V3.0 Refactored</title>
 
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -32,7 +32,8 @@
             --master-gt: #8B0000; --master-bb: #008B8B; --master-gp: #006400; 
             --reminder-pink: #FF69B4;
         }
-        body { font-family: 'Inter', 'Noto Sans TC', sans-serif; height: 100vh; overflow: hidden; background: var(--mac-bg); color: #FFFFFF; -webkit-font-smoothing: antialiased; }
+        /* Fix for iOS 100vh issue */
+        body { font-family: 'Inter', 'Noto Sans TC', sans-serif; height: 100vh; height: 100dvh; overflow: hidden; background: var(--mac-bg); color: #FFFFFF; -webkit-font-smoothing: antialiased; }
         .aura-bg { position: fixed; inset: 0; background: radial-gradient(circle at 50% 0%, #3a3a3c 0%, #1c1c1e 100%); z-index: 0; pointer-events: none; }
         .mac-glass { background: rgba(44, 44, 46, 0.9); backdrop-filter: blur(40px) saturate(200%); border-bottom: 0.5px solid rgba(255,255,255,0.15); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -41,9 +42,7 @@
         
         @keyframes b-glow-adaptive {
             0% { box-shadow: 0 0 2px rgba(255,255,255,0.4); }
-            100% { 
-                box-shadow: 0 0 8px #fff, 0 0 15px rgba(255,255,255,0.6), 0 0 30px rgba(255,255,255,0.4); 
-            }
+            100% { box-shadow: 0 0 8px #fff, 0 0 15px rgba(255,255,255,0.6), 0 0 30px rgba(255,255,255,0.4); }
         }
 
         @media (max-width: 768px) {
@@ -98,9 +97,9 @@
             "王志剛": { type: "Normal", gender: "M" }, "張國飛": { type: "Normal", gender: "M" }, 
             "張懷德": { type: "Normal", gender: "M" }, "謝祥玄": { type: "Normal", gender: "M" } 
         };
-
         const formatK = (d) => `${d.getFullYear()}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getDate().toString().padStart(2,'0')}`;
 
+        // --- Shared Components ---
         const Icon = memo(({ name, className = "w-4 h-4" }) => {
             const icons = {
                 refresh: <React.Fragment><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" /><path d="M16 21h5v-5" /></React.Fragment>,
@@ -120,8 +119,7 @@
             const isALong = name === "廖俊龍";
             const colorClass = info?.type === "Special" ? "text-[var(--special-text)]" : info?.gender === "F" ? "text-[var(--women-text)]" : "text-[var(--men-text)]";
             const dotClass = info?.type === "Special" ? "bg-[var(--special-dot)]" : info?.gender === "F" ? "bg-[var(--women-dot)]" : "bg-[var(--men-dot)]";
-            const fontSize = mode === "tiny" ? "text-[14px]" : (mode === "small" ? (isALong ? "text-[16px]" : "text-[18px]") : (mode === "master" ? "text-[16px]" : (isALong ? "text-[22px]" : "text-[26px]")));
-            
+            const fontSize = mode === "tiny" ? "text-[14px]" : (mode === "small" ? (isALong ? "text-[14px]" : "text-[18px]") : (mode === "master" ? "text-[16px]" : (isALong ? "text-[22px]" : "text-[26px]")));
             const borderClass = "border-white/10";
             const btnClass = `${mode === "small" || mode === "master" ? 'h-8' : 'h-10'} ${fontSize} rounded-[0.6rem]`;
             
@@ -132,6 +130,147 @@
             );
         });
 
+        // --- 提取組件 1: MasterModal (總表) ---
+        const MasterModal = memo(({ isOpen, onClose, dates, schedule, aliasMap, onStaffClick, todayK, onShiftWeek, onBackToday }) => {
+            if (!isOpen) return null;
+            return (
+                <div className="fixed inset-0 z-[1000] flex items-center justify-center p-2 bg-black/95 backdrop-blur-3xl" onClick={onClose}>
+                    <div className="bg-[var(--mac-bg)] border border-white/10 w-full max-w-4xl rounded-[2rem] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
+                        {/* Header */}
+                        <div className="p-4 border-b border-white/10 flex items-center justify-between bg-[var(--mac-card)] shrink-0">
+                            <div className="flex items-center gap-4">
+                                <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 text-xl">×</button>
+                                <h3 className="text-lg font-black italic">Master Roster</h3>
+                            </div>
+                            <div className="flex gap-1 bg-white/5 rounded-full px-2 py-1">
+                                <button onClick={() => onShiftWeek(-1)} className="p-1 hover:text-white transition-colors"><Icon name="chevronLeft" /></button>
+                                <button onClick={onBackToday} className="text-[10px] px-3 font-black text-blue-400 active:scale-90 transition-transform">TODAY</button>
+                                <button onClick={() => onShiftWeek(1)} className="p-1 hover:text-white transition-colors"><Icon name="chevronRight" /></button>
+                            </div>
+                        </div>
+                        {/* Content */}
+                        <div className="flex-1 overflow-hidden relative">
+                            <div className="master-left-column">
+                                <div className="master-header-height flex items-center justify-center border-b border-white/20 text-[9px] font-black text-white/40">STAFF</div>
+                                {STAFF_ORDER.map(staff => (
+                                    <div key={staff} className="master-row-height px-1 border-b border-white/5 flex items-center justify-center">
+                                        <StaffButton name={staff} aliasMap={aliasMap} mode="master" forceName={staff === "廖俊龍" ? "阿龍" : null} onClick={(s) => { onClose(); onStaffClick(s); }} />
+                                    </div>
+                                ))}
+                            </div>
+                            <div id="master-scroll-container" className="master-right-content h-full overflow-y-auto no-scrollbar scroll-smooth">
+                                <div style={{ width: 'fit-content' }}>
+                                    <div className="flex bg-[var(--mac-card-light)] border-b border-white/20 sticky top-0 z-40 master-header-height">
+                                        {dates.map((d) => (
+                                            <div key={d.fullKey} id={`master-nav-date-${d.fullKey}`} className={`master-cell-unit p-2 ${d.fullKey === todayK ? 'master-today-highlight' : ''}`}>
+                                                <div className={`font-black ${d.w === '六' || d.w === '日' ? 'text-[8px] opacity-40' : 'text-[10px] text-white/60'}`}>週{d.w}</div>
+                                                <div className="text-[13px] font-bold">{d.d}</div>
+                                                {d.fullKey === todayK && <div className="h-0.5 w-full bg-blue-400 mt-1"></div>}
+                                            </div>
+                                        ))}
+                                    </div>
+                                    {STAFF_ORDER.map((staff) => (
+                                        <div key={staff} className="master-row-height border-b border-white/5">
+                                            {dates.map((d) => {
+                                                const dk = d.fullKey; let label = "—", cls = "bg-white/5 text-white/10", hasS = false, isB = false;
+                                                ['GT','BB','GP'].forEach(v => { 
+                                                    if (schedule.roster[dk]?.[v]?.[staff]) { 
+                                                        const sh = schedule.roster[dk][v][staff].shift; 
+                                                        label = `${v}-${sh}`; 
+                                                        cls = `bg-[${v === 'GT' ? 'var(--master-gt)' : v === 'BB' ? 'var(--master-bb)' : 'var(--master-gp)'}] bg-opacity-30 text-white font-normal text-[11px]`; 
+                                                        hasS = true; 
+                                                        if (sh === 'B') isB = true; 
+                                                    } 
+                                                });
+                                                if (schedule.statuses[dk]?.[staff]?.match(/辦公|其他/)) { label = "辦"; cls = "bg-orange-500/40 text-orange-200 text-[14px]"; } 
+                                                else if (!hasS && (schedule.statuses[dk]?.[staff] === "" || schedule.statuses[dk]?.[staff]?.match(/休|例|假|病|補|事|公/))) { label = "休"; cls = "bg-gray-700/80 text-white/50 text-[14px]"; }
+                                                return (
+                                                    <div key={dk} className={`master-cell-unit p-1 ${dk === todayK ? 'master-today-highlight' : ''}`}>
+                                                        <div className={`w-full h-8 flex items-center justify-center rounded-md ${cls} ${isB ? 'b-shift-glow border border-white' : ''}`}>{label}</div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        });
+
+        // --- 提取組件 2: InfoModal (詳細資訊) ---
+        const InfoModal = memo(({ queryStaff, queryVenue, onClose, dates, schedule, aliasMap, setQueryVenue, setQueryStaff, dateIdx, onShiftWeek, onBackToday }) => {
+            if (!queryStaff && !queryVenue) return null;
+            
+            return (
+                <div className="fixed inset-0 z-[2000] flex items-center justify-center p-6 bg-black/90 backdrop-blur-2xl" onClick={onClose}>
+                    <div className="bg-[var(--mac-bg)] border border-white/10 w-full max-w-lg rounded-[2.5rem] shadow-2xl flex flex-col max-h-[85vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
+                        <div className="p-4 border-b border-white/10 flex items-center justify-between bg-[var(--mac-card)]">
+                            <div className="flex items-center gap-3">
+                                <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 text-2xl">×</button>
+                                <h3 className="text-xl font-black italic">{queryVenue ? `${queryVenue} Weekly` : (aliasMap[queryStaff] || queryStaff)}</h3>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="flex bg-white/5 rounded-full px-1 py-1">
+                                    <button onClick={() => onShiftWeek(-1)} className="p-1 hover:text-white transition-colors"><Icon name="chevronLeft" className="w-3 h-3" /></button>
+                                    <button onClick={onBackToday} className="px-2 text-[9px] font-black text-blue-400">Today</button>
+                                    <button onClick={() => onShiftWeek(1)} className="p-1 hover:text-white transition-colors"><Icon name="chevronRight" className="w-3 h-3" /></button>
+                                </div>
+                            </div>
+                        </div>
+                        <div id={queryVenue ? "venue-scroll-container" : "staff-scroll-container"} className="flex-1 overflow-y-auto p-3 space-y-3 no-scrollbar scroll-smooth">
+                            {dates.map((d) => {
+                                const isS = d.fullKey === dates[dateIdx]?.fullKey, isW = d.w === '六' || d.w === '日';
+                                const blockClass = `day-block-card ${isS ? 'day-block-today' : ''}`;
+                                
+                                if (queryVenue) {
+                                    const venueShowName = schedule.shows[d.fullKey]?.[queryVenue] || "—";
+                                    return (
+                                        <div key={d.fullKey} id={`modal-row-${d.fullKey}`} className={`flex flex-col ${blockClass}`}>
+                                            <div className="mb-2 pb-2 border-b border-white/10 text-sm font-light italic opacity-60 text-right">{venueShowName}</div>
+                                            <div className="flex items-start gap-4">
+                                                <div className="flex flex-col text-left pr-2 border-r border-white/10 w-16 leading-none justify-center">
+                                                    <span className={`font-black mb-1 ${isW ? 'text-[10px] text-red-400' : 'text-[12px] text-white/50'}`}>週{d.w}</span>
+                                                    <span className="text-[32px] font-black tracking-tighter">{d.d.split('/')[1]}</span>
+                                                </div>
+                                                <div className="flex-1 grid grid-cols-2 gap-2">
+                                                    {['A','B'].map(sh => (
+                                                        <div key={sh} className="bg-black/20 rounded-xl p-1 min-h-[40px] flex flex-col gap-1">
+                                                            {Object.entries(schedule.roster[d.fullKey]?.[queryVenue]||{}).filter(([_,v])=>v.shift===sh).map(([n])=><StaffButton key={n} name={n} aliasMap={aliasMap} onClick={(s) => { setQueryVenue(null); setQueryStaff(s); }} mode="small" />)}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                }
+                                
+                                let st = "辦公", co = "#FF9500", hasS = false, activeV = "";
+                                ['GT','BB','GP'].forEach(v => { if (schedule.roster[d.fullKey]?.[v]?.[queryStaff]) { const sh = schedule.roster[d.fullKey][v][queryStaff].shift; st = `${v}-${sh}`; co = v==='GP'?'#32DE84':v==='BB'?'#00FFFF':'#FF2D55'; hasS = true; activeV = v; } }); 
+                                if (schedule.statuses[d.fullKey]?.[queryStaff]?.match(/休|例|假/)) { st = "休假"; co = "#8E8E93"; }
+                                const showName = hasS ? (schedule.shows[d.fullKey]?.[activeV] || "") : "";
+                                
+                                return (
+                                    <div key={d.fullKey} id={`modal-row-${d.fullKey}`} className={`flex items-center gap-3 ${blockClass}`}>
+                                        <div className="flex flex-col text-left pr-3 border-r border-white/10 w-20 leading-none shrink-0 justify-center">
+                                            <span className={`font-black mb-1 ${isW ? 'text-[10px] text-red-400' : 'text-[12px] text-white/50'}`}>週{d.w}</span>
+                                            <span className="text-[32px] font-black tracking-tighter">{d.d}</span>
+                                        </div>
+                                        <div className="flex-1 marquee-container text-[18px] font-light text-white opacity-50 italic">
+                                            {showName ? (showName.length > 8 ? <div className="marquee-text">{showName}</div> : <span>{showName}</span>) : null}
+                                        </div>
+                                        <span className={`text-lg font-black px-3 py-1 rounded-lg shrink-0`} style={{ color: co }}>{st}</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+            );
+        });
+
         const App = () => {
             const [dates, setDates] = useState([]), [schedule, setSchedule] = useState({ roster: {}, statuses: {}, shows: {}, notes: {}, updated: null });
             const [dateIdx, setDateIdx] = useState(0), [isUnlocked, setIsUnlocked] = useState(false), [user, setUser] = useState(null);
@@ -139,7 +278,7 @@
             const [showMasterModal, setShowMasterModal] = useState(false);
 
             const scrollToElement = useCallback((fullKey, containerId) => {
-                setTimeout(() => {
+                requestAnimationFrame(() => {
                     const container = document.getElementById(containerId);
                     if (!container) return;
                     let elId = containerId === "nav-scroll-container" ? `nav-date-${fullKey}` : containerId === "master-scroll-container" ? `master-nav-date-${fullKey}` : `modal-row-${fullKey}`;
@@ -149,7 +288,7 @@
                         if (isHorizontal) { container.scrollTo({ left: el.offsetLeft - (container.offsetWidth / 2) + (el.offsetWidth / 2), behavior: 'smooth' }); }
                         else { container.scrollTo({ top: el.offsetTop - (container.offsetHeight / 2) + (el.offsetHeight / 2), behavior: 'smooth' }); }
                     }
-                }, 200);
+                });
             }, [queryStaff, queryVenue]);
 
             const handleBackToday = useCallback(() => {
@@ -239,13 +378,16 @@
             return (
                 <div className="h-screen flex flex-col overflow-hidden relative text-white bg-[var(--mac-bg)]">
                     <div className="aura-bg"></div>
+                    {/* Header */}
                     <header className="mac-glass pt-10 pb-3 px-4 flex items-center justify-between shrink-0 z-50">
                         <button onClick={handleBackToday} className="bg-blue-600 px-4 h-7 rounded-full text-[10px] font-black shadow-lg active:scale-95 transition-transform">Today</button>
                         <h1 className="text-xl font-black italic cursor-pointer hover:text-blue-400" onClick={() => setShowMasterModal(true)}>視聽班表系統</h1>
                         <button onClick={()=>window.location.reload()} className="h-7 w-7 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/50"><Icon name="refresh" className="w-3 h-3" /></button>
                     </header>
 
+                    {/* Main Scroll Content */}
                     <main className="flex-1 overflow-y-auto px-2 py-3 no-scrollbar pb-24 z-10 text-left">
+                        {/* Timeline & Reminder */}
                         <div className="mac-glass sticky top-0 -mx-2 px-2 py-2 flex flex-col mb-4 z-20 shadow-2xl">
                             <div className="flex items-center justify-between mb-2 px-1">
                                 <button onClick={() => shiftWeek(-1)} className="text-white/40 hover:text-white p-2 text-xs">◀ 上週</button>
@@ -274,6 +416,7 @@
                             </div>
                         </div>
 
+                        {/* Venue Grid */}
                         <div className="grid grid-cols-3 gap-2 mb-6">
                             {['GT','BB','GP'].map(v=>{
                                 const vColor = v==='GT'?'#FF2D55':v==='BB'?'#00FFFF':'#32DE84';
@@ -286,139 +429,40 @@
                                 );
                             })}
                         </div>
+                        
+                        {/* Other Staff Lists */}
                         <div className="space-y-4 px-1">
                             <section className="bg-[var(--mac-card)] border border-white/10 rounded-[1.5rem] p-4 shadow-sm"><h4 className="text-orange-400 text-[14px] font-black uppercase mb-3 flex items-center gap-2"><Icon name="briefcase" /> 辦公人員</h4><div className="grid grid-cols-4 gap-2">{dData?.s?.["辦公"]?.map(n=>(<StaffButton key={n} name={n} aliasMap={aliasMap} mode="tiny" onClick={setQueryStaff} />))}</div></section>
                             <section className="bg-[var(--mac-card)] border border-white/10 rounded-[1.5rem] p-4 shadow-sm"><h4 className="text-gray-400 text-[14px] font-black uppercase mb-3 flex items-center gap-2"><Icon name="sun" /> 今日休假</h4><div className="grid grid-cols-4 gap-2">{dData?.s?.["休假"]?.map(n=>(<StaffButton key={n} name={n} aliasMap={aliasMap} mode="tiny" onClick={setQueryStaff} />))}</div></section>
                         </div>
                     </main>
 
-                    {showMasterModal && (
-                        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-2 bg-black/95 backdrop-blur-3xl" onClick={() => setShowMasterModal(false)}>
-                            <div className="bg-[var(--mac-bg)] border border-white/10 w-full max-w-4xl rounded-[2rem] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
-                                <div className="p-4 border-b border-white/10 flex items-center justify-between bg-[var(--mac-card)] shrink-0">
-                                    <div className="flex items-center gap-4">
-                                        <button onClick={() => setShowMasterModal(false)} className="w-8 h-8 rounded-full bg-white/10 text-xl">×</button>
-                                        <h3 className="text-lg font-black italic">Master Roster</h3>
-                                    </div>
-                                    <div className="flex gap-1 bg-white/5 rounded-full px-2 py-1">
-                                        <button onClick={() => shiftWeek(-1)} className="p-1 hover:text-white transition-colors"><Icon name="chevronLeft" /></button>
-                                        <button onClick={handleBackToday} className="text-[10px] px-3 font-black text-blue-400 active:scale-90 transition-transform">TODAY</button>
-                                        <button onClick={() => shiftWeek(1)} className="p-1 hover:text-white transition-colors"><Icon name="chevronRight" /></button>
-                                    </div>
-                                </div>
-                                <div className="flex-1 overflow-hidden relative">
-                                    <div className="master-left-column">
-                                        <div className="master-header-height flex items-center justify-center border-b border-white/20 text-[9px] font-black text-white/40">STAFF</div>
-                                        {STAFF_ORDER.map(staff => (
-                                            <div key={staff} className="master-row-height px-1 border-b border-white/5 flex items-center justify-center">
-                                                <StaffButton name={staff} aliasMap={aliasMap} mode="master" forceName={staff === "廖俊龍" ? "阿龍" : null} onClick={(s) => { setShowMasterModal(false); setQueryStaff(s); }} />
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <div id="master-scroll-container" className="master-right-content h-full overflow-y-auto no-scrollbar scroll-smooth">
-                                        <div style={{ width: 'fit-content' }}>
-                                            <div className="flex bg-[var(--mac-card-light)] border-b border-white/20 sticky top-0 z-40 master-header-height">
-                                                {dates.map((d) => (
-                                                    <div key={d.fullKey} id={`master-nav-date-${d.fullKey}`} className={`master-cell-unit p-2 ${d.fullKey === todayK ? 'master-today-highlight' : ''}`}>
-                                                        <div className={`font-black ${d.w === '六' || d.w === '日' ? 'text-[8px] opacity-40' : 'text-[10px] text-white/60'}`}>週{d.w}</div>
-                                                        <div className="text-[13px] font-bold">{d.d}</div>
-                                                        {d.fullKey === todayK && <div className="h-0.5 w-full bg-blue-400 mt-1"></div>}
-                                                    </div>
-                                                ))}
-                                            </div>
-                                            {STAFF_ORDER.map((staff) => (
-                                                <div key={staff} className="master-row-height border-b border-white/5">
-                                                    {dates.map((d) => {
-                                                        const dk = d.fullKey; let label = "—", cls = "bg-white/5 text-white/10", hasS = false, isB = false;
-                                                        ['GT','BB','GP'].forEach(v => { 
-                                                            if (schedule.roster[dk]?.[v]?.[staff]) { 
-                                                                const sh = schedule.roster[dk][v][staff].shift; 
-                                                                label = `${v}-${sh}`; 
-                                                                cls = `bg-[${v === 'GT' ? 'var(--master-gt)' : v === 'BB' ? 'var(--master-bb)' : 'var(--master-gp)'}] bg-opacity-30 text-white font-normal text-[11px]`; 
-                                                                hasS = true; 
-                                                                if (sh === 'B') isB = true; 
-                                                            } 
-                                                        });
-                                                        if (schedule.statuses[dk]?.[staff]?.match(/辦公|其他/)) { label = "辦"; cls = "bg-orange-500/40 text-orange-200 text-[14px]"; } 
-                                                        else if (!hasS && (schedule.statuses[dk]?.[staff] === "" || schedule.statuses[dk]?.[staff]?.match(/休|例|假|病|補|事|公/))) { label = "休"; cls = "bg-gray-700/80 text-white/50 text-[14px]"; }
-                                                        
-                                                        return (
-                                                            <div key={dk} className={`master-cell-unit p-1 ${dk === todayK ? 'master-today-highlight' : ''}`}>
-                                                                <div className={`w-full h-8 flex items-center justify-center rounded-md ${cls} ${isB ? 'b-shift-glow border border-white' : ''}`}>{label}</div>
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                    {/* Modals - Clean and Separated */}
+                    <MasterModal 
+                        isOpen={showMasterModal} 
+                        onClose={() => setShowMasterModal(false)}
+                        dates={dates}
+                        schedule={schedule}
+                        aliasMap={aliasMap}
+                        onStaffClick={(s) => { setShowMasterModal(false); setQueryStaff(s); }}
+                        todayK={todayK}
+                        onShiftWeek={shiftWeek}
+                        onBackToday={handleBackToday}
+                    />
 
-                    {(queryStaff || queryVenue) && (
-                        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-6 bg-black/90 backdrop-blur-2xl" onClick={() => { setQueryStaff(null); setQueryVenue(null); }}>
-                            <div className="bg-[var(--mac-bg)] border border-white/10 w-full max-w-lg rounded-[2.5rem] shadow-2xl flex flex-col max-h-[85vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
-                                <div className="p-4 border-b border-white/10 flex items-center justify-between bg-[var(--mac-card)]">
-                                    <div className="flex items-center gap-3">
-                                        <button onClick={() => { setQueryStaff(null); setQueryVenue(null); }} className="w-8 h-8 rounded-full bg-white/10 text-2xl">×</button>
-                                        <h3 className="text-xl font-black italic">{queryVenue ? `${queryVenue} Weekly` : (aliasMap[queryStaff] || queryStaff)}</h3>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <div className="flex bg-white/5 rounded-full px-1 py-1">
-                                            <button onClick={() => shiftWeek(-1)} className="p-1 hover:text-white transition-colors"><Icon name="chevronLeft" className="w-3 h-3" /></button>
-                                            <button onClick={handleBackToday} className="px-2 text-[9px] font-black text-blue-400">Today</button>
-                                            <button onClick={() => shiftWeek(1)} className="p-1 hover:text-white transition-colors"><Icon name="chevronRight" className="w-3 h-3" /></button>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div id={queryVenue ? "venue-scroll-container" : "staff-scroll-container"} className="flex-1 overflow-y-auto p-3 space-y-3 no-scrollbar scroll-smooth">
-                                    {dates.map((d) => {
-                                        const isS = d.fullKey === dates[dateIdx]?.fullKey, isW = d.w === '六' || d.w === '日';
-                                        const blockClass = `day-block-card ${isS ? 'day-block-today' : ''}`;
-                                        if (queryVenue) {
-                                            const venueShowName = schedule.shows[d.fullKey]?.[queryVenue] || "—";
-                                            return (
-                                                <div key={d.fullKey} id={`modal-row-${d.fullKey}`} className={`flex flex-col ${blockClass}`}>
-                                                    <div className="mb-2 pb-2 border-b border-white/10 text-sm font-light italic opacity-60 text-right">{venueShowName}</div>
-                                                    <div className="flex items-start gap-4">
-                                                        <div className="flex flex-col text-left pr-2 border-r border-white/10 w-20 leading-none justify-center">
-                                                            <span className={`font-black mb-1 ${isW ? 'text-[12px] text-red-400' : 'text-[14px] text-white/50'}`}>週{d.w}</span>
-                                                            <span className="text-[24px] font-black tracking-tighter">{d.d}</span>
-                                                        </div>
-                                                        <div className="flex-1 grid grid-cols-2 gap-2">
-                                                            {['A','B'].map(sh => (
-                                                                <div key={sh} className="bg-black/20 rounded-xl p-1 min-h-[40px] flex flex-col gap-1">
-                                                                    {Object.entries(schedule.roster[d.fullKey]?.[queryVenue]||{}).filter(([_,v])=>v.shift===sh).map(([n])=><StaffButton key={n} name={n} aliasMap={aliasMap} onClick={(s) => { setQueryVenue(null); setQueryStaff(s); }} mode="small" />)}
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            );
-                                        }
-                                        let st = "辦公", co = "#FF9500", hasS = false, activeV = "";
-                                        ['GT','BB','GP'].forEach(v => { if (schedule.roster[d.fullKey]?.[v]?.[queryStaff]) { const sh = schedule.roster[d.fullKey][v][queryStaff].shift; st = `${v}-${sh}`; co = v==='GP'?'#32DE84':v==='BB'?'#00FFFF':'#FF2D55'; hasS = true; activeV = v; } }); 
-                                        if (schedule.statuses[d.fullKey]?.[queryStaff]?.match(/休|例|假/)) { st = "休假"; co = "#8E8E93"; }
-                                        const showName = hasS ? (schedule.shows[d.fullKey]?.[activeV] || "") : "";
-                                        return (
-                                            <div key={d.fullKey} id={`modal-row-${d.fullKey}`} className={`flex items-center gap-3 ${blockClass}`}>
-                                                <div className="flex flex-col text-left pr-3 border-r border-white/10 w-20 leading-none shrink-0 justify-center">
-                                                    <span className={`font-black mb-1 ${isW ? 'text-[12px] text-red-400' : 'text-[14px] text-white/50'}`}>週{d.w}</span>
-                                                    <span className="text-[24px] font-black tracking-tighter">{d.d}</span>
-                                                </div>
-                                                <div className="flex-1 marquee-container text-[18px] font-light text-white opacity-50 italic">
-                                                    {showName ? (showName.length > 8 ? <div className="marquee-text">{showName}</div> : <span>{showName}</span>) : null}
-                                                </div>
-                                                <span className={`text-lg font-black px-3 py-1 rounded-lg shrink-0`} style={{ color: co }}>{st}</span>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                    <InfoModal 
+                        queryStaff={queryStaff}
+                        queryVenue={queryVenue}
+                        onClose={() => { setQueryStaff(null); setQueryVenue(null); }}
+                        dates={dates}
+                        schedule={schedule}
+                        aliasMap={aliasMap}
+                        setQueryVenue={setQueryVenue}
+                        setQueryStaff={setQueryStaff}
+                        dateIdx={dateIdx}
+                        onShiftWeek={shiftWeek}
+                        onBackToday={handleBackToday}
+                    />
                 </div>
             );
         };
