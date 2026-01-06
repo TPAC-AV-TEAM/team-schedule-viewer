@@ -59,7 +59,6 @@
             "王志剛": { type: "M", color: "#D1FFFF" }, "張國飛": { type: "M", color: "#D1FFFF" }, 
             "張懷德": { type: "M", color: "#D1FFFF" }, "謝祥玄": { type: "M", color: "#D1FFFF" } 
         };
-        // Excel Template Coordinates (Magic Numbers extracted)
         const EXCEL_ROWS_START = [4, 52, 100, 148, 196, 244];
         const EXCEL_COLS_INDEX = [2, 5, 8, 11, 14, 17, 20];
 
@@ -70,7 +69,18 @@
                 return `${d.getFullYear()}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getDate().toString().padStart(2,'0')}`;
             } else if (typeof cellValue === 'string') {
                 const m = cellValue.match(/(\d{1,2})\/(\d{1,2})/);
-                if (m) return `${parseInt(m[1]) >= 11 ? 2025 : 2026}/${m[1].padStart(2,'0')}/${m[2].padStart(2,'0')}`;
+                if (m) {
+                    const now = new Date();
+                    let year = now.getFullYear();
+                    const month = parseInt(m[1]);
+                    const day = parseInt(m[2]);
+                    
+                    // 動態年份修正邏輯：處理跨年問題
+                    if (now.getMonth() >= 10 && month <= 2) year++; // 年底處理明年初班表
+                    else if (now.getMonth() <= 1 && month >= 11) year--; // 年初讀取去年底資料
+                    
+                    return `${year}/${month.toString().padStart(2,'0')}/${day.toString().padStart(2,'0')}`;
+                }
             }
             return null;
         };
@@ -84,11 +94,9 @@
                     const dateKey = parseExcelDate(rows[rS]?.[cI]);
                     if (!dateKey) return;
 
-                    // Init data structure for date
                     if (!fR[dateKey]) fR[dateKey] = { GT:{}, BB:{}, GP:{} };
                     if (!fS[dateKey]) fS[dateKey] = {};
 
-                    // Read Header & Notes
                     fH[dateKey] = { 
                         GT: (rows[rS-4]?.[cI] || "").toString().trim(), 
                         BB: (rows[rS-3]?.[cI] || "").toString().trim(), 
@@ -96,7 +104,6 @@
                     };
                     fN[dateKey] = (rows[rS-1]?.[cI] || "").toString().trim();
 
-                    // Read Staff Logic (V4.1 Core)
                     for (let r = rS + 2; r <= rS + 30; r += 2) {
                         const name = (rows[r]?.[1] || "").trim();
                         if (!STAFF_LIST.includes(name)) continue;
@@ -115,7 +122,7 @@
                                 fR[dateKey][v][name] = { shift: s };
                                 fS[dateKey][name] = ""; 
                             } else {
-                                fS[dateKey][name] = "辦公"; // Default fallback
+                                fS[dateKey][name] = "辦公"; 
                             }
                         }
                     }
@@ -206,11 +213,10 @@
             );
         };
 
-        // --- Main App ---
         const App = () => {
             const [db, setDb] = useState(null);
             const [user, setUser] = useState(null);
-            const [status, setStatus] = useState('connecting'); // connecting, idle, picking, syncing, success, error
+            const [status, setStatus] = useState('connecting'); 
             const [sheetNames, setSheetNames] = useState([]);
             const [selectedSheets, setSelectedSheets] = useState([]);
             const [wb, setWb] = useState(null);
@@ -219,7 +225,6 @@
             const [showAliasModal, setShowAliasModal] = useState(false);
             const fileInputRef = useRef(null);
 
-            // Firebase Init
             useEffect(() => {
                 const initProtocol = setInterval(() => {
                     if (window.isFirebaseCoreLoaded && window.Firebase) {
@@ -244,7 +249,6 @@
                 return () => clearInterval(initProtocol);
             }, []);
 
-            // File Handler
             const onFileChange = useCallback((e) => {
                 const file = e.target.files[0];
                 if (!file) return;
@@ -261,12 +265,9 @@
                 e.target.value = null;
             }, []);
 
-            // Sync Logic
             const runSync = async () => {
                 if (!selectedSheets.length || !db) return;
                 setStatus('syncing');
-
-                // Allow UI to update before heavy processing
                 await new Promise(r => setTimeout(r, 100));
 
                 try {
@@ -284,14 +285,12 @@
                         };
                     }
 
-                    // Process Data using Utility
                     selectedSheets.forEach(name => {
                         existingData = processSheetData(wb.Sheets[name], existingData);
                     });
 
                     const { fR, fS, fH, fN } = existingData;
                     const allK = Object.keys(fR).sort();
-                    
                     if (allK.length === 0) throw new Error("無有效排班資料被提取");
 
                     await Firebase.setDoc(docRef, { 
@@ -318,7 +317,7 @@
             };
 
             const wipeData = async () => {
-                if(confirm("⚠️ 確定清空雲端所有排班資料？(此動作無法復原)")) { 
+                if(confirm("⚠️ 確定清空雲端所有排班資料？")) { 
                     await Firebase.deleteDoc(Firebase.doc(db, 'artifacts', APP_ID, 'public', 'data', 'rosters', 'master')); 
                     alert("雲端已清空"); 
                     setStatus('idle'); 
@@ -330,8 +329,6 @@
             return (
                 <div className="h-screen w-screen bg-[#050505] text-white flex flex-col items-center justify-between p-10 relative overflow-hidden select-none">
                     <div className="aura-bg"></div>
-                    
-                    {/* Header */}
                     <header className="w-full flex justify-between items-start z-40">
                         <button onClick={() => setShowAliasModal(true)} className="p-3 bg-white/5 border border-white/10 rounded-2xl active:scale-95 transition-all hover:bg-white/10"><Icon name="copy" className="text-blue-400 w-5 h-5" /></button>
                         <div className="text-center">
@@ -343,8 +340,6 @@
                         </div>
                         <div className="w-12 h-12"></div>
                     </header>
-
-                    {/* Main Uploader */}
                     <main className="flex-1 flex flex-col items-center justify-center relative w-full z-10">
                         <div onClick={() => status === 'idle' && fileInputRef.current.click()} className={`relative w-64 h-64 flex items-center justify-center transition-transform ${status === 'idle' ? 'cursor-pointer active:scale-95 hover:scale-105' : ''}`}>
                             <div className="absolute inset-0 rounded-full border-4 border-white/5"></div>
@@ -358,19 +353,15 @@
                         </div>
                         <p className="mt-12 text-[10px] font-black uppercase tracking-[0.6em] opacity-30 text-center select-none">Click core to upload</p>
                     </main>
-
-                    {/* Modals */}
                     <AliasModal show={showAliasModal} onClose={() => setShowAliasModal(false)} mapping={nameMapping} setMapping={setNameMapping} onSave={saveMapping} />
                     <SheetPickerModal show={status === 'picking'} sheets={sheetNames} selected={selectedSheets} setSelected={setSelectedSheets} onConfirm={runSync} onWipe={wipeData} onClose={() => setStatus('idle')} />
-
                     <footer className="w-full shrink-0 text-center opacity-30 mt-6 font-black tracking-widest text-[8px] text-white">© 2026 Stable Sync Architecture</footer>
                     <input type="file" ref={fileInputRef} className="hidden" onChange={onFileChange} accept=".xlsx" />
                 </div>
             );
         };
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
     </script>
 </body>
 </html>
