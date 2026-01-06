@@ -3,75 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PT-RQ35K 智慧導覽 V30</title>
+    <title>PT-RQ35K 操作助手 V3 - 專業彙整版</title>
     <style>
         :root { 
             --navy-dark: #050505; --card-bg: #1a1a1a; --gold: #d4af37; 
             --text-main: #ffffff; --text-sub: #d1d1d1; --active-blue: #007aff; --sop-green: #28cd41; --danger: #ff3b30;
         }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        html, body { background: var(--navy-dark); margin: 0; padding: 0; color: var(--text-main); font-family: "Inter", "PingFang TC", "Microsoft JhengHei", sans-serif; height: 100vh; overflow: hidden; }
+        html, body { background: var(--navy-dark); margin: 0; padding: 0; color: var(--text-main); font-family: "Inter", "PingFang TC", sans-serif; height: 100vh; overflow: hidden; }
 
         .main-wrapper { width: 100%; height: 100%; display: flex; flex-direction: column; }
-        header { background: #000; color: var(--gold); padding: 10px; text-align: center; border-bottom: 2px solid var(--gold); flex-shrink: 0; font-weight: 900; letter-spacing: 2px; font-size: 13px; }
+        header { background: #000; color: var(--gold); padding: 12px; text-align: center; border-bottom: 2px solid var(--gold); flex-shrink: 0; font-weight: 900; letter-spacing: 2px; }
         
         .top-fixed-area { background: #111; border-bottom: 1px solid #222; flex-shrink: 0; z-index: 1000; }
+        .search-container { padding: 15px 15px 10px 15px; }
+        #searchInput { width: 100%; padding: 18px; border-radius: 12px; border: 1px solid #444; background: #222; color: white; font-size: 18px; outline: none; }
+        #searchInput:focus { border-color: var(--gold); }
         
-        /* 搜尋區塊 - 帶 X 按鈕 */
-        .search-container { padding: 12px 15px 8px 15px; position: relative; display: flex; align-items: center; }
-        #searchInput { width: 100%; padding: 14px 45px 14px 14px; border-radius: 10px; border: 1px solid #444; background: #222; color: white; font-size: 16px; outline: none; transition: 0.3s; }
-        .clear-btn { position: absolute; right: 25px; width: 24px; height: 24px; background: #444; color: #fff; border-radius: 50%; border: none; cursor: pointer; display: none; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; }
-        .clear-btn.active { display: flex; }
-
-        .tab-group { display: flex; gap: 5px; padding: 0 15px 12px 15px; }
-        .tab-btn { flex: 1; padding: 10px 5px; border-radius: 8px; border: 1px solid #333; background: #1a1a1a; color: #888; cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.2s; }
+        .tab-group { display: flex; gap: 5px; padding: 0 15px 15px 15px; }
+        .tab-btn { flex: 1; padding: 12px 5px; border-radius: 8px; border: 1px solid #333; background: #1a1a1a; color: #888; cursor: pointer; font-weight: bold; font-size: 15px; }
         .tab-btn.active { background: var(--active-blue); color: white; border-color: var(--active-blue); }
         .tab-btn.gold.active { background: var(--gold); color: black; border-color: var(--gold); }
         .tab-btn.red.active { background: var(--danger); color: white; border-color: var(--danger); }
 
-        .content-container { flex: 1; overflow-y: auto; padding: 12px; scroll-behavior: smooth; }
+        .content-container { flex: 1; overflow-y: auto; padding: 15px; scroll-behavior: smooth; }
         .view-section { display: none; width: 100%; }
         .view-section.active { display: block; }
 
-        /* 選單樹 UI */
-        .node { margin-bottom: 8px; width: 100%; }
-        .label { cursor: pointer; padding: 15px 12px 15px 42px; border-radius: 12px; background: var(--card-bg); border: 1px solid #2a2a2a; display: flex; align-items: center; position: relative; transition: 0.2s; }
-        .label::before { content: '▶'; font-size: 9px; position: absolute; left: 18px; color: var(--gold); }
+        .node { margin-bottom: 10px; width: 100%; }
+        .label { cursor: pointer; padding: 20px 15px 20px 50px; border-radius: 14px; background: var(--card-bg); border: 1px solid #2a2a2a; display: flex; align-items: center; position: relative; transition: 0.2s; }
+        .label::before { content: '▶'; font-size: 10px; position: absolute; left: 22px; color: var(--gold); transition: 0.2s; }
         .node.expanded > .label::before { transform: rotate(90deg); }
         .node.leaf > .label::before { content: '○'; color: #666; }
         
-        .en-text { font-weight: 900; font-size: 17px; color: #fff; margin-right: 10px; }
-        .cn-text { font-weight: 300; font-size: 17px; color: var(--text-sub); } 
+        .en-text { font-weight: 900; font-size: 20px; color: #fff; margin-right: 12px; }
+        .cn-text { font-weight: 300; font-size: 20px; color: var(--text-sub); }
         
-        .options-box { margin: 8px 0 8px 30px; background: #000; border: 1px dashed #444; border-radius: 10px; padding: 12px; display: none; }
+        .options-box { margin: 10px 0 10px 40px; background: #000; border: 1px dashed #444; border-radius: 10px; padding: 15px; display: none; }
         .node.expanded > .options-box { display: block; }
-        .option-item { color: #aaa; font-size: 14px; margin-bottom: 4px; display: flex; align-items: center; }
-        .option-item::before { content: '•'; color: var(--gold); margin-right: 8px; }
+        .option-item { color: #aaa; font-size: 16px; margin-bottom: 5px; display: flex; align-items: center; }
+        .option-item::before { content: '•'; color: var(--gold); margin-right: 10px; }
 
-        .children { margin-left: 18px; display: none; border-left: 2px solid #333; padding-left: 12px; margin-top: 8px; }
+        .children { margin-left: 20px; display: none; border-left: 2px solid #333; padding-left: 15px; margin-top: 10px; }
         .node.expanded > .children { display: block; }
-        .highlight { background: #3d3400 !important; border: 1.5px solid var(--gold) !important; box-shadow: 0 0 15px rgba(212,175,55,0.3); }
+        .highlight { background: #3d3400 !important; border: 2px solid var(--gold) !important; box-shadow: 0 0 15px rgba(212,175,55,0.4); }
 
-        /* 卡片設計 */
-        .card { background: #1a1a1a; padding: 18px; border-radius: 15px; margin-bottom: 12px; border-left: 6px solid var(--sop-green); line-height: 1.6; font-size: 16px; border-top: 1px solid #333; }
+        .card { background: #1a1a1a; padding: 22px; border-radius: 18px; margin-bottom: 15px; border-left: 8px solid var(--sop-green); line-height: 1.8; font-size: 19px; border-top: 1px solid #333; }
         .fault-card { border-left-color: var(--danger); background: #201516; }
-        .step-tag { background: var(--sop-green); color: black; padding: 2px 8px; border-radius: 5px; margin-right: 10px; font-weight: 900; font-size: 12px; }
-        h3 { color: var(--gold); border-bottom: 1px solid #333; padding-bottom: 10px; margin-top: 0; font-size: 20px; font-style: italic; }
-        .fault-q { color: var(--danger); font-weight: 900; display: block; margin-bottom: 8px; font-size: 17px; }
+        .step-tag { background: var(--sop-green); color: black; padding: 3px 12px; border-radius: 6px; margin-right: 12px; font-weight: 900; }
+        h3 { color: var(--gold); border-bottom: 1px solid #333; padding-bottom: 12px; margin-top: 0; font-size: 24px; font-style: italic; }
+        .fault-q { color: var(--danger); font-weight: 900; display: block; margin-bottom: 10px; }
+        .hidden { display: none; }
+        .source-tag { font-size: 12px; color: #666; display: block; margin-top: 8px; }
     </style>
 </head>
 <body>
 
 <div class="main-wrapper">
-    <header>PT-RQ35K 智慧導覽 V30</header>
+    <header>PT-RQ35K 智慧助手 V3 - 原廠資料整合版</header>
 
     <div class="top-fixed-area">
         <div class="search-container">
-            <input type="text" id="searchInput" placeholder="輸入關鍵字 (還原、HDMI、變暗...)" oninput="globalSearch()">
-            <button id="clearSearch" class="clear-btn" onclick="clearInput()">✕</button>
+            <input type="text" id="searchInput" placeholder="輸入關鍵字 (電壓、快門、鏡頭、變暗...)" oninput="globalSearch()">
         </div>
         <div class="tab-group">
-            <button id="btn-tree" class="tab-btn active" onclick="handleTreeTabClick()">選單主頁</button>
+            <button id="btn-tree" class="tab-btn active" onclick="switchView('tree')">選單主頁</button>
             <button id="btn-sop" class="tab-btn gold" onclick="switchView('sop')">安裝 SOP</button>
             <button id="btn-fault" class="tab-btn red" onclick="switchView('fault')">故障排除</button>
         </div>
@@ -83,103 +79,76 @@
         </section>
 
         <section id="sopSection" class="view-section">
-            <h3>🚀 第一次操作安裝 SOP</h3>
-            <div class="card" data-tags="電源 220V 110V 亮度 電壓 變暗"><span class="step-tag">1</span><b>確認電源電壓</b><br>RQ35K 必須使用 **200-240V**。若接 110V，亮度會自動閹割 2/3 (僅剩 10,000 lm)。</div>
-            <div class="card" data-tags="初始化 還原 出廠 reset initialize 預設 重設 清除 抹除"><span class="step-tag">2</span><b>全機重置 (Initialize)</b><br>路徑：[PROJECTOR SETUP] -> [INITIALIZE] -> [ALL USER DATA]。務必清除前一場活動殘留的幾何校正與融合設定。</div>
-            <div class="card" data-tags="鏡頭 校正 calibration lens 對焦 模糊"><span class="step-tag">3</span><b>執行鏡頭校正 (Lens Calibration)</b><br>路徑：[PROJECTOR SETUP] -> [LENS] -> [LENS CALIBRATION]。更換或重新裝上鏡頭後，必須讓馬達找回物理原點。</div>
-            <div class="card" data-tags="對焦 縮放 focus zoom shift 尺寸 比例 大小"><span class="step-tag">4</span><b>初步畫面對位</b><br>使用快速鍵：[LENS SHIFT]、[ZOOM]、[FOCUS] 調整。</div>
-            <div class="card" data-tags="測試圖樣 網格 pattern grid crosshatch"><span class="step-tag">5</span><b>調用測試網格</b><br>路徑：[TEST PATTERN] -> [CROSSHATCH]。在網格狀態下進行 [GEOMETRY] 幾何修正才精準。</div>
+            <h3>🚀 專業安裝與初次使用 SOP</h3>
+            <div class="card" data-tags="鏡頭 安裝 lens 物理 鎖緊"><span class="step-tag">1</span><b>鏡頭物理安裝</b><br>移除鏡頭孔蓋，插入鏡頭並順時針旋轉至發出「喀嚓」聲，務必鎖緊固定螺絲以確保安全 。</div>
+            <div class="card" data-tags="訊號線 連接 順序 設備"><span class="step-tag">2</span><b>連接訊號線</b><br>請在**電源關閉**的狀態下，先連接外部設備（如電腦、播放器）之訊號線 。</div>
+            <div class="card" data-tags="電源 220V 110V 亮度 電壓 變暗"><span class="step-tag">3</span><b>確認電源電壓</b><br>必須使用 **200-240V** 電源。若接 110V，光輸出會自動降低至約 1/3 (剩約 10,000 lm) 。</div>
+            <div class="card" data-tags="初始化 還原 出廠 reset initialize 預設 重設 清除 抹除"><span class="step-tag">4</span><b>執行全機重置 (Initialize)</b><br>路徑：[PROJECTOR SETUP] -> [INITIALIZE] -> [ALL USER DATA]。清除所有前場留下的幾何與顏色設定。</div>
+            <div class="card" data-tags="鏡頭 校正 calibration lens 對焦 模糊"><span class="step-tag">5</span><b>執行鏡頭校正 (Lens Calibration)</b><br>路徑：[PROJECTOR SETUP] -> [LENS] -> [LENS CALIBRATION]。讓馬達找回物理原點。</div>
         </section>
 
         <section id="faultSection" class="view-section">
-            <h3>⚠️ 原廠手冊故障排除指引</h3>
-            <div class="card fault-card" data-tags="指示燈 閃爍 燈號 紅燈 綠燈"><span class=\"fault-q\">Q: 指示燈閃爍含意？</span>1. **紅燈慢閃**：過熱預警（檢查進氣口）。<br>2. **紅燈快閃**：光源或風扇故障（需記錄代碼後重開）。<br>3. **橘燈/紅燈長亮**：濾網壽命到期。</div>
-            <div class="card fault-card" data-tags="變暗 不夠亮 220V 110V 節能 quiet eco 亮度"><span class="fault-q">Q: 畫面明顯不夠亮？</span>1. 檢查 [STATUS] 頁面。輸入電壓低於 200V 時機器會自動降功率。<br>2. 檢查 [OPERATION SETTING] -> [LIGHT OUTPUT] 是否被限制。</div>
-            <div class="card fault-card" data-tags="沒訊號 黑畫面 sdi hdmi 4k 頻率 signal edid"><span class="fault-q">Q: 無訊號或顯示 Invalid Format？</span>1. 進入 [SIGNAL LIST] 檢查解析度是否為紅色。<br>2. 嘗試修改 [HDMI EDID] 設定（從 4K 改為 2K）以匹配舊設備。</div>
-            <div class="card fault-card" data-tags="選單 消失 反灰 simple normal menu mode"><span class="fault-q">Q: 選單很多功能都不見了？</span>進入 [DISPLAY OPTION] -> [MENU MODE]，從 **SIMPLE** 改回 **NORMAL**。</div>
-            <div class="card fault-card" data-tags="web control 網路 連不上 password 管理員"><span class="fault-q">Q: 無法使用 Web Control 控制？</span>1. 檢查 [NETWORK] 選單中 [WEB CONTROL] 是否設為 ON。<br>2. 務必設定管理員密碼，否則部分瀏覽器會因安全協議拒絕連線。</div>
+            <h3>⚠️ 進階故障檢測指南</h3>
+            <div class="card fault-card" data-tags="電源 開啟 開關 插座"><span class="fault-q">Q: 電源無法開啟？</span>1. 檢查電源線是否確實插入插座。<br>2. 確認主電源開關（Main Power）是否切換至「I」開通狀態 [cite: 1]。</div>
+            <div class="card fault-card" data-tags="變暗 亮度 220V 溫度 散熱 eco quiet 節能"><span class="fault-q">Q: 畫面明顯不夠亮？</span>1. **電壓檢查**：確認是否誤接 110V 。<br>2. **模式檢查**：[OPERATING MODE] 是否被設為 Eco 或 Quiet (會降低亮度以靜音/省電) 。<br>3. **環境檢查**：若環境溫度 >35°C，系統會自動降階亮度以保護雷射 。</div>
+            <div class="card fault-card" data-tags="快門 黑畫面 綠燈 閃爍 shutter"><span class="fault-q">Q: 畫面突然變黑但電源亮著？</span>檢查是否誤觸 [SHUTTER] 快門功能。當快門關閉時，指示燈會呈現**綠色慢閃** 。</div>
+            <div class="card fault-card" data-tags="沒訊號 黑畫面 sdi hdmi signal no signal 解析度 頻率"><span class="fault-q">Q: 已接訊號線但顯示 No Signal？</span>進入 [SIGNAL LIST] 檢查當前輸入格式是否變紅 (不支援)。SDI 訊號請嘗試切換 Level-A/B。</div>
+            <div class="card fault-card" data-tags="U12 U13 F10 F20 濾網 報錯 警告 代碼 error code 溫度 風扇"><span class="fault-q">Q: 出現 U12/U13 警告？</span>代表進氣濾網堵塞，請清潔進氣孔。若出現紅色指示燈，表示部分光源元件可能故障 。</div>
         </section>
     </div>
 </div>
 
 <script>
+    // 擴展詞庫：根據原廠指南加入更多關鍵字
     const ALIAS_MAP = {
         "還原": ["initialize", "reset", "初始化", "出廠", "預設", "重設", "清除"],
-        "解析度": ["signal", "format", "訊號", "解析度", "edid"],
-        "訊號源": ["signal", "input", "hdmi", "sdi", "displayport"],
-        "尺寸": ["aspect", "zoom", "比例", "尺寸"],
+        "解析度": ["signal", "format", "訊號", "解析", "頻率"],
+        "訊號源": ["signal", "input", "hdmi", "sdi", "displayport", "訊號"],
+        "HDMI": ["input", "signal", "訊號源"],
+        "SDI": ["sdi", "level", "signal"],
+        "尺寸": ["aspect", "zoom", "比例", "尺寸", "大小"],
         "歪了": ["geometry", "keystone", "幾何", "梯形", "修正", "斜了", "grid"],
-        "變暗": ["brightness", "light", "電壓", "110v", "eco", "quiet", "亮度"],
-        "對焦": ["focus", "lens", "校正", "馬達", "模糊"],
-        "燈號": ["indicator", "flash", "指示燈", "閃爍", "紅燈"]
+        "變暗": ["brightness", "light", "電壓", "110v", "220v", "eco", "quiet", "亮度", "溫度", "散熱"],
+        "對焦": ["focus", "lens", "校正", "馬達", "模糊", "鏡頭"],
+        "快門": ["shutter", "黑畫面", "閃爍", "綠燈"],
+        "格線": ["test", "pattern", "crosshatch", "網格"]
     };
 
     const menuData = [
         { en: "1. PICTURE", cn: "影像選單", children: [
-            { en: "PICTURE MODE", cn: "影像模式", options: ["STANDARD", "CINEMA", "NATURAL", "GRAPHIC"] },
-            { en: "CONTRAST / BRIGHTNESS", cn: "對比與亮度", options: ["Contrast (-30 ~ +30)", "Brightness (-30 ~ +30)"] },
-            { en: "WHITE BALANCE", cn: "白平衡設定", options: ["Color Temperature", "RGB Gain", "RGB Offset"] },
-            { en: "DYNAMIC CONTRAST", cn: "動態對比", options: ["OFF", "1", "2 (RQ35K 預設)", "3"] }
+            { en: "PICTURE MODE", cn: "影像模式", options: ["STANDARD (標準)", "CINEMA (電影)", "NATURAL (自然)", "GRAPHIC (圖形)"] },
+            { en: "CONTRAST / BRIGHTNESS", cn: "對比與亮度", options: ["Contrast: -30 ~ +30", "Brightness: -30 ~ +30"] },
+            { en: "DYNAMIC CONTRAST", cn: "動態對比", options: ["OFF", "1", "2 (RQ35K 預設)", "3 (最高)", "LIGHTS OUT (信號過低時關閉光源) "] },
+            { en: "OPERATING MODE", cn: "運作模式", options: ["NORMAL (全亮度)", "ECO (節能)", "QUIET (靜音) "] }
         ]},
         { en: "2. POSITION", cn: "位置設定", children: [
             { en: "SHIFT", cn: "鏡頭位移", options: ["Vertical Shift", "Horizontal Shift"] },
-            { en: "ASPECT", cn: "長寬比設定", options: ["AUTO", "4:3", "16:9", "THROUGH"] },
-            { en: "ZOOM", cn: "畫面縮放", options: ["Optical Zoom", "Digital Zoom"] },
+            { en: "ASPECT", cn: "長寬比設定", options: ["AUTO", "4:3", "16:9", "THROUGH (點對點)"] },
             { en: "GEOMETRY", cn: "幾何校正", children: [
                 { en: "KEYSTONE", cn: "梯形修正", options: ["H-Keystone", "V-Keystone"] },
-                { en: "CORNER CORRECTION", cn: "四角修正", options: ["四角獨立座標調整"] },
+                { en: "CORNER CORRECTION", cn: "四角修正", options: ["四點獨立座標調整"] },
                 { en: "FREE GRID", cn: "自由格點校正", options: ["2x2 ~ 16x16 點位細調"] }
             ]}
         ]},
-        { en: "3. ADVANCED MENU", cn: "進階融合", children: [
-            { en: "EDGE BLENDING", cn: "邊緣融合", options: ["Marker (標記)", "Edges Width", "Black Level"] },
-            { en: "COLOR MATCHING", cn: "色彩匹配", options: ["3-Colors", "7-Colors", "Measured"] }
-        ]},
-        { en: "4. DISPLAY LANGUAGE", cn: "語系選擇", options: ["English", "繁體中文", "日本語"] },
-        { en: "5. DISPLAY OPTION", cn: "顯示選項", children: [
-            { en: "MENU MODE", cn: "選單模式", options: ["NORMAL", "SIMPLE"] },
-            { en: "MENU POSITION", cn: "選單顯示位置", options: ["CENTER", "UPPER LEFT..."] }
-        ]},
         { en: "6. PROJECTOR SETUP", cn: "投影機設定", children: [
             { en: "LENS", cn: "鏡頭設定", children: [
-                { en: "LENS CALIBRATION", cn: "鏡頭校正", options: ["Execute (執行)"] },
+                { en: "LENS CALIBRATION", cn: "鏡頭校正", options: ["Execute (馬達歸位)"] },
                 { en: "ACTIVE FOCUS OPTIMIZER", cn: "主動對焦優化", options: ["ON / OFF"] }
             ]},
             { en: "INITIALIZE", cn: "初始化 (全機重置)", children: [
-                { en: "ALL USER DATA", cn: "全使用者資料重置 (出廠)", options: ["抹除所有幾何與顏色參數"] },
-                { en: "REGISTERED SIGNAL DATA", cn: "訊號資料重置", options: ["僅清除解析度紀錄"] }
+                { en: "ALL USER DATA", cn: "全使用者資料重置 (出廠化)", options: ["執行後清空所有幾何與顏色設定"] }
             ]},
-            { en: "STATUS", cn: "機身狀態資訊", options: ["Input Voltage", "Intake Temp", "Runtime"] }
+            { en: "STATUS", cn: "機身狀態資訊", options: ["Input Voltage (需 200V-240V)", "Runtime (運行時間)", "Light Output (%)"] }
         ]},
         { en: "7. TEST PATTERN", cn: "測試圖樣", children: [
-            { en: "INTERNAL TEST PATTERN", cn: "內建測試圖樣", options: ["CROSSHATCH (網格)", "WHITE", "COLOR BAR"] }
-        ]},
-        { en: "8. SIGNAL LIST", cn: "訊號清單", children: [
-            { en: "SIGNAL LIST", cn: "可用訊號表", options: ["顯示插槽支援格式"] },
-            { en: "SDI IN SETTING", cn: "SDI 設定", options: ["SDI MODE: Level A / B"] }
-        ]},
-        { en: "9. SECURITY", cn: "安全性", options: ["PIN CODE CHANGE", "SECURITY LOCK"] },
-        { en: "10. NETWORK", cn: "網路設定", options: ["WIRED LAN", "NETWORK STATUS", "WEB CONTROL"] }
+            { en: "INTERNAL TEST PATTERN", cn: "內建測試圖樣", options: ["CROSSHATCH (網格)", "WHITE", "BLACK", "COLOR BAR"] }
+        ]}
     ];
-
-    let treeExpanded = false;
-
-    // 選單主頁切換與展開切換
-    function handleTreeTabClick() {
-        const treeSect = document.getElementById('treeSection');
-        if (!treeSect.classList.contains('active')) {
-            // 切換到選單分頁
-            switchView('tree');
-        } else {
-            // 切換展開/收合
-            treeExpanded = !treeExpanded;
-            handleMasterToggle(treeExpanded);
-        }
-    }
 
     function switchView(view) {
         document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        
         document.getElementById(view + 'Section').classList.add('active');
         document.getElementById('btn-' + view).classList.add('active');
         document.getElementById('scrollTarget').scrollTop = 0;
@@ -189,10 +158,7 @@
         let input = document.getElementById('searchInput').value.toLowerCase().trim();
         const labels = document.querySelectorAll('.label');
         const cards = document.querySelectorAll('.card');
-        const clearBtn = document.getElementById('clearSearch');
         
-        clearBtn.classList.toggle('active', input !== "");
-
         if (!input) {
             labels.forEach(l => l.classList.remove('highlight'));
             cards.forEach(c => c.classList.remove('hidden'));
@@ -204,14 +170,16 @@
             if (key.includes(input) || input.includes(key)) keywords = [...keywords, ...ALIAS_MAP[key]];
         }
 
-        let foundInTree = false, firstMatch = null;
+        let foundInTree = false;
+        let firstLabelMatch = null;
+
         labels.forEach(l => {
             const text = l.innerText.toLowerCase();
             const tags = (l.getAttribute('data-tags') || "").toLowerCase();
             const isHit = keywords.some(k => text.includes(k) || tags.includes(k));
             if (isHit) {
                 l.classList.add('highlight');
-                if (!firstMatch) firstMatch = l;
+                if (!firstLabelMatch) firstLabelMatch = l;
                 foundInTree = true;
                 let p = l.parentElement;
                 while (p && p.classList.contains('node')) { p.classList.add('expanded'); p = p.parentElement.parentElement; }
@@ -230,16 +198,7 @@
         if (foundInTree && !foundInCards) switchView('tree');
         else if (!foundInTree && foundInCards) switchView('sop');
 
-        if (firstMatch) firstMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-
-    function clearInput() {
-        document.getElementById('searchInput').value = "";
-        globalSearch();
-    }
-
-    function handleMasterToggle(expand) {
-        document.querySelectorAll('.node').forEach(n => expand ? n.classList.add('expanded') : n.classList.remove('expanded'));
+        if (firstLabelMatch) firstLabelMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
     function draw(data, parent, level = 0) {
