@@ -3,14 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PT-RQ35K 智慧導覽 V37</title>
+    <title>PT-RQ35K 智慧導覽 V38</title>
     <style>
         :root { 
             --navy-dark: #050505; --card-bg: #1a1a1a; --gold: #d4af37; 
             --text-main: #ffffff; --text-sub: #d1d1d1; --active-blue: #007aff; --sop-green: #28cd41; --danger: #ff3b30;
         }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        html, body { background: var(--navy-dark); margin: 0; padding: 0; color: var(--text-main); font-family: "Inter", "PingFang TC", "Microsoft JhengHei", sans-serif; height: 100vh; overflow: hidden; }
+        
+        /* 解決手機導覽列遮擋：使用 svh 並確保佈局填滿 */
+        html, body { 
+            background: var(--navy-dark); 
+            margin: 0; padding: 0; 
+            color: var(--text-main); 
+            font-family: "Inter", "PingFang TC", "Microsoft JhengHei", sans-serif; 
+            height: 100vh; height: 100svh; 
+            overflow: hidden; 
+        }
 
         .main-wrapper { width: 100%; height: 100%; display: flex; flex-direction: column; }
         header { background: #000; color: var(--gold); padding: 10px; text-align: center; border-bottom: 2px solid var(--gold); flex-shrink: 0; font-weight: 900; letter-spacing: 2px; font-size: 13px; }
@@ -27,7 +36,14 @@
         .tab-btn.gold.active { background: var(--gold); color: black; border-color: var(--gold); }
         .tab-btn.red.active { background: var(--danger); color: white; border-color: var(--danger); }
 
-        .content-container { flex: 1; overflow-y: auto; padding: 12px; scroll-behavior: smooth; }
+        /* 內容區增加底部間距防止遮擋 */
+        .content-container { 
+            flex: 1; 
+            overflow-y: auto; 
+            padding: 12px 12px 100px 12px; 
+            scroll-behavior: smooth; 
+            -webkit-overflow-scrolling: touch;
+        }
         .view-section { display: none; width: 100%; }
         .view-section.active { display: block; }
 
@@ -60,11 +76,11 @@
 <body>
 
 <div class="main-wrapper">
-    <header>PT-RQ35K 智慧導覽 V3.7</header>
+    <header>PT-RQ35K 智慧導覽 V3.8</header>
 
     <div class="top-fixed-area">
         <div class="search-container">
-            <input type="text" id="searchInput" placeholder="試試輸入：解析度、黑畫面、Invalid、歸位..." oninput="globalSearch()">
+            <input type="text" id="searchInput" placeholder="搜尋關鍵字 (歪了、模糊、黑畫面、220V...)" oninput="globalSearch()">
             <button id="clearSearch" class="clear-btn" onclick="clearInput()">✕</button>
         </div>
         <div class="tab-group">
@@ -80,20 +96,21 @@
         </section>
 
         <section id="sopSection" class="view-section">
-            <h3>🚀 安裝與初次使用指南</h3>
-            <div class="card" data-tags="鏡頭 安裝 lens 物理 鎖緊 安全 電源"><span class="step-tag">1</span><b>鏡頭安裝安全守則</b><br>更換鏡頭前必須<b>關閉主電源</b>。移除孔蓋後插入並旋轉至「喀嚓」聲，務必鎖緊<b>防倒落螺絲</b>。</div>
-            <div class="card" data-tags="電源 220V 110V 亮度 電壓 變暗"><span class="step-tag">2</span><b>電源與亮度限制</b><br>使用 AC 100-120V 時亮度僅剩約 1/3 (10,000 lm)。發揮 30,500 lm 全亮度需接 <b>AC 200-240V</b>。</div>
-            <div class="card" data-tags="歸位 shift home 中心 原點 比例 大小"><span class="step-tag">4</span><b>初步對位歸位</b><br>調整幾何前，應先將 [LENS SHIFT] 移動至<b>原點中心 (Home Position)</b>，再進行縮放與對焦。</div>
-            <div class="card" data-tags="初始化 還原 出廠 reset initialize 幾何"><span class="step-tag">5</span><b>全機重置 (Initialize)</b><br>路徑：[PROJECTOR SETUP] -> [INITIALIZE] -> [ALL USER DATA]。清除所有殘留設定。</div>
-            <div class="card" data-tags="鏡頭 校正 calibration 馬達 模糊"><span class="step-tag">6</span><b>鏡頭馬達校正</b><br>路徑：[PROJECTOR SETUP] -> [LENS] -> [LENS CALIBRATION]。更換或搬運後必做動作。</div>
+            <h3>🚀 安裝與初次使用指南 [cite: 6]</h3>
+            <div class="card" data-tags="鏡頭 安裝 lens 物理 鎖緊 安全 電源"><span class="step-tag">1</span><b>鏡頭安裝安全守則</b><br>更換鏡頭前必須<b>關閉主電源</b> [cite: 6]。移除孔蓋後插入並順時針旋至「喀嚓」聲，務必鎖緊<b>防倒落螺絲</b> [cite: 6]。</div>
+            <div class="card" data-tags="電源 220V 110V 亮度 電壓 變暗 功率"><span class="step-tag">2</span><b>電源電壓與亮度限制</b><br>使用 AC 100-120V 時亮度會降低至約 1/3 (10,000 lm) [cite: 3, 6]。全亮度 30,500 lm 需接 <b>AC 200-240V</b> [cite: 3, 6]。</div>
+            <div class="card" data-tags="設備 連接 順序 訊號線"><span class="step-tag">3</span><b>設備連接順序</b><br>應在電源關閉下完成連線 [cite: 6]。開機順序：外部設備 -> 投影機主開關 -> 待機鍵 [cite: 6]。</div>
+            <div class="card" data-tags="歸位 shift home 中心 原點 比例 大小"><span class="step-tag">4</span><b>初步對位歸位</b><br>調整幾何前，應先將 [LENS SHIFT] 移動至<b>歸位中心 (Home Position)</b> [cite: 6]，再進行縮放與對焦。</div>
+            <div class="card" data-tags="初始化 還原 出廠 reset initialize 幾何 融合"><span class="step-tag">5</span><b>全機重置 (Initialize)</b><br>路徑：[PROJECTOR SETUP] -> [INITIALIZE] -> [ALL USER DATA] [cite: 1, 6]。務必清除前場活動的殘留設定。</div>
+            <div class="card" data-tags="鏡頭 校正 calibration 馬達 異常 模糊"><span class="step-tag">6</span><b>執行鏡頭馬達校正</b><br>路徑：[PROJECTOR SETUP] -> [LENS] -> [LENS CALIBRATION] [cite: 1, 6]。更換或搬運後必做動作。</div>
         </section>
 
         <section id="faultSection" class="view-section">
-            <h3>⚠️ 故障排除診斷</h3>
-            <div class="card fault-card" data-tags="解析度 不支援 紅色 invalid 黑畫面 4K 2K 頻率"><span class="fault-q">Q: 無訊號或顯示 Invalid Format (解析度問題)？</span>1. 進入 [SIGNAL LIST]，若該訊號標示為<b>紅色</b>代表頻率不支援。<br>2. 嘗試將 [HDMI EDID] 從 4K 切換至 2K 測試。<br>3. SDI 檢查 Level-A/B 是否匹配。</div>
-            <div class="card fault-card" data-tags="變暗 亮度 溫度 高海拔 25度 35度 恆定 散熱"><span class="fault-q">Q: 畫面亮度異常變暗？</span>1. <b>電壓</b>：確認是否接在 110V。<br>2. <b>環境保護</b>：溫度 >35°C (高海拔 >25°C) 系統會強制降功率。<br>3. <b>恆定模式</b>：檢查 [CONSTANT MODE] 是否開啟。</div>
-            <div class="card fault-card" data-tags="指示燈 快門 綠燈 慢閃 shutter 暫時關閉"><span class="fault-q">Q: 畫面變黑但有綠燈慢閃？</span>快門 [SHUTTER] 已啟動。指示燈會呈<b>綠色 2 秒週期慢閃</b>。按快門鍵回復。</div>
-            <div class="card fault-card" data-tags="紅燈 長亮 故障 光源 風扇 U12 U13"><span class="fault-q">Q: 指示燈顏色與代碼診斷？</span>1. **紅燈長亮**：部分雷射故障。<br>2. **U12/U13**：進氣(12)或排氣(13)溫度預警。<br>3. **紅燈快閃**：硬體或風扇錯誤 (F系列)。</div>
+            <h3>⚠️ 故障排除診斷 [cite: 1, 3]</h3>
+            <div class="card fault-card" data-tags="解析度 不支援 紅色 invalid 黑畫面 4K 2K 頻率"><span class="fault-q">Q: 無訊號或顯示 Invalid Format (解析度問題)？</span>1. 進入 [SIGNAL LIST]，若該訊號標示為<b>紅色</b>代表頻率不支援。<br>2. 嘗試將 [HDMI EDID] 從 4K 切換至 2K 測試。</div>
+            <div class="card fault-card" data-tags="變暗 亮度 溫度 高海拔 25度 35度 恆定 散熱"><span class="fault-q">Q: 畫面亮度異常變暗？</span>1. <b>電壓</b>：確認是否誤接 110V [cite: 3]。<br>2. <b>環境保護</b>：溫度 >35°C (高海拔 >25°C) 系統會強制降功率 [cite: 3]。<br>3. <b>恆定模式</b>：檢查 [CONSTANT MODE] 是否開啟 [cite: 3]。</div>
+            <div class="card fault-card" data-tags="指示燈 快門 綠燈 慢閃 shutter 暫時關閉 2秒"><span class="fault-q">Q: 畫面變黑但有綠燈慢閃？</span>快門 [SHUTTER] 已啟動 [cite: 3]。指示燈會呈<b>綠色 2 秒週期慢閃</b>。按遙控器快門鍵回復。</div>
+            <div class="card fault-card" data-tags="紅燈 長亮 故障 光源 風扇 U12 U13"><span class="fault-q">Q: 指示燈顏色與代碼診斷？</span>1. **紅燈長亮**：部分雷射單元故障 [cite: 1, 3]。<br>2. **U12/U13**：進氣(12)或排氣(13)口溫度異常 [cite: 1]。<br>3. **紅燈快閃**：硬體或風扇錯誤 (F系列代碼) [cite: 1]。</div>
         </section>
     </div>
 </div>
@@ -102,12 +119,12 @@
     const ALIAS_MAP = {
         "還原": ["initialize", "reset", "初始化", "出廠", "預設"],
         "解析度": ["signal", "format", "edid", "解析度", "不支援", "紅色", "黑畫面", "頻率"],
-        "扭曲": ["geometry", "keystone", "幾何", "梯形", "修正", "歪了", "grid"],
+        "扭曲": ["geometry", "keystone", "幾何", "梯形", "修正", "歪了", "斜了", "grid"],
         "大小": ["zoom", "aspect", "比例", "尺寸", "大小", "歸位", "home"],
-        "變暗": ["brightness", "light", "電壓", "110v", "220v", "eco", "quiet", "亮度", "溫度", "高海拔"],
+        "變暗": ["brightness", "light", "電壓", "110v", "220v", "eco", "quiet", "亮度", "溫度", "高海拔", "恆定"],
         "對焦": ["focus", "lens", "校正", "馬達", "模糊"],
         "快門": ["shutter", "綠燈", "慢閃", "黑畫面"],
-        "燈號": ["indicator", "紅燈", "指示燈", "故障", "閃爍", "u12", "u13"]
+        "燈號": ["indicator", "紅燈", "指示燈", "故障", "閃爍", "u12", "u13", "f10"]
     };
 
     const menuData = [
