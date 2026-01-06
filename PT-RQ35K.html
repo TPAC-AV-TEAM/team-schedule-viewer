@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PT-RQ35K 智慧導覽 V3</title>
+    <title>PT-RQ35K 智慧導覽 V3.4</title>
     <style>
         :root { 
             --navy-dark: #050505; --card-bg: #1a1a1a; --gold: #d4af37; 
@@ -60,11 +60,11 @@
 <body>
 
 <div class="main-wrapper">
-    <header>PT-RQ35K 智慧導覽 V33 - 終極修正版</header>
+    <header>PT-RQ35K 智慧導覽 V3.4</header>
 
     <div class="top-fixed-area">
         <div class="search-container">
-            <input type="text" id="searchInput" placeholder="搜尋 (環境溫度、PIN、快門、110V...)" oninput="globalSearch()">
+            <input type="text" id="searchInput" placeholder="搜尋 (環境溫度、PIN、EDID、110V...)" oninput="globalSearch()">
             <button id="clearSearch" class="clear-btn" onclick="clearInput()">✕</button>
         </div>
         <div class="tab-group">
@@ -80,20 +80,20 @@
         </section>
 
         <section id="sopSection" class="view-section">
-            <h3>🚀 專業安裝作業守則</h3>
-            <div class="card" data-tags="鏡頭 安裝 lens 蓋子 物理 鎖緊"><span class="step-tag">1</span><b>鏡頭安裝細節</b><br>移除鏡頭孔蓋後插入鏡頭，順時針旋轉至聽見「喀嚓」聲，並務必鎖緊固定螺絲。 </div>
-            <div class="card" data-tags="電源 220V 110V 亮度 電壓 變暗"><span class="step-tag">2</span><b>電壓與亮度關係</b><br>RQ35K 使用 100-120V 電源時，亮度會自動降至約 1/3。需 200-240V 才能發揮全亮度。 [cite: 3]</div>
-            <div class="card" data-tags="訊號線 連接 順序 設備 電源"><span class="step-tag">3</span><b>連接先後順序</b><br>應在電源關閉狀態下連接外部訊號線。開啟時，先主電源再開待機鍵。 [cite: 1, 2]</div>
-            <div class="card" data-tags="初始化 還原 出廠 reset initialize 預設 重設"><span class="step-tag">4</span><b>全機重置 (Initialize)</b><br>路徑：[PROJECTOR SETUP] -> [INITIALIZE] -> [ALL USER DATA]。務必清除前場設定。 </div>
-            <div class="card" data-tags="鏡頭 校正 calibration lens"><span class="step-tag">5</span><b>鏡頭校正 (Calibration)</b><br>路徑：[PROJECTOR SETUP] -> [LENS] -> [LENS CALIBRATION]。更換鏡頭後必做。 </div>
+            <h3>🚀 專業安裝與初次使用指南</h3>
+            <div class="card" data-tags="鏡頭 安裝 lens 蓋子 物理 鎖緊 旋轉"><span class="step-tag">1</span><b>鏡頭物理安裝</b><br>移除鏡頭孔蓋，插入鏡頭並順時針旋轉至聽見「喀嚓」聲，務必鎖緊固定螺絲以確保投影品質。 </div>
+            <div class="card" data-tags="電源 220V 110V 亮度 電壓 變暗"><span class="step-tag">2</span><b>電源與亮度限制</b><br>使用 AC 100V-120V 時亮度會降至約 1/3 (10,000 lm)。發揮全亮度需接 AC 200V-240V。 </div>
+            <div class="card" data-tags="訊號線 連接 順序 設備 電源"><span class="step-tag">3</span><b>設備連接順序</b><br>請在電源關閉狀態下連接外部設備。開啟時先開主電源，再按待機鍵。 </div>
+            <div class="card" data-tags="初始化 還原 出廠 reset initialize 預設 重設"><span class="step-tag">4</span><b>全機重置 (Initialize)</b><br>路徑：[PROJECTOR SETUP] -> [INITIALIZE] -> [ALL USER DATA]。清除所有幾何與顏色設定。 </div>
+            <div class="card" data-tags="鏡頭 校正 calibration lens"><span class="step-tag">5</span><b>執行鏡頭校正</b><br>路徑：[PROJECTOR SETUP] -> [LENS] -> [LENS CALIBRATION]。更換鏡頭後必做的馬達歸位動作。 </div>
         </section>
 
         <section id="faultSection" class="view-section">
-            <h3>⚠️ 原廠手冊診斷指引</h3>
-            <div class="card fault-card" data-tags="變暗 亮度 溫度 高海拔 25度 35度"><span class="fault-q">Q: 畫面因溫度自動變暗？</span>環境溫度過高 (>35°C，高海拔地區 >25°C) 或通風不良，系統會強制降低亮度保護雷射。 </div>
-            <div class="card fault-card" data-tags="指示燈 快門 綠燈 慢閃 shutter"><span class="fault-q">Q: 畫面變黑但有綠燈慢閃？</span>這是快門 [SHUTTER] 功能被啟動，並非故障，請按遙控器快門鍵回復。 </div>
-            <div class="card fault-card" data-tags="紅燈 長亮 故障 光源 指示燈"><span class="fault-q">Q: 出現紅色指示燈長亮？</span>表示部分光源元件可能發生故障，導致光輸出下降，需記錄狀態報修。 </div>
-            <div class="card fault-card" data-tags="沒訊號 SDI HDMI Level A B 4K 2K Invalid"><span class="fault-q">Q: 無法顯示訊號 (Invalid Format)？</span>1. SDI 請檢查 [SDI MODE] 是否切換 Level-A/B。<br>2. HDMI 嘗試切換 EDID 設定 (4K/2K)。 </div>
+            <h3>⚠️ 深度故障排除診斷</h3>
+            <div class="card fault-card" data-tags="變暗 亮度 溫度 高海拔 25度 35度 散熱 濾網"><span class="fault-q">Q: 畫面亮度異常變暗？</span>1. **電壓檢查**：是否接在 110V。<br>2. **環境保護**：溫度 >35°C (高海拔 >25°C) 會自動降亮度。<br>3. **設定檢查**：[OPERATING MODE] 是否設為 ECO 或 QUIET。 </div>
+            <div class="card fault-card" data-tags="指示燈 快門 綠燈 慢閃 shutter 暫時關閉"><span class="fault-q">Q: 畫面變黑但有綠燈慢閃？</span>快門 [SHUTTER] 功能被啟動（暫時關閉影像），請按遙控器快門鍵回復。 </div>
+            <div class="card fault-card" data-tags="紅燈 長亮 故障 光源 指示燈 診斷"><span class="fault-q">Q: 指示燈顏色診斷？</span>1. **紅燈長亮**：部分光源元件故障。<br>2. **紅燈閃爍**：過熱或風扇異常。<br>3. **橘燈**：濾網壽命預警。 [cite: 1, 3]</div>
+            <div class="card fault-card" data-tags="沒訊號 SDI HDMI Level A B 4K 2K Invalid Format EDID"><span class="fault-q">Q: 無法顯示訊號 (Invalid Format)？</span>1. **SDI**：檢查 Level-A/B 是否切換。<br>2. **HDMI**：嘗試將 [HDMI EDID] 從 4K 改為 2K 以匹配舊設備。 </div>
         </section>
     </div>
 </div>
@@ -102,29 +102,36 @@
     const ALIAS_MAP = {
         "還原": ["initialize", "reset", "初始化", "出廠", "預設"],
         "解析度": ["signal", "format", "edid", "解析度"],
-        "變暗": ["brightness", "light", "電壓", "110v", "220v", "eco", "quiet", "亮度", "溫度", "高海拔"],
-        "密碼": ["security", "pin", "lock", "密碼", "安全"],
+        "變暗": ["brightness", "light", "電壓", "110v", "220v", "eco", "quiet", "亮度", "溫度", "高海拔", "散熱"],
+        "密碼": ["security", "pin", "lock", "密碼", "安全", "管理員"],
         "快門": ["shutter", "綠燈", "慢閃", "黑畫面"],
-        "指示燈": ["indicator", "紅燈", "綠燈", "閃爍", "故障"]
+        "指示燈": ["indicator", "紅燈", "綠燈", "閃爍", "故障", "燈號"]
     };
 
     const menuData = [
         { en: "1. PICTURE", cn: "影像選單", children: [
             { en: "PICTURE MODE", cn: "影像模式", options: ["STANDARD", "CINEMA", "NATURAL", "GRAPHIC"] },
-            { en: "DYNAMIC CONTRAST", cn: "動態對比", options: ["OFF", "1", "2 (預設)", "3", "LIGHTS OUT (全黑關燈)"] },
-            { en: "OPERATING MODE", cn: "運作模式", options: ["NORMAL", "ECO", "QUIET"] }
+            { en: "CONTRAST / BRIGHTNESS", cn: "對比與亮度", options: ["Contrast (-30 ~ +30)", "Brightness (-30 ~ +30)"] },
+            { en: "DYNAMIC CONTRAST", cn: "動態對比", options: ["OFF", "1", "2 (預設)", "3", "LIGHTS OUT (偵測全黑時關燈)"] },
+            { en: "OPERATING MODE", cn: "運作模式", options: ["NORMAL (全亮)", "ECO (長壽命)", "QUIET (靜音)"] }
         ]},
         { en: "2. POSITION", cn: "位置設定", children: [
-            { en: "SHIFT", cn: "鏡頭位移" },
+            { en: "SHIFT", cn: "鏡頭位移", options: ["Vertical Shift", "Horizontal Shift"] },
+            { en: "ASPECT", cn: "長寬比設定", options: ["AUTO", "4:3", "16:9", "THROUGH"] },
             { en: "GEOMETRY", cn: "幾何校正", children: [
                 { en: "KEYSTONE", cn: "梯形修正" },
                 { en: "CORNER CORRECTION", cn: "四角修正" },
                 { en: "FREE GRID", cn: "自由格點校正" }
             ]}
         ]},
+        { en: "3. ADVANCED MENU", cn: "進階融合", children: [
+            { en: "EDGE BLENDING", cn: "邊緣融合", options: ["Marker", "Edges Width", "Black Level"] },
+            { en: "COLOR MATCHING", cn: "色彩匹配", options: ["3-Colors", "7-Colors", "Measured"] }
+        ]},
         { en: "4. DISPLAY LANGUAGE", cn: "語系選擇", options: ["English", "繁體中文", "日本語"] },
         { en: "5. DISPLAY OPTION", cn: "顯示選項", children: [
-            { en: "MENU MODE", cn: "選單模式", options: ["NORMAL", "SIMPLE"] }
+            { en: "MENU MODE", cn: "選單模式", options: ["NORMAL", "SIMPLE"] },
+            { en: "MENU POSITION", cn: "選單位置" }
         ]},
         { en: "6. PROJECTOR SETUP", cn: "投影機設定", children: [
             { en: "LENS", cn: "鏡頭設定", children: [
@@ -132,15 +139,24 @@
                 { en: "ACTIVE FOCUS OPTIMIZER", cn: "主動對焦優化" }
             ]},
             { en: "INITIALIZE", cn: "初始化 (全機重置)", children: [
-                { en: "ALL USER DATA", cn: "全使用者資料重置" }
+                { en: "ALL USER DATA", cn: "全重置" },
+                { en: "REGISTERED SIGNAL DATA", cn: "訊號資料重置" }
             ]},
-            { en: "STATUS", cn: "機身狀態資訊", options: ["Input Voltage", "Intake Temp", "Runtime", "Light Output"] }
+            { en: "STATUS", cn: "機身狀態資訊", options: ["Input Voltage", "Intake Temp", "Runtime", "Light Output (%)"] }
+        ]},
+        { en: "7. TEST PATTERN", cn: "測試圖樣", children: [
+            { en: "INTERNAL TEST PATTERN", cn: "內建測試圖樣", options: ["CROSSHATCH (網格)", "WHITE", "COLOR BAR", "BLACK"] }
+        ]},
+        { en: "8. SIGNAL LIST", cn: "訊號清單", children: [
+            { en: "SIGNAL LIST", cn: "可用訊號清單" },
+            { en: "SDI IN SETTING", cn: "SDI 設定", options: ["SDI MODE: Level A / B"] },
+            { en: "HDMI EDID", cn: "HDMI 相容性", options: ["4K", "2K (解決 Invalid Format)"] }
         ]},
         { en: "9. SECURITY", cn: "安全性設定", children: [
             { en: "PIN CODE CHANGE", cn: "PIN 碼變更" },
-            { en: "SECURITY LOCK", cn: "安全性鎖定" }
+            { en: "SECURITY LOCK", cn: "鎖定開關" }
         ]},
-        { en: "10. NETWORK", cn: "網路設定", options: ["WIRED LAN", "WEB CONTROL (ON/OFF)", "ADMIN PASSWORD"] }
+        { en: "10. NETWORK", cn: "網路設定", options: ["WIRED LAN", "WEB CONTROL (ON/OFF)", "ADMIN ACCOUNT (管理員密碼)"] }
     ];
 
     let treeExpanded = false;
@@ -190,7 +206,7 @@
         });
 
         cards.forEach(c => {
-            const isHit = keywords.some(k => (c.innerText + c.getAttribute('data-tags')).toLowerCase().includes(k));
+            const isHit = keywords.some(k => (c.innerText + (c.getAttribute('data-tags')||'')).toLowerCase().includes(k));
             c.classList.toggle('hidden', !isHit);
         });
 
