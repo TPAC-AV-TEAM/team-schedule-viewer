@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cloud Sync | Pro Publisher V3.2 (Refactored)</title>
+    <title>Cloud Sync | Pro Publisher V3.3 (Clean Sync)</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -25,7 +25,6 @@
         body { font-family: 'Inter', 'Noto Sans TC', sans-serif; background: #050505; color: #fff; min-height: 100vh; overflow: hidden; -webkit-font-smoothing: antialiased; }
         .aura-bg { position: fixed; inset: 0; background: radial-gradient(circle at 50% 50%, #081021 0%, #050505 100%); z-index: -1; }
         
-        /* Loading Animation */
         @keyframes rotate-orbit { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .racing-beam { position: absolute; inset: -6px; border-radius: 50%; background: conic-gradient(from 0deg, transparent 40%, #0A84FF 80%, #ffffff 100%); mask: radial-gradient(transparent 65%, black 67%); -webkit-mask: radial-gradient(transparent 65%, black 67%); filter: blur(1.2px); pointer-events: none; }
         .animate-orbit { animation: rotate-orbit 3s linear infinite; }
@@ -74,11 +73,8 @@
                     let year = now.getFullYear();
                     const month = parseInt(m[1]);
                     const day = parseInt(m[2]);
-                    
-                    // 動態年份修正邏輯：處理跨年問題
-                    if (now.getMonth() >= 10 && month <= 2) year++; // 年底處理明年初班表
-                    else if (now.getMonth() <= 1 && month >= 11) year--; // 年初讀取去年底資料
-                    
+                    if (now.getMonth() >= 10 && month <= 2) year++;
+                    else if (now.getMonth() <= 1 && month >= 11) year--;
                     return `${year}/${month.toString().padStart(2,'0')}/${day.toString().padStart(2,'0')}`;
                 }
             }
@@ -93,7 +89,6 @@
                 EXCEL_COLS_INDEX.forEach(cI => {
                     const dateKey = parseExcelDate(rows[rS]?.[cI]);
                     if (!dateKey) return;
-
                     if (!fR[dateKey]) fR[dateKey] = { GT:{}, BB:{}, GP:{} };
                     if (!fS[dateKey]) fS[dateKey] = {};
 
@@ -107,7 +102,6 @@
                     for (let r = rS + 2; r <= rS + 30; r += 2) {
                         const name = (rows[r]?.[1] || "").trim();
                         if (!STAFF_LIST.includes(name)) continue;
-                        
                         const code = (rows[r+1]?.[cI] || "").toString().trim();
 
                         if (code === "" || code.match(/休|例|休息|無排班|公假|婚假|喪假|病假|事假|特休|補休/)) {
@@ -135,13 +129,19 @@
         const Icon = memo(({ name, className = "w-4 h-4" }) => {
             const icons = {
                 cloud: <path d="M17.5 19c2.5 0 4.5-2 4.5-4.5 0-2.2-1.6-4-3.7-4.4-.5-3.1-3.2-5.6-6.3-5.6-2.5 0-4.7 1.5-5.7 3.6-2 .4-3.3 2.1-3.3 4.1C3 15.2 5.2 18 8 18h9.5z" />,
-                copy: <path d="M8 4v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7.242a2 2 0 0 0-.602-1.43L16.083 2.57A2 2 0 0 0 14.685 2H10a2 2 0 0 0-2 2z M16 2v4h4 M4 8H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1"/>,
+                // 修正馬甲圖示為 Alias 意象
+                alias: (
+                    <React.Fragment>
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <path d="M22 8.5l-3.5 3.5L15 9" />
+                    </React.Fragment>
+                ),
                 check: <path d="M20 6 9 17l-5-5" />,
             };
             return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>{icons[name]}</svg>;
         });
 
-        // --- Sub Components ---
         const SuccessScreen = ({ report, onBack }) => (
             <div className="h-screen w-screen flex flex-col items-center bg-[#050505] p-6 page-fade-in text-center overflow-y-auto no-scrollbar relative z-50">
                 <div className="aura-bg fixed inset-0"></div>
@@ -265,7 +265,7 @@
                 e.target.value = null;
             }, []);
 
-            // Sync Logic (修正版：同步前自動清空舊資料)
+            // 同步前自動清空舊資料
             const runSync = async () => {
                 if (!selectedSheets.length || !db) return;
                 setStatus('syncing');
@@ -273,14 +273,9 @@
 
                 try {
                     const docRef = Firebase.doc(db, 'artifacts', APP_ID, 'public', 'data', 'rosters', 'master');
-                    
-                    // --- 修改處：不再讀取雲端舊資料，直接從空物件開始 ---
-                    // 這樣上傳後，雲端只會留下本次 Excel 提到的日期
+                    // 初始化為空，實現同步前自動清空
                     let existingData = { fR: {}, fS: {}, fH: {}, fN: {} };
-                    
-                    // (移除原本讀取 snap.exists() 的邏輯)
 
-                    // Process Data using Utility
                     selectedSheets.forEach(name => {
                         existingData = processSheetData(wb.Sheets[name], existingData);
                     });
@@ -289,7 +284,6 @@
                     const allK = Object.keys(fR).sort();
                     if (allK.length === 0) throw new Error("無有效排班資料被提取");
 
-                    // 直接使用 setDoc 覆蓋雲端檔案
                     await Firebase.setDoc(docRef, { 
                         roster: JSON.stringify(fR), 
                         statuses: JSON.stringify(fS), 
@@ -327,7 +321,8 @@
                 <div className="h-screen w-screen bg-[#050505] text-white flex flex-col items-center justify-between p-10 relative overflow-hidden select-none">
                     <div className="aura-bg"></div>
                     <header className="w-full flex justify-between items-start z-40">
-                        <button onClick={() => setShowAliasModal(true)} className="p-3 bg-white/5 border border-white/10 rounded-2xl active:scale-95 transition-all hover:bg-white/10"><Icon name="copy" className="text-blue-400 w-5 h-5" /></button>
+                        {/* 套用新圖示 */}
+                        <button onClick={() => setShowAliasModal(true)} className="p-3 bg-white/5 border border-white/10 rounded-2xl active:scale-95 transition-all hover:bg-white/10"><Icon name="alias" className="text-blue-400 w-5 h-5" /></button>
                         <div className="text-center">
                             <h1 className="text-4xl font-black italic tracking-tighter uppercase leading-none">Cloud Sync</h1>
                             <div className={`mt-4 px-4 py-1 rounded-full border text-[9px] font-black uppercase inline-flex items-center gap-2 ${user?'border-emerald-500/30 text-emerald-500':'border-blue-500/30 text-blue-500'}`}>
@@ -352,7 +347,12 @@
                     </main>
                     <AliasModal show={showAliasModal} onClose={() => setShowAliasModal(false)} mapping={nameMapping} setMapping={setNameMapping} onSave={saveMapping} />
                     <SheetPickerModal show={status === 'picking'} sheets={sheetNames} selected={selectedSheets} setSelected={setSelectedSheets} onConfirm={runSync} onWipe={wipeData} onClose={() => setStatus('idle')} />
-                    <footer className="w-full shrink-0 text-center opacity-30 mt-6 font-black tracking-widest text-[8px] text-white">© 2026 Stable Sync Architecture</footer>
+                    
+                    {/* 加入程式碼更新日期標記 */}
+                    <footer className="w-full shrink-0 text-center opacity-30 mt-6 font-black tracking-widest text-[8px] text-white">
+                        © 2026 Stable Sync Architecture | LAST UPDATED: 2026-01-06
+                    </footer>
+                    
                     <input type="file" ref={fileInputRef} className="hidden" onChange={onFileChange} accept=".xlsx" />
                 </div>
             );
