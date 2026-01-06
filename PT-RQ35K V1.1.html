@@ -3,79 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PT-RQ35K 智慧導覽助手 V18 - Fixes</title>
+    <title>PT-RQ35K 智慧導覽助手 V19 - Optimized</title>
     <style>
         :root { 
             --navy-dark: #121212; --card-bg: #1e1e1e; --gold: #d4af37; 
-            --text-main: #ffffff; --text-sub: #b0b0b0; --danger: #cf6679; --active-blue: #0050b3; --sop-green: #4caf50;
+            --text-main: #ffffff; --text-sub: #b0b0b0; --danger: #cf6679; --active-blue: #0A84FF; --sop-green: #30D158;
         }
         
-        * { box-sizing: border-box; }
-        html, body { background: var(--navy-dark); margin: 0; padding: 0; color: var(--text-main); font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; overflow-x: hidden; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html, body { background: var(--navy-dark); margin: 0; padding: 0; color: var(--text-main); font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; height: 100vh; }
 
-        /* RWD 比例控制 (電腦 100% / 手機 80%) */
-        .main-wrapper { width: 100%; display: flex; flex-direction: column; min-height: 100vh; }
-        @media (max-width: 768px) {
-            .main-wrapper { transform: scale(0.8); transform-origin: top left; width: 125%; height: 125%; }
-        }
+        /* 移除原本的 transform scale，改用響應式佈局 */
+        .main-wrapper { width: 100%; height: 100%; display: flex; flex-direction: column; }
 
         header { background: #000; color: var(--gold); padding: 15px; text-align: center; border-bottom: 2px solid var(--gold); flex-shrink: 0; }
-        .search-area { background: #222; padding: 15px; border-bottom: 1px solid #444; flex-shrink: 0; position: sticky; top: 0; z-index: 1000; }
-        #searchInput { width: 100%; padding: 14px; border-radius: 8px; border: 1px solid #444; background: #333; color: white; font-size: 20px; outline: none; margin-bottom: 12px; }
+        .search-area { background: #1a1a1a; padding: 15px; border-bottom: 1px solid #333; flex-shrink: 0; position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        #searchInput { width: 100%; padding: 16px; border-radius: 12px; border: 1px solid #444; background: #2a2a2a; color: white; font-size: 18px; outline: none; margin-bottom: 12px; transition: 0.3s; }
+        #searchInput:focus { border-color: var(--gold); box-shadow: 0 0 10px rgba(212,175,55,0.3); }
         
-        .btn-group { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
-        .btn { padding: 12px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.3s; color: white; }
-        .btn-toggle { background: var(--active-blue); min-width: 130px; }
+        .btn-group { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+        .btn { padding: 10px 18px; border-radius: 8px; border: none; cursor: pointer; font-weight: 900; font-size: 14px; transition: 0.2s; color: white; text-transform: uppercase; letter-spacing: 1px; }
+        .btn:active { transform: scale(0.95); }
+        .btn-toggle { background: var(--active-blue); min-width: 120px; }
         .btn-gold { background: var(--gold); color: #000; }
         .btn-red { background: var(--danger); }
 
-        .main-container { display: flex; flex: 1; flex-direction: row; overflow: hidden; }
+        .main-container { display: flex; flex: 1; overflow: hidden; }
+        
+        /* 手機版自動切換為垂直排列 */
         @media (max-width: 768px) {
-            .main-container { flex-direction: column; overflow: visible; height: auto; }
-            .tree-view, .guide-view { width: 100% !important; height: auto !important; overflow: visible !important; border-right: none !important; }
+            .main-container { flex-direction: column; overflow-y: auto; }
+            .tree-view, .guide-view { width: 100% !important; height: auto !important; overflow: visible !important; border: none !important; }
+            .tree-view { padding: 15px; background: #121212; }
+            .guide-view { padding: 20px; }
         }
 
-        .tree-view { width: 50%; overflow-y: auto; padding: 20px; border-right: 1px solid #333; }
-        .guide-view { width: 50%; overflow-y: auto; padding: 25px; background: #181818; scroll-behavior: smooth; }
+        .tree-view { width: 45%; overflow-y: auto; padding: 20px; border-right: 1px solid #333; background: #161616; scroll-behavior: smooth; }
+        .guide-view { width: 55%; overflow-y: auto; padding: 25px; background: #121212; scroll-behavior: smooth; }
 
         /* Tree UI Styles */
-        .node { margin-bottom: 8px; }
-        .label { cursor: pointer; padding: 12px; border-radius: 8px; display: flex; flex-direction: column; background: var(--card-bg); border: 1px solid #333; transition: 0.2s; position: relative; padding-left: 45px; }
-        .label:hover { background: #2c2c2c; border-color: var(--gold); }
-        .label::before { content: '▶'; font-size: 12px; position: absolute; left: 18px; top: 15px; color: var(--gold); transition: 0.3s; }
+        .node { margin-bottom: 6px; }
+        .label { cursor: pointer; padding: 14px; border-radius: 10px; display: flex; flex-direction: column; background: var(--card-bg); border: 1px solid #2a2a2a; transition: 0.2s; position: relative; padding-left: 45px; }
+        .label:hover { background: #2c2c2c; border-color: #555; }
+        .label::before { content: '▶'; font-size: 10px; position: absolute; left: 18px; top: 18px; color: var(--gold); transition: 0.3s; }
         .node.expanded > .label::before { transform: rotate(90deg); }
-        .node.leaf > .label::before { content: '○'; color: #555; transform: none; }
-        .cn-text { font-weight: bold; font-size: 19px; }
-        .en-text { font-size: 13px; color: var(--text-sub); margin-top: 4px; }
-        .children { margin-left: 15px; display: none; border-left: 1px solid #444; padding-left: 10px; }
-        .node.expanded > .children { display: block; }
-        .level-0 > .label { border-left: 6px solid var(--gold); background: #1a1a1a; }
-        .highlight { background: #4a3a00 !important; border: 2px solid var(--gold) !important; box-shadow: 0 0 10px rgba(212,175,55,0.6); }
+        .node.leaf > .label::before { content: '○'; color: #444; transform: none; }
+        
+        .cn-text { font-weight: bold; font-size: 18px; color: #eee; }
+        .en-text { font-size: 12px; color: var(--text-sub); margin-top: 4px; font-family: monospace; }
+        .children { margin-left: 15px; display: none; border-left: 1px solid #333; padding-left: 10px; margin-top: 4px; }
+        .node.expanded > .children { display: block; animation: slideIn 0.2s ease-out; }
+        
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-5px); } to { opacity: 1; transform: translateX(0); } }
+
+        .level-0 > .label { border-left: 5px solid var(--gold); background: #1f1f1f; }
+        .highlight { background: #3d3400 !important; border: 2px solid var(--gold) !important; box-shadow: 0 0 15px rgba(212,175,55,0.4); }
 
         /* Guide & Fault Cards */
-        .card { background: #252525; padding: 20px; border-radius: 10px; margin-bottom: 15px; border-left: 6px solid var(--sop-green); line-height: 1.7; transition: 0.3s; }
+        .card { background: #222; padding: 20px; border-radius: 12px; margin-bottom: 15px; border-left: 6px solid var(--sop-green); line-height: 1.6; transition: 0.3s; border-top: 1px solid #333; }
         .card.hidden { display: none; }
-        .card.search-match { border-color: var(--gold); background: #332b00; }
-        .fault-card { border-left-color: var(--danger); background: #2d1d1f; }
-        .step-tag { background: var(--sop-green); color: white; padding: 2px 10px; border-radius: 4px; margin-right: 10px; font-weight: bold; }
-        h3 { color: var(--gold); border-bottom: 1px solid #444; padding-bottom: 10px; margin-top: 0; scroll-margin-top: 20px; font-size: 1.5em; }
-        b.warn { color: var(--gold); }
-        .fault-q { color: var(--danger); font-weight: bold; font-size: 1.1em; display: block; margin-bottom: 8px; }
+        .card.search-match { border-color: var(--gold); background: #2a2510; }
+        .fault-card { border-left-color: var(--danger); background: #241a1b; }
+        .step-tag { background: var(--sop-green); color: black; padding: 2px 10px; border-radius: 6px; margin-right: 12px; font-weight: 900; font-size: 14px; }
+        h3 { color: var(--gold); border-bottom: 1px solid #333; padding-bottom: 12px; margin-top: 0; scroll-margin-top: 20px; font-size: 1.4em; font-style: italic; }
+        .fault-q { color: var(--danger); font-weight: bold; font-size: 1.1em; display: block; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
 <div class="main-wrapper">
     <header>
-        <h2 style="margin:0">Panasonic PT-RQ35K 智慧導覽控制台 V18</h2>
+        <h2 style="margin:0; letter-spacing: 2px;">PANASONIC PT-RQ35K <span style="font-weight:100">PRO-CONSOLE V19</span></h2>
     </header>
 
     <div class="search-area">
-        <input type="text" id="searchInput" placeholder="搜尋問題或功能 (例：還原、變暗、歪了、信號、密碼...)" oninput="globalSearch()">
+        <input type="text" id="searchInput" placeholder="輸入關鍵字 (例：還原、電壓、SDI、密碼...)" oninput="globalSearch()">
         <div class="btn-group">
             <button id="toggleBtn" class="btn btn-toggle" onclick="handleMasterToggle()">📂 全部展開</button>
-            <button class="btn btn-gold" onclick="jumpTo('sopSection')">🚀 新手 SOP</button>
-            <button class="btn btn-red" onclick="jumpTo('faultSection')">⚠️ 簡易故障檢測</button>
+            <button class="btn btn-gold" onclick="jumpTo('sopSection')">SOP 指引</button>
+            <button class="btn btn-red" onclick="jumpTo('faultSection')">故障檢測</button>
         </div>
     </div>
 
@@ -85,74 +91,68 @@
         <div class="guide-view" id="infoDisplay">
             <div id="sopSection">
                 <h3>🚀 新手安裝開機 SOP</h3>
-                <div class="card" data-tags="初始化 還原 出廠 重設 reset"><span class="step-tag">1</span><b>初始化 (Initialize)</b><br>路徑：[PROJECTOR SETUP] -> [INITIALIZE]。確保清除之前活動的所有殘留校正與密碼。</div>
-                <div class="card" data-tags="鏡頭 對焦 模糊 校正 calibration"><span class="step-tag">2</span><b>鏡頭校正 (Lens Calibration)</b><br>路徑：[LENS] -> [LENS CALIBRATION]。更換鏡頭或搬運後必做，確保步進馬達歸位。</div>
-                <div class="card" data-tags="電壓 亮度 220V 110V 變暗"><span class="step-tag">3</span><b>確認電壓 (220V)</b><br>路徑：[STATUS] 頁面。PT-RQ35K 在 110V 下亮度會自動被限制在 1/3 (約 10,000 lm)。</div>
-                <div class="card" data-tags="網格 格子 圖樣對位 pattern"><span class="step-tag">4</span><b>調用測試圖樣</b><br>路徑：[TEST PATTERN] -> 選擇 [CROSSHATCH]。調整畫面涵蓋範圍與幾何修正。</div>
+                <div class="card" data-tags="初始化 還原 出廠 重設 reset setup initialize"><span class="step-tag">1</span><b>初始化 (Initialize)</b><br>路徑：[PROJECTOR SETUP] -> [INITIALIZE]。確保清除之前活動的所有殘留校正與密碼。</div>
+                <div class="card" data-tags="鏡頭 對焦 模糊 校正 calibration lens focus zoom"><span class="step-tag">2</span><b>鏡頭校正 (Lens Calibration)</b><br>路徑：[LENS] -> [LENS CALIBRATION]。更換鏡頭或搬運後必做，確保步進馬達歸位。</div>
+                <div class="card" data-tags="電壓 亮度 220V 110V 變暗 status power volts"><span class="step-tag">3</span><b>確認電壓 (220V)</b><br>路徑：[STATUS] 頁面。PT-RQ35K 在 110V 下亮度會自動被限制在 1/3 (約 10,000 lm)。</div>
+                <div class="card" data-tags="網格 格子 圖樣對位 pattern test crosshatch"><span class="step-tag">4</span><b>調用測試圖樣</b><br>路徑：[TEST PATTERN] -> 選擇 [CROSSHATCH]。調整畫面涵蓋範圍與幾何修正。</div>
             </div>
 
             <div id="faultSection" style="margin-top: 50px;">
                 <h3>⚠️ 簡易故障檢測</h3>
-                <div class="card fault-card" data-tags="暗 亮度 電壓 110V 模式 Eco Quiet"><span class="fault-q">Q: 畫面不夠亮 / 變暗了？</span>1. 檢查 [STATUS] 電壓，確認是否接在 220V。110V 會砍掉 2/3 亮度。<br>2. 檢查 [OPERATION SETTING]，確保未設為 Eco 或 Quiet。</div>
-                <div class="card fault-card" data-tags="訊號 沒畫面 黑畫面 sdi 頻率"><span class="fault-q">Q: 畫面沒訊號 (No Signal)？</span>1. 檢查 [SIGNAL LIST] 確認輸入源格式。<br>2. 若是 SDI，確認 [SDI MODE] 的 Level-A/B 設定是否與發送端匹配。</div>
-                <div class="card fault-card" data-tags="不見 選單 消失 項目 反灰"><span class="fault-q">Q: 選單項目消失或反灰？</span>檢查 [DISPLAY OPTION] -> [MENU MODE]。務必設為 <b>NORMAL</b>，設為 SIMPLE 會隱藏專業功能。</div>
-                <div class="card fault-card" data-tags="遙控器 反應 id 密碼 接收器"><span class="fault-q">Q: 遙控器控制沒反應？</span>檢查遙控器與機身的 [PROJECTOR ID]。確保接收器 [REMOTE CONTROL] 未設為 Disable。</div>
-                <div class="card fault-card" data-tags="對焦 模糊 馬達 變焦"><span class="fault-q">Q: 鏡頭無法聚焦或模糊？</span>執行一次 [LENS CALIBRATION]。若環境溫度變化大，請開啟 [ACTIVE FOCUS OPTIMIZER]。</div>
+                <div class="card fault-card" data-tags="暗 亮度 電壓 110V 模式 Eco Quiet status brightness"><span class="fault-q">Q: 畫面不夠亮 / 變暗了？</span>1. 檢查 [STATUS] 電壓，確認是否接在 220V。110V 會砍掉 2/3 亮度。<br>2. 檢查 [OPERATION SETTING]，確保未設為 Eco 或 Quiet。</div>
+                <div class="card fault-card" data-tags="訊號 沒畫面 黑畫面 sdi 頻率 level-a level-b input no signal"><span class="fault-q">Q: 畫面沒訊號 (No Signal)？</span>1. 檢查 [SIGNAL LIST] 確認輸入源格式。<br>2. 若是 SDI，確認 [SDI MODE] 的 Level-A/B 設定是否與發送端匹配。</div>
+                <div class="card fault-card" data-tags="不見 選單 消失 項目 反灰 simple normal menu mode"><span class="fault-q">Q: 選單項目消失或反灰？</span>檢查 [DISPLAY OPTION] -> [MENU MODE]。務必設為 <b>NORMAL</b>，設為 SIMPLE 會隱藏專業功能。</div>
+                <div class="card fault-card" data-tags="遙控器 反應 id 密碼 接收器 remote control"><span class="fault-q">Q: 遙控器控制沒反應？</span>檢查遙控器與機身的 [PROJECTOR ID]。確保接收器 [REMOTE CONTROL] 未設為 Disable。</div>
+                <div class="card fault-card" data-tags="對焦 模糊 馬達 變焦 lens focus active optimizer"><span class="fault-q">Q: 鏡頭無法聚焦或模糊？</span>執行一次 [LENS CALIBRATION]。若環境溫度變化大，請開啟 [ACTIVE FOCUS OPTIMIZER]。</div>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    // 選單資料完整鎖定
     const menuData = [
-        { title: "1. 影像選單 (PICTURE)", tags: "亮度 對比 3D 畫質", children: [
+        { title: "1. 影像選單 (PICTURE)", tags: "亮度 對比 3D 畫質 顏色", children: [
             { title: "影像模式 (PICTURE MODE)" }, { title: "對比/亮度 (CONTRAST / BRIGHTNESS)" },
             { title: "3D 設定 (3D SETTINGS)", children: [{ title: "3D 輸入格式" }, { title: "3D 同步" }] }
         ]},
-        { title: "2. 位置選單 (POSITION)", tags: "歪了 梯形 變形 縮放", children: [
+        { title: "2. 位置選單 (POSITION)", tags: "歪了 梯形 變形 縮放 位移", children: [
             { title: "位移 (SHIFT)" }, { title: "長寬比 (ASPECT)" }, { title: "縮放 (ZOOM)" },
             { title: "幾何校正 (GEOMETRY)", children: [{ title: "梯形修正 (KEYSTONE)" }, { title: "四角修正" }, { title: "自由格點 (FREE GRID)" }] }
         ]},
-        { title: "6. 投影機設定 (PROJECTOR SETUP)", tags: "初始化 還原 鏡頭 初始化", children: [
+        { title: "6. 投影機設定 (PROJECTOR SETUP)", tags: "初始化 還原 鏡頭 狀態 溫控", children: [
             { title: "鏡頭設定 (LENS)", children: [{ title: "鏡頭校正 (LENS CALIBRATION)" }, { title: "主動對焦優化" }] },
-            { title: "初始化 (INITIALIZE)", tags: "還原 重設 出廠" },
-            { title: "狀態查看 (STATUS)", tags: "電壓 序號 溫度" }
+            { title: "初始化 (INITIALIZE)", tags: "還原 重設 出廠 reset" },
+            { title: "狀態查看 (STATUS)", tags: "電壓 序號 溫度 運行時間" }
         ]},
-        { title: "7. 測試圖樣 (TEST PATTERN)", tags: "格子 網格", children: [{ title: "內部測試圖樣" }, { title: "圖樣設定" }] },
-        { title: "8. 信號列表 (SIGNAL LIST)", tags: "解析度 頻率 沒訊號", children: [{ title: "所有訊號清單" }, { title: "當前信號資訊" }] },
-        { title: "9. 安全性 (SECURITY)", children: [{ title: "PIN碼變更" }, { title: "安全性鎖定" }] },
-        { title: "10. 網路選單 (NETWORK)", children: [{ title: "有線網路 (WIRED LAN)" }, { title: "管理員帳號" }] }
+        { title: "7. 測試圖樣 (TEST PATTERN)", tags: "格子 網格 測試畫面", children: [{ title: "內部測試圖樣" }, { title: "圖樣設定" }] },
+        { title: "8. 信號列表 (SIGNAL LIST)", tags: "解析度 頻率 沒訊號 SDI HDMI", children: [{ title: "所有訊號清單" }, { title: "當前信號資訊" }] },
+        { title: "9. 安全性 (SECURITY)", tags: "密碼 鎖定 PIN", children: [{ title: "PIN碼變更" }, { title: "安全性鎖定" }] },
+        { title: "10. 網路選單 (NETWORK)", tags: "IP 有線網路 LAN", children: [{ title: "有線網路 (WIRED LAN)" }, { title: "管理員帳號" }] }
     ];
 
     let isAllExpanded = false;
 
-    // 手機捲動優化：跳轉至標題
     function jumpTo(id) {
         const element = document.getElementById(id);
         const container = document.getElementById('infoDisplay');
-        
-        // 清除搜尋以防卡片被隱藏
         document.getElementById('searchInput').value = "";
         globalSearch(); 
 
         if(window.innerWidth <= 768) {
-            // 手機端：全網頁捲動
             const headerOffset = 180; 
             const elementPosition = element.getBoundingClientRect().top;
             const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
             window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
         } else {
-            // 電腦端：右側框內捲動
             container.scrollTo({ top: element.offsetTop - 10, behavior: 'smooth' });
         }
     }
 
-    // 模糊搜尋聯動
     function globalSearch() {
         const input = document.getElementById('searchInput').value.toLowerCase();
         const labels = document.querySelectorAll('.label');
         const cards = document.querySelectorAll('.card');
+        const treeView = document.getElementById('menuTree');
         
         if (!input) {
             labels.forEach(l => l.classList.remove('highlight'));
@@ -160,15 +160,29 @@
             return;
         }
 
+        let firstMatch = null;
+
         // 選單搜尋
         labels.forEach(l => {
-            const text = (l.innerText + l.getAttribute('data-tags')).toLowerCase();
+            const tagsAttr = l.getAttribute('data-tags') || "";
+            const text = (l.innerText + tagsAttr).toLowerCase();
             if (text.includes(input)) {
                 l.classList.add('highlight');
+                if (!firstMatch) firstMatch = l;
                 let p = l.parentElement;
-                while (p && p.classList.contains('node')) { p.classList.add('expanded'); p = p.parentElement.parentElement; }
-            } else { l.classList.remove('highlight'); }
+                while (p && p.classList.contains('node')) { 
+                    p.classList.add('expanded'); 
+                    p = p.parentElement.parentElement; 
+                }
+            } else { 
+                l.classList.remove('highlight'); 
+            }
         });
+
+        // 搜尋後自動捲動到第一個匹配的選單項目
+        if (firstMatch) {
+            firstMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
 
         // SOP/故障卡片搜尋
         cards.forEach(c => {
@@ -198,8 +212,16 @@
             label.className = 'label';
             const split = item.title.split(' (');
             label.innerHTML = `<span class="cn-text">${split[0]}</span><span class="en-text">${split[1] ? '(' + split[1] : ''}</span>`;
+            
+            // 重要修正：確保 data-tags 正確寫入屬性供搜尋引擎使用
             label.setAttribute('data-tags', `${item.title} ${item.tags || ''}`);
-            label.onclick = (e) => { e.stopPropagation(); node.classList.toggle('expanded'); };
+            
+            label.onclick = (e) => { 
+                e.stopPropagation(); 
+                node.classList.toggle('expanded');
+                // 修正連動：若手動關閉，取消全部展開的標記
+                if (!node.classList.contains('expanded')) isAllExpanded = false;
+            };
             node.appendChild(label);
             if (item.children) {
                 const childWrap = document.createElement('div');
