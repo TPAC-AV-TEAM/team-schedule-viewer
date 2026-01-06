@@ -3,52 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PT-RQ35K 智慧助手 V24 - 全架構與搜尋對位</title>
+    <title>PT-RQ35K 智慧助手 V25 - 完美全架構版</title>
     <style>
         :root { 
             --navy-dark: #080808; --card-bg: #141414; --gold: #d4af37; 
-            --text-main: #ffffff; --text-sub: #999999; --active-blue: #007aff; --sop-green: #28cd41; --danger: #ff3b30;
-            --weekend-pink: #FF6482;
+            --text-main: #ffffff; --text-sub: #909090; --active-blue: #007aff; --sop-green: #28cd41; --danger: #ff3b30;
         }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         html, body { background: var(--navy-dark); margin: 0; padding: 0; color: var(--text-main); font-family: "Inter", "PingFang TC", sans-serif; height: 100vh; overflow: hidden; }
 
         .main-wrapper { width: 100%; height: 100%; display: flex; flex-direction: column; }
-        header { background: #000; color: var(--gold); padding: 12px; text-align: center; border-bottom: 2px solid var(--gold); flex-shrink: 0; font-weight: 900; letter-spacing: 2px; }
+        header { background: #000; color: var(--gold); padding: 10px; text-align: center; border-bottom: 2px solid var(--gold); flex-shrink: 0; font-weight: 900; letter-spacing: 2px; font-size: 13px; }
         
         /* 搜尋與分頁區 */
         .top-fixed-area { background: #111; border-bottom: 1px solid #222; flex-shrink: 0; z-index: 1000; }
         .search-container { padding: 15px 15px 10px 15px; }
-        #searchInput { width: 100%; padding: 16px; border-radius: 12px; border: 1px solid #333; background: #222; color: white; font-size: 18px; outline: none; }
+        #searchInput { width: 100%; padding: 16px; border-radius: 12px; border: 1px solid #333; background: #222; color: white; font-size: 18px; outline: none; transition: 0.3s; }
         #searchInput:focus { border-color: var(--gold); background: #2a2a2a; }
         
         .tab-group { display: flex; gap: 5px; padding: 0 15px 15px 15px; }
-        .tab-btn { flex: 1; padding: 12px 5px; border-radius: 8px; border: 1px solid #333; background: #1a1a1a; color: #777; cursor: pointer; font-weight: bold; font-size: 15px; }
+        .tab-btn { flex: 1; padding: 12px 5px; border-radius: 8px; border: 1px solid #333; background: #1a1a1a; color: #666; cursor: pointer; font-weight: bold; font-size: 15px; transition: 0.2s; }
         .tab-btn.active { background: var(--active-blue); color: white; border-color: var(--active-blue); }
         .tab-btn.gold.active { background: var(--gold); color: black; border-color: var(--gold); }
         .tab-btn.red.active { background: var(--danger); color: white; border-color: var(--danger); }
 
-        /* 滾動區 */
+        /* 滾動內容區 */
         .content-container { flex: 1; overflow-y: auto; padding: 15px; scroll-behavior: smooth; }
         .view-section { display: none; }
         .view-section.active { display: block; }
 
-        /* 選單樹結構 */
+        /* 選單樹 UI */
         .node { margin-bottom: 8px; }
         .label { cursor: pointer; padding: 18px 15px 18px 50px; border-radius: 12px; background: var(--card-bg); border: 1px solid #222; display: flex; align-items: baseline; position: relative; transition: 0.2s; }
-        .label:hover { border-color: #555; }
+        .label:hover { border-color: #555; background: #1a1a1a; }
         .label::before { content: '▶'; font-size: 10px; position: absolute; left: 22px; top: 25px; color: var(--gold); transition: 0.2s; }
         .node.expanded > .label::before { transform: rotate(90deg); }
         .node.leaf > .label::before { content: '○'; color: #444; }
         
-        /* 英文粗 20px / 中文細 19px */
-        .en-text { font-weight: 900; font-size: 20px; color: #fff; margin-right: 12px; }
-        .cn-text { font-weight: 100; font-size: 19px; color: var(--text-sub); }
+        /* 文字設計：英文左 900 / 中文右 100 */
+        .en-text { font-weight: 900; font-size: 20px; color: #fff; margin-right: 12px; letter-spacing: 0.5px; }
+        .cn-text { font-weight: 100; font-size: 20px; color: var(--text-sub); }
         
         .children { margin-left: 20px; display: none; border-left: 2px solid #222; padding-left: 15px; margin-top: 8px; }
         .node.expanded > .children { display: block; }
+        
         .highlight { background: #3d3400 !important; border: 2px solid var(--gold) !important; box-shadow: 0 0 15px rgba(212,175,55,0.4); }
 
+        /* 卡片設計 */
         .card { background: #1a1a1a; padding: 20px; border-radius: 15px; margin-bottom: 15px; border-left: 8px solid var(--sop-green); line-height: 1.7; font-size: 18px; }
         .card.hidden { display: none; }
         .fault-card { border-left-color: var(--danger); background: #201516; }
@@ -63,15 +64,15 @@
 <body>
 
 <div class="main-wrapper">
-    <header>PT-RQ35K 智慧助手 V24 - 專業對位版</header>
+    <header>PANASONIC PT-RQ35K 智慧導覽助手 V25</header>
 
     <div class="top-fixed-area">
         <div class="search-container">
-            <input type="text" id="searchInput" placeholder="搜尋 (還原、歪了、SDI、密碼、變暗...)" oninput="globalSearch()">
+            <input type="text" id="searchInput" placeholder="搜尋 (還原、歪了、變暗、SDI、密碼...)" oninput="globalSearch()">
         </div>
         <div class="tab-group">
             <button id="tab-tree" class="tab-btn active" onclick="switchView('tree')">選單主頁</button>
-            <button id="tab-sop" class="tab-btn gold" onclick="switchView('sop')">安裝 SOP</button>
+            <button id="tab-sop" class="tab-btn gold" onclick="switchView('sop')">開機 SOP</button>
             <button id="tab-fault" class="tab-btn red" onclick="switchView('fault')">故障排除</button>
         </div>
     </div>
@@ -87,8 +88,8 @@
 
         <section id="sopSection" class="view-section">
             <h3>🚀 第一次操作安裝 SOP</h3>
-            <div class="card" data-tags="電源 220V 110V 亮度 電壓"><span class="step-tag">1</span><b>確認電源電壓</b><br>請確認輸入為 **200-240V**。若接 110V，機器雖能啟動，但亮度會自動閹割 2/3 (僅剩 10,000 lm)。</div>
-            <div class="card" data-tags="初始化 還原 出廠 reset initialize 預設 重設"><span class="step-tag">2</span><b>執行全機重置 (Initialize)</b><br>路徑：[PROJECTOR SETUP] -> [INITIALIZE] -> [ALL USER DATA]。務必清除前一場活動殘留的幾何校正與融合設定。</div>
+            <div class="card" data-tags="電源 220V 110V 亮度 電壓"><span class="step-tag">1</span><b>確認電源電壓</b><br>RQ35K 必須使用 **200-240V**。若接 110V，亮度會自動閹割 2/3 (僅剩 10,000 lm)。</div>
+            <div class="card" data-tags="初始化 還原 出廠 reset initialize 預設 重設 清除 抹除"><span class="step-tag">2</span><b>執行全機重置 (Initialize)</b><br>路徑：[PROJECTOR SETUP] -> [INITIALIZE] -> [ALL USER DATA]。務必清除前一場活動殘留的幾何校正與融合設定。</div>
             <div class="card" data-tags="鏡頭 校正 calibration lens"><span class="step-tag">3</span><b>執行鏡頭校正 (Lens Calibration)</b><br>路徑：[PROJECTOR SETUP] -> [LENS] -> [LENS CALIBRATION]。更換或重新裝上鏡頭後，必須讓馬達找回物理原點。</div>
             <div class="card" data-tags="對焦 縮放 focus zoom shift"><span class="step-tag">4</span><b>初步畫面對位</b><br>使用遙控器快速鍵調整 [ZOOM] 與 [LENS SHIFT]，將畫面填滿投影區。</div>
             <div class="card" data-tags="測試圖樣 網格 pattern grid crosshatch"><span class="step-tag">5</span><b>調用測試網格</b><br>路徑：[TEST PATTERN] -> [CROSSHATCH]。在網格狀態下進行 [GEOMETRY] 幾何修正才精準。</div>
@@ -97,37 +98,36 @@
         <section id="faultSection" class="view-section">
             <h3>⚠️ 簡易故障檢測</h3>
             <div class="card fault-card" data-tags="變暗 不夠亮 220V 110V 節能 quiet eco"><span class="fault-q">Q: 畫面明顯不夠亮？</span>1. 檢查輸入電壓是否接在 110V。<br>2. 檢查 [LIGHT OUTPUT] 是否設為 Eco 或 Quiet 模式。</div>
-            <div class="card fault-card" data-tags="沒訊號 黑畫面 sdi hdmi signal no signal"><span class="fault-q">Q: 已接訊號線但顯示 No Signal？</span>1. 進入 [SIGNAL LIST] 檢查解析度是否變紅。<br>2. SDI 訊號請嘗試在 [SDI MODE] 切換 Level-A/B。</div>
+            <div class="card fault-card" data-tags="沒訊號 黑畫面 sdi hdmi signal no signal"><span class="fault-q">Q: 已接訊號線但顯示 No Signal？</span>1. 進入 [SIGNAL LIST] 檢查當前輸入格式是否變紅 (不支援)。<br>2. SDI 訊號請嘗試在 [SDI MODE] 切換 Level-A/B。</div>
             <div class="card fault-card" data-tags="選單 消失 反灰 simple normal menu mode"><span class="fault-q">Q: 選單項目消失或無法選取？</span>進入 [DISPLAY OPTION] -> [MENU MODE]，將設定改回 **NORMAL**。</div>
-            <div class="card fault-card" data-tags="U12 U13 F10 F20 濾網 報錯 警告 代碼 error code"><span class="fault-q">Q: 出現 U12/U13 警告？</span>代表進氣濾網堵塞，請清潔進氣孔。F 系列代碼請記錄後斷電重開。</div>
+            <div class="card fault-card" data-tags="U12 U13 F10 F20 濾網 報錯 警告 代碼 error code"><span class="fault-q">Q: 出現 U12/U13 警告？</span>代表進氣濾網堵塞，請清潔進氣孔。F 系列代碼請記錄後嘗試重新插拔電源。</div>
         </section>
     </div>
 </div>
 
 <script>
+    // 模糊搜尋意圖表
     const ALIAS_MAP = {
-        "還原": ["initialize", "reset", "初始化", "出廠", "預設", "重設", "清除"],
-        "預設": ["initialize", "reset", "初始化", "還原", "重設"],
-        "出廠": ["initialize", "reset", "初始化", "還原", "重設"],
-        "變形": ["geometry", "keystone", "幾何", "梯形", "修正", "歪了"],
-        "歪了": ["geometry", "keystone", "幾何", "梯形", "修正", "變形", "grid", "格點"],
+        "還原": ["initialize", "reset", "初始化", "出廠", "預設", "重設", "清除", "抹除"],
+        "出廠": ["initialize", "reset", "初始化", "還原", "預設", "重設", "清除", "抹除"],
+        "預設": ["initialize", "reset", "初始化", "還原", "出廠", "重設", "清除", "抹除"],
+        "歪了": ["geometry", "keystone", "幾何", "梯形", "修正", "歪了", "斜了", "grid"],
+        "變形": ["geometry", "keystone", "幾何", "梯形", "修正"],
         "變暗": ["brightness", "light", "電壓", "110v", "eco", "quiet", "亮度"],
-        "沒畫面": ["signal", "sdi", "hdmi", "no signal", "訊號"],
-        "密碼": ["security", "pin", "鎖定"],
-        "對焦": ["focus", "lens", "校正", "馬達", "模糊"]
+        "沒畫面": ["signal", "sdi", "hdmi", "no signal", "訊號"]
     };
 
+    // 完整的 10 大項目資料
     const menuData = [
         { en: "1. PICTURE", cn: "影像選單", children: [
             { en: "PICTURE MODE", cn: "影像模式" },
             { en: "CONTRAST / BRIGHTNESS", cn: "對比與亮度" },
-            { en: "COLOR / TINT", cn: "色彩與色調" },
-            { en: "WHITE BALANCE", cn: "白平衡" },
+            { en: "WHITE BALANCE", cn: "白平衡設定" },
             { en: "DYNAMIC CONTRAST", cn: "動態對比" }
         ]},
-        { en: "2. POSITION", cn: "位置設定", children: [
+        { en: "2. POSITION", cn: "位置校正", children: [
             { en: "SHIFT", cn: "鏡頭位移" },
-            { en: "ASPECT", cn: "長寬比" },
+            { en: "ASPECT", cn: "畫面比例" },
             { en: "ZOOM", cn: "畫面縮放" },
             { en: "GEOMETRY", cn: "幾何校正", children: [
                 { en: "KEYSTONE", cn: "梯形修正" },
@@ -135,14 +135,14 @@
                 { en: "FREE GRID", cn: "自由格點校正" }
             ]}
         ]},
-        { en: "3. ADVANCED MENU", cn: "進階選單", children: [
+        { en: "3. ADVANCED MENU", cn: "進階融合", children: [
             { en: "EDGE BLENDING", cn: "邊緣融合" },
             { en: "COLOR MATCHING", cn: "色彩匹配" },
-            { en: "MULTI-SCREEN", cn: "多機設定" }
+            { en: "MULTI-SCREEN", cn: "多機畫面設定" }
         ]},
-        { en: "4. DISPLAY LANGUAGE", cn: "顯示語言", children: [{ en: "CHINESE / ENGLISH", cn: "中英文選擇" }] },
+        { en: "4. DISPLAY LANGUAGE", cn: "語系選擇", children: [{ en: "LANGUAGE SELECT", cn: "語言切換" }] },
         { en: "5. DISPLAY OPTION", cn: "顯示選項", children: [
-            { en: "ON-SCREEN DISPLAY", cn: "螢幕顯示設定" },
+            { en: "ON-SCREEN DISPLAY", cn: "選單顯示設定" },
             { en: "MENU MODE", cn: "選單模式 (Normal/Simple)" },
             { en: "MENU POSITION", cn: "選單顯示位置" }
         ]},
@@ -152,8 +152,8 @@
                 { en: "LENS CALIBRATION", cn: "鏡頭校正" },
                 { en: "ACTIVE FOCUS OPTIMIZER", cn: "主動對焦優化" }
             ]},
-            { en: "STATUS", cn: "狀態資訊", tags: "電壓 溫度 序號" },
-            { en: "INITIALIZE", cn: "初始化 (全機重置)", tags: "還原 出廠 預設 重設" },
+            { en: "STATUS", cn: "機身狀態資訊 (電壓/溫度)" },
+            { en: "INITIALIZE", cn: "初始化 (全機重置)", tags: "還原 出廠 預設 重設 清除 抹除" },
             { en: "OPERATION SETTING", cn: "運行環境設定" }
         ]},
         { en: "7. TEST PATTERN", cn: "測試圖樣", children: [
@@ -161,9 +161,9 @@
             { en: "PATTERN SETTING", cn: "圖樣屬性設定" }
         ]},
         { en: "8. SIGNAL LIST", cn: "訊號清單", children: [
-            { en: "SIGNAL LIST", cn: "可用訊號表" },
-            { en: "SIGNAL INFO", cn: "當前訊號資訊" },
-            { en: "SDI IN SETTING", cn: "SDI 設定", children: [{ en: "SDI MODE", cn: "Level A/B 切換" }] }
+            { en: "SIGNAL LIST", cn: "所有可用訊號表" },
+            { en: "SIGNAL INFO", cn: "當前訊號詳細資訊" },
+            { en: "SDI IN SETTING", cn: "SDI 輸入設定", children: [{ en: "SDI MODE", cn: "Level A/B 切換" }] }
         ]},
         { en: "9. SECURITY", cn: "安全性", children: [
             { en: "PIN CODE CHANGE", cn: "變更 PIN 密碼" },
@@ -195,17 +195,22 @@
             return;
         }
 
+        // 搜尋詞擴展
         let keywords = [input];
         for (let key in ALIAS_MAP) {
-            if (key.includes(input) || input.includes(key)) keywords = [...keywords, ...ALIAS_MAP[key]];
+            if (key.includes(input) || input.includes(key)) {
+                keywords = [...keywords, ...ALIAS_MAP[key]];
+            }
         }
 
         let firstMatch = null;
 
+        // 選單搜尋
         labels.forEach(l => {
             const text = l.innerText.toLowerCase();
             const tags = (l.getAttribute('data-tags') || "").toLowerCase();
             const isHit = keywords.some(k => text.includes(k) || tags.includes(k));
+
             if (isHit) {
                 l.classList.add('highlight');
                 if (!firstMatch) firstMatch = l;
@@ -214,11 +219,12 @@
             } else { l.classList.remove('highlight'); }
         });
 
-        // 強力對位：搜尋後自動捲動到第一個匹配項
+        // 自動定位
         if (firstMatch) {
             firstMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
+        // 卡片搜尋
         cards.forEach(c => {
             const text = c.innerText.toLowerCase();
             const tags = (c.getAttribute('data-tags') || "").toLowerCase();
