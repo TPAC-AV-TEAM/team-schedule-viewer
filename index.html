@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>視聽班表系統 | V6.8 Master UI Fix</title>
+    <title>視聽班表系統 | V6.9 UI Interactive Fix</title>
 
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -45,6 +45,11 @@
                 box-shadow: 0 0 8px #fff, 0 0 15px rgba(255,255,255,0.6), 0 0 30px rgba(255,255,255,0.4); 
             }
         }
+
+        /* 儲存格互動效果 */
+        .master-cell-btn { transition: all 0.2s ease; cursor: pointer; }
+        .master-cell-btn:hover { filter: brightness(1.3); transform: scale(1.05); z-index: 10; }
+        .master-cell-btn:active { transform: scale(0.95); }
 
         @media (max-width: 768px) {
             @keyframes b-glow-adaptive {
@@ -150,7 +155,14 @@
                         else { container.scrollTo({ top: el.offsetTop - (container.offsetHeight / 2) + (el.offsetHeight / 2), behavior: 'smooth' }); }
                     }
                 }, 200);
-            }, [queryStaff, queryVenue]);
+            }, []);
+
+            // 優化點擊事件，避免重複渲染
+            const handleStaffClick = useCallback((name) => {
+                setQueryStaff(name);
+                setQueryVenue(null);
+                setShowMasterModal(false);
+            }, []);
 
             const handleBackToday = useCallback(() => {
                 const tK = formatK(new Date()), idx = dates.findIndex(d => d.fullKey === tK); 
@@ -281,14 +293,14 @@
                                     <div key={v} className="bg-[var(--mac-card)] rounded-[1.5rem] overflow-hidden flex flex-col shadow-lg border-2 transition-all venue-card-border" style={{ borderColor: vColor, boxShadow: `0 0 10px ${vColor}40` }}>
                                         <button onClick={() => setQueryVenue(v)} className="py-2 font-black text-xl bg-white/[0.05]" style={{color: vColor}}>{v}</button>
                                         <div className="px-1 py-1 min-h-[30px] flex items-center justify-center border-b border-white/5 bg-black/20 text-center overflow-hidden"><p className="text-[13px] font-bold italic truncate">{schedule.shows?.[dates[dateIdx]?.fullKey]?.[v]||""}</p></div>
-                                        <div className="p-1 space-y-1">{['A','B'].map(shift=>(<div key={shift} className="bg-white/5 rounded-[1rem] p-1 flex flex-col gap-1 min-h-[60px]">{dData?.s[v][shift].map(n=><StaffButton key={n} name={n} aliasMap={aliasMap} mode="small" onClick={setQueryStaff} />)}</div>))}</div>
+                                        <div className="p-1 space-y-1">{['A','B'].map(shift=>(<div key={shift} className="bg-white/5 rounded-[1rem] p-1 flex flex-col gap-1 min-h-[60px]">{dData?.s[v][shift].map(n=><StaffButton key={n} name={n} aliasMap={aliasMap} mode="small" onClick={handleStaffClick} />)}</div>))}</div>
                                     </div>
                                 );
                             })}
                         </div>
                         <div className="space-y-4 px-1">
-                            <section className="bg-[var(--mac-card)] border border-white/10 rounded-[1.5rem] p-4 shadow-sm"><h4 className="text-orange-400 text-[14px] font-black uppercase mb-3 flex items-center gap-2"><Icon name="briefcase" /> 辦公人員</h4><div className="grid grid-cols-4 gap-2">{dData?.s?.["辦公"]?.map(n=>(<StaffButton key={n} name={n} aliasMap={aliasMap} mode="tiny" onClick={setQueryStaff} />))}</div></section>
-                            <section className="bg-[var(--mac-card)] border border-white/10 rounded-[1.5rem] p-4 shadow-sm"><h4 className="text-gray-400 text-[14px] font-black uppercase mb-3 flex items-center gap-2"><Icon name="sun" /> 今日休假</h4><div className="grid grid-cols-4 gap-2">{dData?.s?.["休假"]?.map(n=>(<StaffButton key={n} name={n} aliasMap={aliasMap} mode="tiny" onClick={setQueryStaff} />))}</div></section>
+                            <section className="bg-[var(--mac-card)] border border-white/10 rounded-[1.5rem] p-4 shadow-sm"><h4 className="text-orange-400 text-[14px] font-black uppercase mb-3 flex items-center gap-2"><Icon name="briefcase" /> 辦公人員</h4><div className="grid grid-cols-4 gap-2">{dData?.s?.["辦公"]?.map(n=>(<StaffButton key={n} name={n} aliasMap={aliasMap} mode="tiny" onClick={handleStaffClick} />))}</div></section>
+                            <section className="bg-[var(--mac-card)] border border-white/10 rounded-[1.5rem] p-4 shadow-sm"><h4 className="text-gray-400 text-[14px] font-black uppercase mb-3 flex items-center gap-2"><Icon name="sun" /> 今日休假</h4><div className="grid grid-cols-4 gap-2">{dData?.s?.["休假"]?.map(n=>(<StaffButton key={n} name={n} aliasMap={aliasMap} mode="tiny" onClick={handleStaffClick} />))}</div></section>
                         </div>
                     </main>
 
@@ -311,7 +323,7 @@
                                         <div className="master-header-height flex items-center justify-center border-b border-white/20 text-[9px] font-black text-white/40">STAFF</div>
                                         {STAFF_ORDER.map(staff => (
                                             <div key={staff} className="master-row-height px-1 border-b border-white/5 flex items-center justify-center">
-                                                <StaffButton name={staff} aliasMap={aliasMap} mode="master" forceName={staff === "廖俊龍" ? "阿龍" : null} onClick={(s) => { setShowMasterModal(false); setQueryStaff(s); }} />
+                                                <StaffButton name={staff} aliasMap={aliasMap} mode="master" forceName={staff === "廖俊龍" ? "阿龍" : null} onClick={handleStaffClick} />
                                             </div>
                                         ))}
                                     </div>
@@ -329,13 +341,14 @@
                                             {STAFF_ORDER.map((staff) => (
                                                 <div key={staff} className="master-row-height border-b border-white/5">
                                                     {dates.map((d) => {
-                                                        const dk = d.fullKey; let label = "—", cls = "bg-white/5 text-white/10", hasS = false, isB = false;
+                                                        const dk = d.fullKey; let label = "—", cls = "bg-white/5 text-white/10", hasS = false, isB = false, activeV = "";
                                                         ['GT','BB','GP'].forEach(v => { 
                                                             if (schedule.roster[dk]?.[v]?.[staff]) { 
                                                                 const sh = schedule.roster[dk][v][staff].shift; 
                                                                 label = `${v}-${sh}`; 
                                                                 cls = `bg-[${v === 'GT' ? 'var(--master-gt)' : v === 'BB' ? 'var(--master-bb)' : 'var(--master-gp)'}] bg-opacity-30 text-white font-normal text-[11px]`; 
                                                                 hasS = true; 
+                                                                activeV = v;
                                                                 if (sh === 'B') isB = true; 
                                                             } 
                                                         });
@@ -344,7 +357,17 @@
                                                         
                                                         return (
                                                             <div key={dk} className={`master-cell-unit p-1 ${dk === todayK ? 'master-today-highlight' : ''}`}>
-                                                                <div className={`w-full h-8 flex items-center justify-center rounded-md ${cls} ${isB ? 'b-shift-glow border border-white' : ''}`}>{label}</div>
+                                                                <div 
+                                                                    className={`master-cell-btn w-full h-8 flex items-center justify-center rounded-md ${cls} ${isB ? 'b-shift-glow border border-white' : ''}`}
+                                                                    onClick={() => {
+                                                                        if (hasS) {
+                                                                            const showTitle = schedule.shows[dk]?.[activeV] || "無演出內容";
+                                                                            alert(`【${dk} ${activeV}】\n${showTitle}`);
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    {label}
+                                                                </div>
                                                             </div>
                                                         );
                                                     })}
@@ -390,7 +413,7 @@
                                                         <div className="flex-1 grid grid-cols-2 gap-2">
                                                             {['A','B'].map(sh => (
                                                                 <div key={sh} className="bg-black/20 rounded-xl p-1 min-h-[40px] flex flex-col gap-1">
-                                                                    {Object.entries(schedule.roster[d.fullKey]?.[queryVenue]||{}).filter(([_,v])=>v.shift===sh).map(([n])=><StaffButton key={n} name={n} aliasMap={aliasMap} onClick={(s) => { setQueryVenue(null); setQueryStaff(s); }} mode="small" />)}
+                                                                    {Object.entries(schedule.roster[d.fullKey]?.[queryVenue]||{}).filter(([_,v])=>v.shift===sh).map(([n])=><StaffButton key={n} name={n} aliasMap={aliasMap} onClick={handleStaffClick} mode="small" />)}
                                                                 </div>
                                                             ))}
                                                         </div>
@@ -419,6 +442,10 @@
                             </div>
                         </div>
                     )}
+                    
+                    <footer className="fixed bottom-0 left-0 right-0 py-2 text-center opacity-20 pointer-events-none z-0">
+                        <span className="text-[8px] font-black tracking-[0.2em]">STABLE VIEW ARCHITECTURE | LAST UPDATED: 2026-01-06</span>
+                    </footer>
                 </div>
             );
         };
