@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>視聽班表系統 | V7.0 Unified UI Design</title>
+    <title>視聽班表系統 | V7.1 UI Consistency Fix</title>
 
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -22,7 +22,7 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Noto+Sans+TC:wght@400;700;900&display=swap');
         :root { 
             --mac-bg: #1c1c1e; --mac-card: #2c2c2e; --mac-card-light: #3a3a3c; --mac-blue: #0A84FF; 
-            --weekend-red: #FF453A; /* 週末高亮色 */
+            --weekend-pink: #FF6482; /* 改用粉紅色，區分 GT 紅 */
             --women-text: #FFD6E0; --men-text: #E0F7FF; --special-text: #FFFFE0;
             --women-dot: #FF375F; --men-dot: #00FFFF; --special-dot: #FFD60A;
             --master-gt: #8B0000; --master-bb: #008B8B; --master-gp: #006400; 
@@ -35,10 +35,10 @@
         
         /* 統一 Today 按鈕 */
         .btn-today { background: var(--mac-blue); color: white; padding: 4px 12px; border-radius: 9999px; font-size: 10px; font-weight: 900; box-shadow: 0 4px 10px rgba(10, 132, 255, 0.3); transition: all 0.2s ease; flex-shrink: 0; }
-        .btn-today:active { transform: scale(0.9); filter: brightness(1.2); }
+        .btn-today:active { transform: scale(0.9); }
 
         /* 週末背景微光 (用於 Master Roster) */
-        .weekend-bg { background: rgba(255, 69, 58, 0.05) !important; }
+        .weekend-bg { background: rgba(255, 100, 130, 0.05) !important; }
 
         .b-shift-glow { animation: b-glow-adaptive 1.5s infinite alternate; }
         @keyframes b-glow-adaptive {
@@ -109,7 +109,6 @@
             const colorClass = info?.type === "Special" ? "text-[var(--special-text)]" : info?.gender === "F" ? "text-[var(--women-text)]" : "text-[var(--men-text)]";
             const dotClass = info?.type === "Special" ? "bg-[var(--special-dot)]" : info?.gender === "F" ? "bg-[var(--women-dot)]" : "bg-[var(--men-dot)]";
             const fontSize = mode === "tiny" ? "text-[14px]" : (mode === "small" ? (isALong ? "text-[16px]" : "text-[18px]") : (mode === "master" ? "text-[16px]" : (isALong ? "text-[22px]" : "text-[26px]")));
-            
             return (
                 <button onClick={(e) => { e.stopPropagation(); if(onClick) onClick(name); }} className={`w-full ${mode === 'small' || mode === 'master' ? 'h-8' : 'h-10'} ${fontSize} rounded-[0.6rem] font-normal border border-white/10 bg-white/10 flex items-center justify-center gap-1 shadow-sm ${colorClass} truncate shrink-0 active:scale-95 transition-transform`}>
                     <span className={`w-1 h-1 rounded-full ${dotClass}`}></span>{disp}
@@ -122,8 +121,6 @@
             const [dateIdx, setDateIdx] = useState(0), [isUnlocked, setIsUnlocked] = useState(false), [user, setUser] = useState(null);
             const [aliasMap, setAliasMap] = useState({}), [queryStaff, setQueryStaff] = useState(null), [queryVenue, setQueryVenue] = useState(null);
             const [showMasterModal, setShowMasterModal] = useState(false);
-
-            const handleStaffClick = useCallback((name) => { setQueryStaff(name); setQueryVenue(null); setShowMasterModal(false); }, []);
 
             const scrollToElement = useCallback((fullKey, containerId) => {
                 setTimeout(() => {
@@ -138,6 +135,8 @@
                     }
                 }, 200);
             }, []);
+
+            const handleStaffClick = useCallback((name) => { setQueryStaff(name); setQueryVenue(null); setShowMasterModal(false); }, []);
 
             const handleBackToday = useCallback(() => {
                 const tK = formatK(new Date()), idx = dates.findIndex(d => d.fullKey === tK); 
@@ -155,7 +154,10 @@
                 const tK = dates[newIdx].fullKey;
                 setDateIdx(newIdx);
                 scrollToElement(tK, "nav-scroll-container");
-            }, [dateIdx, dates, scrollToElement]);
+                if (showMasterModal) scrollToElement(tK, "master-scroll-container");
+                if (queryVenue) scrollToElement(tK, "venue-scroll-container");
+                if (queryStaff) scrollToElement(tK, "staff-scroll-container");
+            }, [dateIdx, dates, showMasterModal, queryVenue, queryStaff, scrollToElement]);
 
             useEffect(() => {
                 const checkFirebase = setInterval(() => {
@@ -191,6 +193,10 @@
                     }
                 });
             }, [user, scrollToElement]);
+
+            useEffect(() => { if (showMasterModal) scrollToElement(dates[dateIdx]?.fullKey, "master-scroll-container"); }, [showMasterModal, dateIdx, dates, scrollToElement]);
+            useEffect(() => { if (queryVenue) scrollToElement(dates[dateIdx]?.fullKey, "venue-scroll-container"); }, [queryVenue, dateIdx, dates, scrollToElement]);
+            useEffect(() => { if (queryStaff) scrollToElement(dates[dateIdx]?.fullKey, "staff-scroll-container"); }, [queryStaff, dateIdx, dates, scrollToElement]);
 
             const dData = useMemo(() => {
                 const d = dates[dateIdx]; if (!d) return null;
@@ -233,8 +239,8 @@
                                     const active = dateIdx === idx, isW = d.w === '六' || d.w === '日';
                                     return (
                                         <button key={d.fullKey} id={`nav-date-${d.fullKey}`} onClick={()=>setDateIdx(idx)} className={`flex-none w-[55px] py-2 rounded-xl transition-all flex flex-col items-center justify-center border-2 ${active ? 'border-blue-500 bg-blue-500/10' : 'border-transparent bg-white/5 opacity-50'}`}>
-                                            <span className={`font-black uppercase text-[10px] ${isW ? 'text-[var(--weekend-red)]' : 'text-white/70'}`}>週{d.w}</span>
-                                            <span className={`text-base font-black leading-none ${active ? 'text-white' : isW ? 'text-[var(--weekend-red)]' : 'text-white/80'}`}>{d.d}</span>
+                                            <span className={`font-black uppercase text-[10px] ${isW ? 'text-[var(--weekend-pink)]' : 'text-white/70'}`}>週{d.w}</span>
+                                            <span className={`text-base font-black leading-none ${active ? 'text-white' : isW ? 'text-[var(--weekend-pink)]' : 'text-white/80'}`}>{d.d}</span>
                                         </button>
                                     );
                                 })}
@@ -278,8 +284,8 @@
                                         <h3 className="text-lg font-black italic">Master Roster</h3>
                                     </div>
                                     <div className="flex gap-1 bg-white/5 rounded-full px-2 py-1">
-                                        <button onClick={() => shiftWeek(-1)} className="p-1 hover:text-white"><Icon name="chevronLeft" /></button>
-                                        <button onClick={() => shiftWeek(1)} className="p-1 hover:text-white"><Icon name="chevronRight" /></button>
+                                        <button onClick={() => shiftWeek(-1)} className="p-1 hover:text-white transition-colors"><Icon name="chevronLeft" /></button>
+                                        <button onClick={() => shiftWeek(1)} className="p-1 hover:text-white transition-colors"><Icon name="chevronRight" /></button>
                                     </div>
                                 </div>
                                 <div className="flex-1 overflow-hidden relative">
@@ -294,8 +300,8 @@
                                                     const isW = d.w === '六' || d.w === '日';
                                                     return (
                                                         <div key={d.fullKey} id={`master-nav-date-${d.fullKey}`} className={`master-cell-unit p-2 ${d.fullKey === todayK ? 'master-today-highlight' : ''} ${isW ? 'weekend-bg' : ''}`}>
-                                                            <div className={`font-black text-[10px] ${isW ? 'text-[var(--weekend-red)]' : 'text-white/60'}`}>週{d.w}</div>
-                                                            <div className={`text-[13px] font-bold ${isW ? 'text-[var(--weekend-red)]' : ''}`}>{d.d}</div>
+                                                            <div className={`font-black text-[10px] ${isW ? 'text-[var(--weekend-pink)]' : 'text-white/60'}`}>週{d.w}</div>
+                                                            <div className={`text-[13px] font-bold ${isW ? 'text-[var(--weekend-pink)]' : ''}`}>{d.d}</div>
                                                         </div>
                                                     );
                                                 })}
@@ -333,8 +339,8 @@
                                         <h3 className="text-xl font-black italic">{queryVenue ? `${queryVenue} Weekly` : (aliasMap[queryStaff] || queryStaff)}</h3>
                                     </div>
                                     <div className="flex bg-white/5 rounded-full px-1 py-1">
-                                        <button onClick={() => shiftWeek(-1)} className="p-1 hover:text-white"><Icon name="chevronLeft" className="w-3 h-3" /></button>
-                                        <button onClick={() => shiftWeek(1)} className="p-1 hover:text-white"><Icon name="chevronRight" className="w-3 h-3" /></button>
+                                        <button onClick={() => shiftWeek(-1)} className="p-1 hover:text-white transition-colors"><Icon name="chevronLeft" className="w-3 h-3" /></button>
+                                        <button onClick={() => shiftWeek(1)} className="p-1 hover:text-white transition-colors"><Icon name="chevronRight" className="w-3 h-3" /></button>
                                     </div>
                                 </div>
                                 <div id={queryVenue ? "venue-scroll-container" : "staff-scroll-container"} className="flex-1 overflow-y-auto p-3 space-y-3 no-scrollbar scroll-smooth">
@@ -343,11 +349,14 @@
                                         if (queryVenue) {
                                             return (
                                                 <div key={d.fullKey} id={`modal-row-${d.fullKey}`} className={`day-block-card ${isS ? 'day-block-today' : ''}`}>
-                                                    <div className={`mb-2 pb-2 border-b border-white/10 text-sm font-light italic opacity-60 text-right ${isW ? 'text-[var(--weekend-red)]' : ''}`}>{schedule.shows[d.fullKey]?.[queryVenue] || "—"}</div>
+                                                    <div className={`mb-2 pb-2 border-b border-white/10 text-sm font-light italic opacity-60 text-right`}>
+                                                        {/* 修正：文字維持原色，僅日期高亮 */}
+                                                        {schedule.shows[d.fullKey]?.[queryVenue] || "—"}
+                                                    </div>
                                                     <div className="flex items-start gap-4">
                                                         <div className="flex flex-col text-left pr-2 border-r border-white/10 w-20 leading-none justify-center">
-                                                            <span className={`font-black mb-1 text-[12px] ${isW ? 'text-[var(--weekend-red)]' : 'text-white/50'}`}>週{d.w}</span>
-                                                            <span className={`text-[24px] font-black tracking-tighter ${isW ? 'text-[var(--weekend-red)]' : ''}`}>{d.d}</span>
+                                                            <span className={`font-black mb-1 text-[12px] ${isW ? 'text-[var(--weekend-pink)]' : 'text-white/50'}`}>週{d.w}</span>
+                                                            <span className={`text-[24px] font-black tracking-tighter ${isW ? 'text-[var(--weekend-pink)]' : ''}`}>{d.d}</span>
                                                         </div>
                                                         <div className="flex-1 grid grid-cols-2 gap-2">{['A','B'].map(sh => (<div key={sh} className="bg-black/20 rounded-xl p-1 min-h-[40px] flex flex-col gap-1">{Object.entries(schedule.roster[d.fullKey]?.[queryVenue]||{}).filter(([_,v])=>v.shift===sh).map(([n])=><StaffButton key={n} name={n} aliasMap={aliasMap} onClick={handleStaffClick} mode="small" />)}</div>))}</div>
                                                     </div>
@@ -360,10 +369,13 @@
                                         return (
                                             <div key={d.fullKey} id={`modal-row-${d.fullKey}`} className={`flex items-center gap-3 day-block-card ${isS ? 'day-block-today' : ''}`}>
                                                 <div className="flex flex-col text-left pr-3 border-r border-white/10 w-20 leading-none shrink-0 justify-center">
-                                                    <span className={`font-black mb-1 text-[12px] ${isW ? 'text-[var(--weekend-red)]' : 'text-white/50'}`}>週{d.w}</span>
-                                                    <span className={`text-[24px] font-black tracking-tighter ${isW ? 'text-[var(--weekend-red)]' : ''}`}>{d.d}</span>
+                                                    <span className={`font-black mb-1 text-[12px] ${isW ? 'text-[var(--weekend-pink)]' : 'text-white/50'}`}>週{d.w}</span>
+                                                    <span className={`text-[24px] font-black tracking-tighter ${isW ? 'text-[var(--weekend-pink)]' : ''}`}>{d.d}</span>
                                                 </div>
-                                                <div className="flex-1 marquee-container text-[18px] font-light text-white opacity-50 italic">{hasS ? (schedule.shows[d.fullKey]?.[activeV] || "") : ""}</div>
+                                                <div className="flex-1 marquee-container text-[18px] font-light text-white opacity-50 italic">
+                                                    {/* 修正：文字維持原色 */}
+                                                    {hasS ? (schedule.shows[d.fullKey]?.[activeV] || "") : ""}
+                                                </div>
                                                 <span className={`text-lg font-black px-3 py-1 rounded-lg shrink-0`} style={{ color: co }}>{st}</span>
                                             </div>
                                         );
