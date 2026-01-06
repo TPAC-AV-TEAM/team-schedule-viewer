@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PT-RQ35K 智慧導覽助手 V20 - Fuzzy Search Pro</title>
+    <title>PT-RQ35K 智慧導覽助手 V21 - Full Architecture</title>
     <style>
         :root { 
             --navy-dark: #0f0f0f; --card-bg: #1a1a1a; --gold: #d4af37; 
@@ -15,7 +15,6 @@
         .main-wrapper { width: 100%; height: 100%; display: flex; flex-direction: column; }
         header { background: #000; color: var(--gold); padding: 12px; text-align: center; border-bottom: 2px solid var(--gold); flex-shrink: 0; font-weight: 900; letter-spacing: 1px; }
         
-        /* 搜尋區優化 */
         .search-area { background: #111; padding: 15px; border-bottom: 1px solid #333; flex-shrink: 0; z-index: 1000; }
         #searchInput { width: 100%; padding: 16px; border-radius: 14px; border: 1px solid #444; background: #222; color: white; font-size: 18px; outline: none; transition: 0.3s; }
         #searchInput:focus { border-color: var(--gold); background: #2a2a2a; }
@@ -33,10 +32,9 @@
         .guide-view { width: 55%; overflow-y: auto; padding: 20px; background: #0a0a0a; scroll-behavior: smooth; }
         @media (max-width: 768px) { .tree-view, .guide-view { width: 100%; height: 50%; } }
 
-        /* 選單樹 UI */
         .node { margin-bottom: 5px; }
         .label { cursor: pointer; padding: 12px; border-radius: 10px; background: var(--card-bg); border: 1px solid #252525; display: flex; flex-direction: column; position: relative; padding-left: 40px; transition: 0.2s; }
-        .label:hover { border-color: var(--gold); }
+        .label:hover { border-color: var(--gold); background: #222; }
         .label::before { content: '▶'; font-size: 9px; position: absolute; left: 18px; top: 16px; color: var(--gold); transition: 0.2s; }
         .node.expanded > .label::before { transform: rotate(90deg); }
         .node.leaf > .label::before { content: '○'; color: #444; }
@@ -45,28 +43,27 @@
         .en-text { font-size: 11px; color: var(--text-sub); margin-top: 2px; text-transform: uppercase; }
         .children { margin-left: 15px; display: none; border-left: 1px solid #333; padding-left: 10px; margin-top: 5px; }
         .node.expanded > .children { display: block; }
-        .highlight { background: #3d3400 !important; border: 2px solid var(--gold) !important; }
+        .highlight { background: #3d3400 !important; border: 2px solid var(--gold) !important; box-shadow: 0 0 15px rgba(212,175,55,0.3); }
 
-        /* SOP & 故障排除卡片 */
         .card { background: #1e1e1e; padding: 18px; border-radius: 12px; margin-bottom: 12px; border-left: 6px solid var(--sop-green); line-height: 1.6; }
         .card.hidden { display: none; }
         .card.search-match { border-color: var(--gold); background: #26210a; }
         .fault-card { border-left-color: var(--danger); background: #241819; }
-        .step-tag { background: var(--sop-green); color: black; padding: 1px 8px; border-radius: 4px; margin-right: 8px; font-weight: 900; font-size: 12px; vertical-align: middle; }
-        h3 { color: var(--gold); border-bottom: 1px solid #333; padding-bottom: 8px; margin-top: 0; scroll-margin-top: 20px; }
+        .step-tag { background: var(--sop-green); color: black; padding: 1px 8px; border-radius: 4px; margin-right: 8px; font-weight: 900; font-size: 12px; }
+        h3 { color: var(--gold); border-bottom: 1px solid #333; padding-bottom: 8px; margin-top: 0; scroll-margin-top: 20px; font-style: italic; }
         .fault-q { color: var(--danger); font-weight: bold; display: block; margin-bottom: 5px; }
     </style>
 </head>
 <body>
 
 <div class="main-wrapper">
-    <header>PT-RQ35K 智慧導覽控制台 V20</header>
+    <header>Panasonic PT-RQ35K 智慧控制台 V21</header>
 
     <div class="search-area">
-        <input type="text" id="searchInput" placeholder="搜尋問題、功能或代碼 (例：還原、電壓、變暗、SDI...)" oninput="globalSearch()">
+        <input type="text" id="searchInput" placeholder="搜尋意圖 (例：出廠、變形、SDI、密碼、變暗...)" oninput="globalSearch()">
         <div class="btn-group">
             <button id="toggleBtn" class="btn btn-toggle" onclick="handleMasterToggle()">📂 全部展開</button>
-            <button class="btn btn-gold" onclick="jumpTo('sopSection')">開機 SOP</button>
+            <button class="btn btn-gold" onclick="jumpTo('sopSection')">安裝 SOP</button>
             <button class="btn btn-red" onclick="jumpTo('faultSection')">故障排除</button>
         </div>
     </div>
@@ -76,45 +73,47 @@
         <div class="guide-view" id="infoDisplay">
             <div id="sopSection">
                 <h3>🚀 第一次操作安裝 SOP</h3>
-                <div class="card" data-tags="電源 220V 110V 亮度 電壓"><span class="step-tag">1</span><b>電源確認</b><br>確認輸入電壓為 **220V**。若誤接 110V，亮度將被限制在 1/3 (約 10,000 lm)。</div>
-                <div class="card" data-tags="初始化 還原 出廠 reset initialize"><span class="step-tag">2</span><b>全機初始化</b><br>路徑：[PROJECTOR SETUP] -> [INITIALIZE] -> [ALL USER DATA]。清除前一手留下的校正值與幾何設定。</div>
-                <div class="card" data-tags="鏡頭 校正 calibration lens"><span class="step-tag">3</span><b>鏡頭校正 (必做)</b><br>路徑：[LENS] -> [LENS CALIBRATION]。更換或重新安裝鏡頭後必做，確保馬達定位準確。</div>
-                <div class="card" data-tags="對焦 縮放 focus zoom"><span class="step-tag">4</span><b>畫面初調</b><br>使用遙控器 [FOCUS]、[ZOOM]、[SHIFT] 進行初步畫面對位。</div>
-                <div class="card" data-tags="測試圖樣 網格 pattern grid"><span class="step-tag">5</span><b>調用測試圖樣</b><br>路徑：[TEST PATTERN] -> [CROSSHATCH] (網格)。檢查邊緣融合與幾何歪斜。</div>
+                <div class="card" data-tags="電源 220V 110V 亮度 電壓"><span class="step-tag">1</span><b>電源確認 (重要)</b><br>PT-RQ35K 在 **110V** 下亮度會自動降至約 **10,000 lm** (1/3)。請務必確認現場提供 **200-240V** 電源以發揮 30,500 lm 全功率。</div>
+                <div class="card" data-tags="初始化 還原 出廠 reset initialize 預設"><span class="step-tag">2</span><b>全機重設 (Initialize)</b><br>路徑：[PROJECTOR SETUP] -> [INITIALIZE] -> [ALL USER DATA]。<br>這會清除所有前人的幾何修正、融合設定及密碼。</div>
+                <div class="card" data-tags="鏡頭 校正 calibration lens"><span class="step-tag">3</span><b>鏡頭校正 (Lens Calibration)</b><br>路徑：[PROJECTOR SETUP] -> [LENS] -> [LENS CALIBRATION]。<br>每次物理性拆裝或搬運後必做，否則縮放/對焦馬達可能偏移。</div>
+                <div class="card" data-tags="對焦 縮放 focus zoom shift"><span class="step-tag">4</span><b>初步對位</b><br>使用遙控器快速鍵：[LENS SHIFT] 調整上下左右，[ZOOM] 調整大小，[FOCUS] 調整清晰度。</div>
+                <div class="card" data-tags="測試圖樣 網格 pattern grid crosshatch"><span class="step-tag">5</span><b>網格校正</b><br>路徑：[TEST PATTERN] -> [CROSSHATCH]。開啟網格後，才能進行精確的幾何修正。</div>
             </div>
 
             <div id="faultSection" style="margin-top: 40px;">
                 <h3>⚠️ 簡易故障排除</h3>
-                <div class="card fault-card" data-tags="變暗 不夠亮 220V 110V 節能"><span class="fault-q">Q: 投影畫面明顯不夠亮？</span>1. 查看 [STATUS] 確認電壓是否為 200-240V。<br>2. 檢查 [LIGHT OUTPUT] 是否被限制在 Eco 或 Quiet 模式。</div>
-                <div class="card fault-card" data-tags="沒訊號 黑畫面 sdi hdmi level-a level-b signal"><span class="fault-q">Q: 訊號源已接，但顯示 No Signal？</span>1. 進入 [SIGNAL LIST] 檢查解析度是否支援。<br>2. 若使用 SDI，嘗試切換 [SDI MODE] 的 Level-A 或 Level-B。</div>
-                <div class="card fault-card" data-tags="反灰 選單 消失 不見 simple normal menu"><span class="fault-q">Q: 選單很多功能都不見了 (反灰)？</span>檢查 [DISPLAY OPTION] -> [MENU MODE]。若設為 **SIMPLE** 會隱藏多數功能，請改回 **NORMAL**。</div>
-                <div class="card fault-card" data-tags="遙控器 反應 id 控制 remote disable"><span class="fault-q">Q: 遙控器按下後投影機沒反應？</span>1. 檢查遙控器 ID 與機身是否一致。<br>2. 檢查 [PROJECTOR SETUP] -> [REMOTE CONTROL] 是否被設為 Disable。</div>
-                <div class="card fault-card" data-tags="U12 U13 F10 F20 報錯代碼 error"><span class="fault-q">Q: 出現錯誤代碼或進氣孔警告？</span>檢查自診斷選單。常見 U12/U13 為濾網堵塞，請清潔進氣孔。F 系列代碼請重新插拔電源。</div>
+                <div class="card fault-card" data-tags="變暗 不夠亮 220V 110V 節能 quiet eco"><span class="fault-q">Q: 畫面亮度感覺不足？</span>1. 檢查 [STATUS] 中的輸入電壓是否低於 200V。<br>2. 檢查 [LIGHT OUTPUT] 是否處於 Eco 或 Quiet 模式。</div>
+                <div class="card fault-card" data-tags="沒訊號 黑畫面 sdi hdmi level-a level-b signal"><span class="fault-q">Q: 有接線但顯示 No Signal？</span>1. 檢查 [SIGNAL LIST] 解析度是否變紅 (不支援)。<br>2. 若是 SDI，手動切換 [SDI MODE] 的 Level-A 或 Level-B 以配對訊號源。</div>
+                <div class="card fault-card" data-tags="選單 消失 反灰 simple normal menu mode"><span class="fault-q">Q: 選單很多項目消失或不能點？</span>路徑：[DISPLAY OPTION] -> [MENU MODE]。務必切換為 **NORMAL**。設為 Simple 會鎖定專業功能。</div>
+                <div class="card fault-card" data-tags="U12 U13 F10 F20 報錯 警告 代碼 error code"><span class="fault-q">Q: 出現警告訊息或錯誤代碼？</span>- U12/U13：濾網進氣異常，請清潔進氣孔。<br>- F 開頭代碼：電路異常，請記錄號碼並嘗試重新斷電重開。</div>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    // 同義詞映射表 (模糊搜尋核心)
+    // 模糊搜尋同義詞映射
     const ALIAS_MAP = {
         "還原": ["初始化", "initialize", "reset", "出廠", "預設"],
-        "變暗": ["亮度", "電壓", "110v", "light", "output", "eco"],
-        "歪了": ["幾何", "geometry", "梯形", "keystone", "grid", "格點"],
-        "訊號": ["signal", "sdi", "hdmi", "no signal", "沒畫面"],
-        "密碼": ["security", "pin", "鎖定", "變更碼"],
-        "對焦": ["focus", "模糊", "校正", "馬達", "lens"]
+        "預設": ["初始化", "initialize", "reset", "還原"],
+        "出廠": ["初始化", "initialize", "reset", "還原"],
+        "變形": ["幾何", "geometry", "梯形", "keystone", "修正"],
+        "變暗": ["亮度", "電壓", "light", "output", "eco"],
+        "密碼": ["security", "pin", "鎖定"],
+        "歪了": ["幾和", "位移", "梯形", "grid"],
+        "沒畫面": ["訊號", "signal", "sdi", "hdmi", "no signal"]
     };
 
+    // 十大選單完整架構
     const menuData = [
-        { title: "1. PICTURE (影像影像)", tags: "亮度 對比 顏色 白平衡 模式", children: [
+        { title: "1. PICTURE (影像影像)", tags: "亮度 對比 畫質 模式", children: [
             { title: "PICTURE MODE (影像模式)" },
             { title: "CONTRAST / BRIGHTNESS (對比/亮度)" },
             { title: "COLOR / TINT (色彩/色調)" },
             { title: "WHITE BALANCE (白平衡)" },
             { title: "DYNAMIC CONTRAST (動態對比)" }
         ]},
-        { title: "2. POSITION (位置設定)", tags: "縮放 位移 比例 變形", children: [
+        { title: "2. POSITION (位置設定)", tags: "縮放 位移 比例 幾何", children: [
             { title: "SHIFT (位移)" },
             { title: "ASPECT (長寬比)" },
             { title: "ZOOM (縮放)" },
@@ -125,29 +124,44 @@
                 { title: "FREE GRID (自由格點)" }
             ]}
         ]},
-        { title: "3. ADVANCED MENU (進階選單)", tags: "邊緣融合 融合 多機 顏色匹配", children: [
+        { title: "3. ADVANCED MENU (進階選單)", tags: "融合 拼接 多機 匹配", children: [
             { title: "EDGE BLENDING (邊緣融合)" },
             { title: "COLOR MATCHING (色彩匹配)" },
             { title: "MULTI-SCREEN (多機畫面設定)" }
         ]},
-        { title: "6. PROJECTOR SETUP (投影機設定)", tags: "還原 初始化 狀態 電壓 濾網 ID 遙控", children: [
+        { title: "4. DISPLAY LANGUAGE (顯示語言)", tags: "繁體 中文 語言", children: [{ title: "語言選擇 (CHINESE/ENGLISH...)" }] },
+        { title: "5. DISPLAY OPTION (顯示選項)", tags: "選單模式 選單位置 背景", children: [
+            { title: "ON-SCREEN DISPLAY (螢幕顯示設定)" },
+            { title: "MENU MODE (選單模式)", tags: "SIMPLE NORMAL" },
+            { title: "MENU POSITION (選單位置)" }
+        ]},
+        { title: "6. PROJECTOR SETUP (投影機設定)", tags: "還原 初始化 狀態 電壓 濾網 鏡頭", children: [
             { title: "PROJECTOR ID (投影機 ID)" },
             { title: "LENS (鏡頭設定)", children: [
                 { title: "LENS CALIBRATION (鏡頭校正)" },
-                { title: "ACTIVE FOCUS OPTIMIZER (主動對焦)" }
+                { title: "ACTIVE FOCUS OPTIMIZER (對焦優化)" }
             ]},
-            { title: "STATUS (狀態資訊)", tags: "序號 電壓 溫度 運行時間" },
+            { title: "STATUS (狀態資訊)", tags: "電壓 序號 溫度 運行時間" },
             { title: "INITIALIZE (初始化)", tags: "還原 出廠 重設 reset" },
-            { title: "OPERATION SETTING (運行設定)", tags: "風扇 節能 模式" }
+            { title: "OPERATION SETTING (運行模式)" }
         ]},
         { title: "7. TEST PATTERN (測試圖樣)", tags: "網格 格子 測試畫面", children: [
             { title: "INTERNAL TEST PATTERN (內部圖樣)" },
             { title: "PATTERN SETTING (圖樣設定)" }
         ]},
-        { title: "8. SIGNAL LIST (訊號列表)", tags: "訊號 沒訊號 格式 SDI HDMI 解析度", children: [
+        { title: "8. SIGNAL LIST (訊號列表)", tags: "格式 SDI HDMI 沒訊號", children: [
             { title: "SIGNAL LIST (所有訊號)" },
             { title: "SIGNAL INFO (當前資訊)" },
-            { title: "SDI IN SETTING (SDI 設定)", children: [{ title: "SDI MODE (LEVEL A/B)" }] }
+            { title: "SDI IN SETTING (SDI 模式)", children: [{ title: "SDI MODE (LEVEL A/B)" }] }
+        ]},
+        { title: "9. SECURITY (安全性)", tags: "密碼 鎖定 PIN", children: [
+            { title: "PIN CODE CHANGE (PIN碼變更)" },
+            { title: "SECURITY LOCK (安全性鎖定)" }
+        ]},
+        { title: "10. NETWORK (網路設定)", tags: "IP LAN 有線 遠端控制", children: [
+            { title: "WIRED LAN (有線網路)" },
+            { title: "ADMINISTRATOR ACCOUNT (管理員帳號)" },
+            { title: "NETWORK STATUS (網路狀態)" }
         ]}
     ];
 
@@ -164,20 +178,21 @@
             return;
         }
 
-        // 核心模糊邏輯：將輸入轉換為擴展關鍵字
-        let searchTerms = [input];
+        // 構建搜尋關鍵字組 (包含輸入詞及其同義詞)
+        let keywords = [input];
         for (let key in ALIAS_MAP) {
             if (key.includes(input) || input.includes(key)) {
-                searchTerms = [...searchTerms, ...ALIAS_MAP[key]];
+                keywords = [...keywords, ...ALIAS_MAP[key]];
             }
         }
 
         let firstMatch = null;
 
+        // 選單樹搜尋
         labels.forEach(l => {
-            const dataTags = l.getAttribute('data-tags').toLowerCase();
+            const tagsAttr = (l.getAttribute('data-tags') || "").toLowerCase();
             const labelText = l.innerText.toLowerCase();
-            const isHit = searchTerms.some(term => dataTags.includes(term) || labelText.includes(term));
+            const isHit = keywords.some(k => tagsAttr.includes(k) || labelText.includes(k));
 
             if (isHit) {
                 l.classList.add('highlight');
@@ -191,10 +206,11 @@
 
         if (firstMatch) firstMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
+        // SOP/故障卡片搜尋
         cards.forEach(c => {
-            const cardTags = (c.getAttribute('data-tags') || "").toLowerCase();
-            const cardText = c.innerText.toLowerCase();
-            const isHit = searchTerms.some(term => cardTags.includes(term) || cardText.includes(term));
+            const cTags = (c.getAttribute('data-tags') || "").toLowerCase();
+            const cText = c.innerText.toLowerCase();
+            const isHit = keywords.some(k => cTags.includes(k) || cText.includes(k));
             
             if (isHit) {
                 c.classList.remove('hidden');
@@ -212,7 +228,7 @@
         document.getElementById('searchInput').value = "";
         globalSearch(); 
         if(window.innerWidth <= 768) {
-            const offset = element.offsetTop + document.querySelector('.search-area').offsetHeight + 100;
+            const offset = element.offsetTop + 200;
             container.scrollTo({ top: offset, behavior: 'smooth' });
         } else {
             container.scrollTo({ top: element.offsetTop - 10, behavior: 'smooth' });
@@ -233,7 +249,10 @@
             label.className = 'label';
             const split = item.title.split(' (');
             label.innerHTML = `<span class="cn-text">${split[0]}</span><span class="en-text">${split[1] ? '(' + split[1] : ''}</span>`;
+            
+            // 寫入搜尋標籤
             label.setAttribute('data-tags', `${item.title} ${item.tags || ''}`);
+            
             label.onclick = (e) => { e.stopPropagation(); node.classList.toggle('expanded'); if(!node.classList.contains('expanded')) isAllExpanded = false; };
             node.appendChild(label);
             if (item.children) {
