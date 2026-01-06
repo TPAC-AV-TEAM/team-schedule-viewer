@@ -265,6 +265,7 @@
                 e.target.value = null;
             }, []);
 
+            // Sync Logic (修正版：同步前自動清空舊資料)
             const runSync = async () => {
                 if (!selectedSheets.length || !db) return;
                 setStatus('syncing');
@@ -272,19 +273,14 @@
 
                 try {
                     const docRef = Firebase.doc(db, 'artifacts', APP_ID, 'public', 'data', 'rosters', 'master');
-                    const snap = await Firebase.getDoc(docRef);
+                    
+                    // --- 修改處：不再讀取雲端舊資料，直接從空物件開始 ---
+                    // 這樣上傳後，雲端只會留下本次 Excel 提到的日期
                     let existingData = { fR: {}, fS: {}, fH: {}, fN: {} };
                     
-                    if (snap.exists()) {
-                        const d = snap.data();
-                        existingData = {
-                            fR: JSON.parse(d.roster || '{}'),
-                            fS: JSON.parse(d.statuses || '{}'),
-                            fH: JSON.parse(d.shows || '{}'),
-                            fN: JSON.parse(d.notes || '{}')
-                        };
-                    }
+                    // (移除原本讀取 snap.exists() 的邏輯)
 
+                    // Process Data using Utility
                     selectedSheets.forEach(name => {
                         existingData = processSheetData(wb.Sheets[name], existingData);
                     });
@@ -293,6 +289,7 @@
                     const allK = Object.keys(fR).sort();
                     if (allK.length === 0) throw new Error("無有效排班資料被提取");
 
+                    // 直接使用 setDoc 覆蓋雲端檔案
                     await Firebase.setDoc(docRef, { 
                         roster: JSON.stringify(fR), 
                         statuses: JSON.stringify(fS), 
