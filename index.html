@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>視聽班表系統 | V7.3 Full Marquee Integrated</title>
+    <title>視聽班表系統 | V7.3 Marquee Fixed</title>
 
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -64,10 +64,11 @@
         .day-block-today { background: #48484a !important; border: 2px solid var(--mac-blue) !important; box-shadow: 0 0 20px rgba(10, 132, 255, 0.3) !important; }
         .master-today-highlight { background: rgba(10, 132, 255, 0.2) !important; border-left: 1.5px solid var(--mac-blue) !important; border-right: 1.5px solid var(--mac-blue) !important; }
 
-        /* 全域跑馬燈設定 */
+        /* --- 修正後的跑馬燈 CSS --- */
         .marquee-container { overflow: hidden; white-space: nowrap; position: relative; width: 100%; }
-        .marquee-text-slow { display: inline-block; padding-left: 100%; animation: marquee-scroll-slow 18s linear infinite; }
-        @keyframes marquee-scroll-slow { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
+        /* 統一使用慢速 20s 滾動，適合演出名稱 */
+        .marquee-active { display: inline-block; padding-left: 100%; animation: marquee-slow 20s linear infinite; }
+        @keyframes marquee-slow { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
     </style>
 </head>
 <body>
@@ -193,6 +194,10 @@
                 });
             }, [user, scrollToElement]);
 
+            useEffect(() => { if (showMasterModal) scrollToElement(dates[dateIdx]?.fullKey, "master-scroll-container"); }, [showMasterModal, dateIdx, dates, scrollToElement]);
+            useEffect(() => { if (queryVenue) scrollToElement(dates[dateIdx]?.fullKey, "venue-scroll-container"); }, [queryVenue, dateIdx, dates, scrollToElement]);
+            useEffect(() => { if (queryStaff) scrollToElement(dates[dateIdx]?.fullKey, "staff-scroll-container"); }, [queryStaff, dateIdx, dates, scrollToElement]);
+
             const dData = useMemo(() => {
                 const d = dates[dateIdx]; if (!d) return null;
                 const res = { s: { GT:{A:[],B:[]}, BB:{A:[],B:[]}, GP:{A:[],B:[]}, "辦公":[], "休假":[] } };
@@ -251,7 +256,6 @@
                             </div>
                         </div>
 
-                        {/* 主畫面場館卡片跑馬燈 */}
                         <div className="grid grid-cols-3 gap-2 mb-6">
                             {['GT','BB','GP'].map(v=>{
                                 const vC = v==='GT'?'#FF2D55':v==='BB'?'#00FFFF':'#32DE84';
@@ -261,9 +265,7 @@
                                         <button onClick={() => setQueryVenue(v)} className="py-2 font-black text-xl bg-white/[0.05]" style={{color: vC}}>{v}</button>
                                         <div className="px-1 py-1 min-h-[30px] flex items-center justify-center border-b border-white/5 bg-black/20 text-center overflow-hidden text-[13px] font-bold italic">
                                             <div className="marquee-container">
-                                                <span className={sName.length > 8 ? "marquee-text-slow" : ""}>
-                                                    {sName}
-                                                </span>
+                                                <span className={sName.length > 8 ? "marquee-active" : "truncate"}>{sName}</span>
                                             </div>
                                         </div>
                                         <div className="p-1 space-y-1">{['A','B'].map(sh=>(<div key={sh} className="bg-white/5 rounded-[1rem] p-1 flex flex-col gap-1 min-h-[60px]">{dData?.s[v][sh].map(n=><StaffButton key={n} name={n} aliasMap={aliasMap} mode="small" onClick={handleStaffClick} />)}</div>))}</div>
@@ -349,17 +351,13 @@
                                 <div id={queryVenue ? "venue-scroll-container" : "staff-scroll-container"} className="flex-1 overflow-y-auto p-3 space-y-3 no-scrollbar scroll-smooth">
                                     {dates.map((d) => {
                                         const isS = d.fullKey === dates[dateIdx]?.fullKey, isW = d.w === '六' || d.w === '日';
-                                        
-                                        // 彈窗跑馬燈處理：廳院視圖
                                         if (queryVenue) {
-                                            const vSName = schedule.shows[d.fullKey]?.[queryVenue] || "";
+                                            const vSName = schedule.shows[d.fullKey]?.[queryVenue] || "—";
                                             return (
                                                 <div key={d.fullKey} id={`modal-row-${d.fullKey}`} className={`day-block-card ${isS ? 'day-block-today' : ''}`}>
                                                     <div className={`mb-2 pb-2 border-b border-white/10 text-sm font-light italic opacity-60 text-right overflow-hidden`}>
                                                         <div className="marquee-container">
-                                                            <span className={vSName.length > 8 ? "marquee-text-slow" : ""}>
-                                                                {vSName || "—"}
-                                                            </span>
+                                                            <span className={vSName.length > 8 ? "marquee-active" : ""}>{vSName}</span>
                                                         </div>
                                                     </div>
                                                     <div className="flex items-start gap-4">
@@ -372,13 +370,10 @@
                                                 </div>
                                             );
                                         }
-
-                                        // 彈窗跑馬燈處理：個人視圖
                                         let st = "辦公", co = "#FF9500", hasS = false, activeV = "";
                                         ['GT','BB','GP'].forEach(v => { if (schedule.roster[d.fullKey]?.[v]?.[queryStaff]) { const sh = schedule.roster[d.fullKey][v][queryStaff].shift; st = `${v}-${sh}`; co = v==='GP'?'#32DE84':v==='BB'?'#00FFFF':'#FF2D55'; hasS = true; activeV = v; } }); 
                                         if (schedule.statuses[d.fullKey]?.[queryStaff]?.match(/休|例|假/)) { st = "休假"; co = "#8E8E93"; }
                                         const pSName = hasS ? (schedule.shows[d.fullKey]?.[activeV] || "") : "";
-
                                         return (
                                             <div key={d.fullKey} id={`modal-row-${d.fullKey}`} className={`flex items-center gap-3 day-block-card ${isS ? 'day-block-today' : ''}`}>
                                                 <div className="flex flex-col text-left pr-3 border-r border-white/10 w-20 leading-none shrink-0 justify-center">
@@ -386,9 +381,7 @@
                                                     <span className={`text-[24px] font-black tracking-tighter ${isW ? 'text-[var(--weekend-pink)]' : ''}`}>{d.d}</span>
                                                 </div>
                                                 <div className="flex-1 marquee-container text-[18px] font-light text-white opacity-50 italic">
-                                                    <span className={pSName.length > 10 ? "marquee-text-slow" : ""}>
-                                                        {pSName}
-                                                    </span>
+                                                    <span className={pSName.length > 10 ? "marquee-active" : ""}>{pSName}</span>
                                                 </div>
                                                 <span className={`text-lg font-black px-3 py-1 rounded-lg shrink-0`} style={{ color: co }}>{st}</span>
                                             </div>
