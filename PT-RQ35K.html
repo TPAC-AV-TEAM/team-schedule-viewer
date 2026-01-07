@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PT-RQ35K 智慧導覽 V4.5 - 模糊搜尋版</title>
+    <title>PT-RQ35K 選單導覽</title>
     <style>
         :root { 
             --navy-dark: #050505; --card-bg: #1a1a1a; --gold: #d4af37; 
@@ -21,7 +21,20 @@
         }
 
         .main-wrapper { width: 100%; height: 100%; display: flex; flex-direction: column; }
-        header { background: #000; color: var(--gold); padding: 10px; text-align: center; border-bottom: 2px solid var(--gold); flex-shrink: 0; font-weight: 900; letter-spacing: 2px; font-size: 13px; }
+        
+        /* 頁首佈局修改 */
+        header { 
+            background: #000; 
+            color: var(--gold); 
+            padding: 12px 15px; 
+            border-bottom: 2px solid var(--gold); 
+            flex-shrink: 0; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+        }
+        .header-title { font-weight: 900; letter-spacing: 2px; font-size: 14px; }
+        .header-team { font-weight: 400; font-size: 10px; opacity: 0.8; letter-spacing: 1px; }
         
         .top-fixed-area { background: #111; border-bottom: 1px solid #222; flex-shrink: 0; z-index: 1000; }
         .search-container { padding: 12px 15px 8px 15px; position: relative; display: flex; align-items: center; }
@@ -45,9 +58,8 @@
         .view-section { display: none; width: 100%; }
         .view-section.active { display: block; }
 
-        /* 選單樹樣式 */
         .node { margin-bottom: 8px; width: 100%; }
-        .node.hidden { display: none; } /* 搜尋時隱藏不相關項目 */
+        .node.hidden { display: none; }
         
         .label { cursor: pointer; padding: 15px 12px 15px 42px; border-radius: 12px; background: var(--card-bg); border: 1px solid #2a2a2a; display: flex; align-items: center; position: relative; }
         .label::before { content: '▶'; font-size: 9px; position: absolute; left: 18px; color: var(--gold); transition: 0.2s; }
@@ -66,10 +78,10 @@
         .node.expanded > .children { display: block; }
         .highlight { background: #3d3400 !important; border: 1.5px solid var(--gold) !important; box-shadow: 0 0 15px rgba(212,175,55,0.3); }
 
-        /* SOP 與 故障卡片樣式 */
         .card { background: #1a1a1a; padding: 18px; border-radius: 15px; margin-bottom: 12px; border-left: 6px solid var(--sop-green); line-height: 1.6; font-size: 15px; border-top: 1px solid #333; }
         .fault-card { border-left-color: var(--danger); background: #201516; }
         .step-tag { background: var(--sop-green); color: black; padding: 2px 8px; border-radius: 5px; margin-right: 10px; font-weight: 900; font-size: 11px; }
+        .path-hint { color: var(--gold); font-size: 13px; display: block; margin-top: 8px; font-family: monospace; font-weight: bold; }
         h3 { color: var(--gold); border-bottom: 1px solid #333; padding-bottom: 10px; margin-top: 0; font-size: 19px; font-style: italic; }
         .fault-q { color: var(--danger); font-weight: 900; display: block; margin-bottom: 8px; font-size: 16px; }
         .hidden { display: none; }
@@ -78,7 +90,10 @@
 <body>
 
 <div class="main-wrapper">
-    <header>PT-RQ35K 智慧導覽 V4.5</header>
+    <header>
+        <span class="header-title">PT-RQ35K 選單導覽</span>
+        <span class="header-team">TPAC AV TEAM</span>
+    </header>
 
     <div class="top-fixed-area">
         <div class="search-container">
@@ -100,28 +115,52 @@
         <section id="sopSection" class="view-section">
             <h3>🚀 安裝與初次使用指南</h3>
             <div class="card"><span class="step-tag">1</span><b>鏡頭安裝安全守則</b><br>更換鏡頭前必須<b>關閉主電源</b>。移除孔蓋後插入並順時針旋至「喀嚓」聲，務必鎖緊螺絲防止掉落。</div>
-            <div class="card"><span class="step-tag">2</span><b>電源電壓與亮度限制</b><br>使用 AC 100-120V 時亮度會降低至約 1/3。全亮度輸出需接 <b>AC 200-240V</b> 電源。</div>
-            <div class="card"><span class="step-tag">3</span><b>初步位移歸位</b><br>路徑：[位置 (POSITION)] -> [移位] -> 執行 <b>[返回原始設置位置]</b>。</div>
-            <div class="card"><span class="step-tag">4</span><b>全機重置 (Initialize)</b><br>路徑：[投影机设置 (PROJECTOR SETUP)] -> 下一頁 [2/2] -> <b>[初始化 (INITIALIZE)]</b> -> [出廠重置]。</div>
-            <div class="card"><span class="step-tag">5</span><b>執行鏡頭校正</b><br>路徑：[投影机设置 (PROJECTOR SETUP)] -> [镜头 (LENS)] -> <b>[镜头校正 (LENS CALIBRATION)]</b>。</div>
+            <div class="card"><span class="step-tag">2</span><b>電源與亮度限制</b><br>使用 AC 100-120V 時亮度會降至約 1/3。全亮度輸出需接 <b>AC 200-240V</b> 電源。</div>
+            <div class="card"><span class="step-tag">3</span><b>初步位移歸位</b><br>在進行幾何校正前，建議先執行位移歸位。
+                <span class="path-hint">操作路徑：[位置 (POSITION)] -> [移位 (SHIFT)] -> [返回原始設置位置]</span>
+            </div>
+            <div class="card"><span class="step-tag">4</span><b>全機初始化 (Initialize)</b><br>若選單設定異常，可恢復出廠狀態。
+                <span class="path-hint">操作路徑：[投影机设置 (PROJECTOR SETUP)] -> 下一頁 -> [初始化 (INITIALIZE)] -> [出厂重置]</span>
+            </div>
+            <div class="card"><span class="step-tag">5</span><b>執行鏡頭校正</b><br>每次更換鏡頭後，請執行校正以確保馬達精準度。
+                <span class="path-hint">操作路徑：[投影机设置 (PROJECTOR SETUP)] -> [镜头 (LENS)] -> [镜头校正 (LENS CALIBRATION)]</span>
+            </div>
         </section>
 
         <section id="faultSection" class="view-section">
             <h3>⚠️ 故障排除診斷</h3>
-            <div class="card fault-card"><span class="fault-q">Q: 無訊號或顯示 Invalid Format (解析度問題)？</span>1. 進入 <b>[登录信号一览]</b>，若該訊號標示為<b>紅色</b>代表頻率不支援。<br>2. 於 [显示方式选项] 嘗試調整 [HDMI EDID] 設定。</div>
-            <div class="card fault-card"><span class="fault-q">Q: 畫面亮度異常變暗？</span>1. 檢查 <b>[投影机设置] -> [操作设置]</b>，確認是否誤開啟 [节能] 或 [低噪音] 模式。<br>2. <b>[状态]</b>：查看 [光源輸出] 百分比與 [進氣溫度] 是否觸發保護。</div>
-            <div class="card fault-card"><span class="fault-q">Q: 畫面變黑但有綠燈慢閃？</span>快門 [SHUTTER] 已啟動。指示燈會呈<b>綠色 2 秒週期慢閃</b>。按遙控器快門鍵回復。</div>
-            <div class="card fault-card"><span class="fault-q">Q: 指示燈顏色與代碼診斷？</span>1. **紅燈長亮**：部分雷射單元故障。<br>2. **U12/U13**：進氣(12)或排氣(13)口溫度異常。<br>3. **紅燈快閃**：硬體或風扇錯誤 (F系列代碼)。</div>
-            <div class="card fault-card"><span class="fault-q">Q: 鏡頭馬達移動異常或對焦模糊？</span>請執行 <b>[投影机设置] -> [镜头] -> [镜头校正]</b>，馬達將重新定位。</div>
+            <div class="card fault-card"><span class="fault-q">Q: 無訊號或顯示 Invalid Format？</span>
+                1. 檢查輸入訊號格式是否支援。<br>
+                2. 嘗試切換 HDMI 版本設定。
+                <span class="path-hint">對應選單：[登录信号一览 (SIGNAL LIST)] (檢查紅色項目)</span>
+                <span class="path-hint">對應選單：[显示方式选项 (DISPLAY OPTION)] -> [HDMI EDID]</span>
+            </div>
+            <div class="card fault-card"><span class="fault-q">Q: 畫面亮度異常變暗？</span>
+                1. 確認是否誤觸節能模式。<br>
+                2. 檢查機身進氣溫度。
+                <span class="path-hint">對應選單：[投影机设置] -> [操作设置] -> 確認為 [普通]</span>
+                <span class="path-hint">對應選單：[投影机设置] -> [状态 (STATUS)] -> 查看 [光源輸出]</span>
+            </div>
+            <div class="card fault-card"><span class="fault-q">Q: 畫面變黑但有綠燈慢閃？</span>
+                快門 (SHUTTER) 已啟動。指示燈會呈<b>綠色 2 秒週期慢閃</b>。按遙控器快門鍵即可回復。
+            </div>
+            <div class="card fault-card"><span class="fault-q">Q: 指示燈紅燈快閃或 U 代碼？</span>
+                1. <b>U12/U13</b>：溫度異常，請清理濾網。<br>
+                2. <b>紅燈快閃</b>：風扇或硬體錯誤。
+                <span class="path-hint">查看代碼：[ADVANCED 菜单] -> [状态 (STATUS)] -> 詳細資訊</span>
+            </div>
+            <div class="card fault-card"><span class="fault-q">Q: 幾何校正無法儲存或歪斜？</span>
+                請先執行鏡頭校正，再重新進行幾何調整。
+                <span class="path-hint">對應選單：[位置 (POSITION)] -> [几何矫正 (GEOMETRY)]</span>
+            </div>
         </section>
     </div>
 </div>
 
 <script>
-    // 1. 模糊搜尋關聯辭典 (Fuzzy Mapping)
     const ALIAS_MAP = {
         "初始化": ["還原", "出廠", "預設", "歸零", "reset", "factory", "initialize"],
-        "几何矫正": ["變形", "扭曲", "歪了", "斜了", "梯形", "修正", "修正", "geometry", "keystone", "歪歪的"],
+        "几何矫正": ["變形", "扭曲", "歪了", "斜了", "梯形", "修正", "geometry", "keystone", "歪歪的"],
         "变焦 / 聚焦": ["大小", "縮放", "模糊", "對焦", "zoom", "focus", "放大", "縮小"],
         "屏幕设定": ["正投", "背投", "鏡射", "翻轉", "倒投", "screen", "天花板"],
         "操作设置": ["變暗", "節能", "安靜", "亮度", "eco", "quiet", "低噪音"],
@@ -172,8 +211,8 @@
         ]},
         { cn: "7. 测试模式", en: "TEST PATTERN", options: ["网格", "全白", "彩條"] },
         { cn: "8. 登录信号一览", en: "SIGNAL LIST", options: ["檢查紅色不支援訊號項目"] },
-        { cn: "9. 安全", en: "SECURITY", options: ["PIN 码变更", "安全性锁定"] },
-        { cn: "10. 网络", en: "NETWORK", options: ["有线网络", "Web 控制"] }
+        { cn: "9. 安全", en: "SECURITY", options: ["PIN 碼變更", "安全性鎖定"] },
+        { cn: "10. 网络", en: "NETWORK", options: ["有線網絡", "Web 控制"] }
     ];
 
     function handleTreeTabClick() {
@@ -194,7 +233,6 @@
         document.getElementById('scrollTarget').scrollTop = 0;
     }
 
-    // --- 核心搜尋邏輯 ---
     function globalSearch() {
         const rawInput = document.getElementById('searchInput').value.toLowerCase().trim();
         const nodes = document.querySelectorAll('.node');
@@ -205,93 +243,56 @@
         clearBtn.classList.toggle('active', rawInput !== "");
 
         if (!rawInput) {
-            nodes.forEach(n => {
-                n.classList.remove('hidden', 'expanded');
-                n.querySelector('.label').classList.remove('highlight');
-            });
+            nodes.forEach(n => { n.classList.remove('hidden', 'expanded'); n.querySelector('.label').classList.remove('highlight'); });
             cards.forEach(c => c.classList.remove('hidden'));
             return;
         }
 
-        // 建立搜尋關聯池
         let searchPool = [rawInput];
         for (let key in ALIAS_MAP) {
-            if (ALIAS_MAP[key].some(a => a.includes(rawInput)) || key.includes(rawInput)) {
-                searchPool.push(key.toLowerCase());
-            }
+            if (ALIAS_MAP[key].some(a => a.includes(rawInput)) || key.includes(rawInput)) searchPool.push(key.toLowerCase());
         }
 
         let treeMatchCount = 0;
-        
-        // 1. 先隱藏選單所有節點
         nodes.forEach(n => n.classList.add('hidden'));
 
-        // 2. 比對標籤
         labels.forEach(l => {
             const text = l.innerText.toLowerCase();
             const isHit = searchPool.some(k => text.includes(k));
-            
             if (isHit) {
                 treeMatchCount++;
                 l.classList.add('highlight');
-                
-                // 向上追溯：顯示並展開所有父層節點
                 let currNode = l.parentElement; 
                 while (currNode && currNode.classList.contains('node')) {
                     currNode.classList.remove('hidden');
                     currNode.classList.add('expanded');
-                    
-                    // 尋找更上一層的 .node
-                    let parentContent = currNode.parentElement; // 可能是 .children 或 #menuTree
-                    if (parentContent && parentContent.classList.contains('children')) {
-                        currNode = parentContent.parentElement; // 這是父層的 .node
-                    } else {
-                        currNode = null;
-                    }
+                    let parentContent = currNode.parentElement;
+                    currNode = (parentContent && parentContent.classList.contains('children')) ? parentContent.parentElement : null;
                 }
-            } else {
-                l.classList.remove('highlight');
-            }
+            } else { l.classList.remove('highlight'); }
         });
 
-        // 3. 過濾 SOP 與 故障排除卡片
         cards.forEach(c => {
             const content = c.innerText.toLowerCase();
             const isHit = searchPool.some(k => content.includes(k));
             c.classList.toggle('hidden', !isHit);
         });
 
-        // 如果選單有結果，自動切換到選單頁
-        if (treeMatchCount > 0 && !document.getElementById('treeSection').classList.contains('active')) {
-            switchView('tree');
-        }
+        if (treeMatchCount > 0 && !document.getElementById('treeSection').classList.contains('active')) switchView('tree');
     }
 
-    function clearInput() { 
-        document.getElementById('searchInput').value = ""; 
-        globalSearch(); 
-    }
-
-    function handleMasterToggle(expand) { 
-        document.querySelectorAll('.node').forEach(n => expand ? n.classList.add('expanded') : n.classList.remove('expanded')); 
-    }
+    function clearInput() { document.getElementById('searchInput').value = ""; globalSearch(); }
+    function handleMasterToggle(expand) { document.querySelectorAll('.node').forEach(n => expand ? n.classList.add('expanded') : n.classList.remove('expanded')); }
 
     function draw(data, parent, level = 0) {
         data.forEach(item => {
             const node = document.createElement('div');
             node.className = `node level-${level} ${item.children ? '' : 'leaf'}`;
-            
             const label = document.createElement('div');
             label.className = 'label';
             label.innerHTML = `<span class="cn-text">${item.cn}</span><span class="en-text">(${item.en})</span>`;
-            
-            label.onclick = (e) => { 
-                e.stopPropagation(); 
-                node.classList.toggle('expanded'); 
-            };
-            
+            label.onclick = (e) => { e.stopPropagation(); node.classList.toggle('expanded'); };
             node.appendChild(label);
-
             if (item.options) {
                 const optBox = document.createElement('div');
                 optBox.className = 'options-box';
@@ -303,7 +304,6 @@
                 });
                 node.appendChild(optBox);
             }
-
             if (item.children) {
                 const childWrap = document.createElement('div');
                 childWrap.className = 'children';
@@ -313,8 +313,6 @@
             parent.appendChild(node);
         });
     }
-
-    // 初始化繪製
     draw(menuData, document.getElementById('menuTree'));
 </script>
 </body>
