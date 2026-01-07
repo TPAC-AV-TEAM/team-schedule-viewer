@@ -79,7 +79,7 @@
 
     <div class="top-fixed-area">
         <div class="search-container">
-            <input type="text" id="searchInput" placeholder="搜尋：4K、正投、密碼、代碼..." oninput="globalSearch()">
+            <input type="text" id="searchInput" placeholder="搜尋：正投、4K、還原、代碼..." oninput="globalSearch()">
             <button id="clearSearch" class="clear-btn" onclick="clearInput()">✕</button>
         </div>
         <div class="tab-group">
@@ -110,29 +110,35 @@
         </section>
 
         <section id="faultSection" class="view-section">
-            <h3>⚠️ 故障排除 (全面完整版)</h3>
+            <h3>⚠️ 故障排除 (全面整合原廠手冊)</h3>
+            
             <div class="card fault-card"><span class="fault-q">Q: 電源無法開啟或遙控器無反應？</span>
-                1. <b>電源檢查</b>：檢查電源線是否確實插入，主開關是否設為 [I]。<br>
-                2. <b>遙控器</b>：檢查電池，並確認 [REMOTE ID] 是否與機台 ID 一致。<br>
-                3. <b>面板鎖定</b>：確認機身按鈕是否被鎖定功能啟用了。
+                1. <b>電源檢查</b>：檢查電源線是否鬆脫，主開關是否設為 [I]。<br>
+                2. <b>遙控器</b>：檢查電池，並確認 [REMOTE ID] 是否與機身設定一致。<br>
+                3. <b>面板鎖定</b>：確認並未啟用控制面板鎖定功能。
             </div>
-            <div class="card fault-card"><span class="fault-q">Q: 畫面亮度明顯不足 (影像變暗)？</span>
-                1. <b>AC 電壓確認</b>：確認是否誤接 110V 插座？220V 電源才能發揮 100% 亮度。<br>
-                2. <b>操作模式</b>：檢查是否設為 [ECO] 或 [QUIET] (會降低亮度以降低噪音)。<br>
-                3. <b>恆定模式</b>：[CONSTANT MODE] 若開啟，亮度會自動限制在較低水平以維持長效性。<br>
-                4. <b>環境溫度保護</b>：環境溫度高於 35°C (高海拔 25°C) 會強制降亮度保護。
+
+            <div class="card fault-card"><span class="fault-q">Q: 畫面亮度變暗？(深度排查)</span>
+                1. <b>AC 電壓</b>：確認是否接在 110V？110V 環境亮度僅剩 30% 左右。<br>
+                2. <b>操作模式</b>：確認是否設為 [ECO] 或 [QUIET] (會降低亮度以靜音)。<br>
+                3. <b>恆定模式</b>：[CONSTANT MODE] 若開啟，亮度會自動限制以維持長效一致性。<br>
+                4. <b>環境保護</b>：環境溫度若高於 35°C (或高海拔 25°C)，光源會強制降低功率。
                 <span class="path-hint">對應選單：[投影机设置] -> [操作设置]</span>
             </div>
-            <div class="card fault-card"><span class="fault-q">Q: 影像解析度不正確或 Invalid Format？</span>
-                1. <b>Quad Pixel Drive</b>：確認 4K 驅動功能是否根據需求設為 [ON]。<br>
-                2. <b>HDMI EDID</b>：若電腦抓不到正確解析度，手動將模式切換為 [USER]。<br>
-                3. <b>訊號清單</b>：進入 [SIGNAL LIST] 檢查該訊號是否顯示為紅色 (代表頻率不支援)。
+
+            <div class="card fault-card"><span class="fault-q">Q: 解析度異常或 4K 無法抓到？</span>
+                1. <b>4K 啟動</b>：確認 [QUAD PIXEL DRIVE] 是否為 [ON]。<br>
+                2. <b>EDID 衝突</b>：若顯示 Invalid Format，請手動調整 EDID 模式。<br>
+                3. <b>訊號清單</b>：在 [SIGNAL LIST] 中檢查訊號是否標示為紅色。
+                <span class="path-hint">路徑：[显示方式选项] -> [HDMI EDID] -> [EDID MODE] -> [USER]</span>
             </div>
-            <div class="card fault-card"><span class="fault-q">Q: 指示燈狀態 (U 代碼、F 代碼、紅燈)？</span>
-                1. <b>綠燈慢閃</b>：快門 [SHUTTER] 已啟動，按遙控器快門鍵恢復影像。<br>
-                2. <b>U12 / U13</b>：溫度異常。請清理進/排氣濾網並檢查環境通風。<br>
-                3. <b>紅燈快閃 (F系)</b>：風扇或硬體系統故障，請聯絡維修。<br>
-                4. <b>紅燈長亮</b>：部分雷射單元故障，亮度會下降但投影機可維持運作。
+
+            <div class="card fault-card"><span class="fault-q">Q: 指示燈狀態與錯誤代碼 (U/F/紅燈)？</span>
+                1. <b>綠燈慢閃</b>：[SHUTTER] 快門已啟動，按遙控器快門鍵回復。<br>
+                2. <b>U12 / U13</b>：溫度異常。請清理濾網、檢查進排氣孔是否堵塞。<br>
+                3. <b>紅燈快閃 (F系代碼)</b>：硬體或風扇損毀，需聯絡維修。<br>
+                4. <b>紅燈長亮</b>：部分雷射單元故障，投影機仍可運作但亮度降低。
+                <span class="path-hint">路徑：[ADVANCED 菜单] -> [状态 (STATUS)] 查看詳細錯誤碼</span>
             </div>
         </section>
     </div>
@@ -140,13 +146,12 @@
 
 <script>
     const ALIAS_MAP = {
-        "投影方法": ["正投", "背投", "吊掛", "桌面", "投影方式", "方向", "安裝", "projection"],
+        "投影方法": ["正投", "背投", "吊掛", "桌面", "投影方式", "方向", "鏡射", "安裝", "projection"],
         "初始化": ["還原", "出廠", "預設", "歸零", "reset", "factory", "initialize"],
         "几何矫正": ["變形", "扭曲", "歪了", "斜了", "梯形", "修正", "geometry", "keystone"],
         "变焦 / 聚焦": ["大小", "縮放", "對焦", "zoom", "focus", "模糊"],
-        "QUAD PIXEL DRIVE": ["4K", "解析度", "畫質", "畫素", "3840", "pixel"],
-        "安全": ["鎖定", "密碼", "PIN", "security", "lock"],
-        "网络": ["IP", "區域網路", "network", "lan", "web"]
+        "QUAD PIXEL DRIVE": ["4K", "解析度", "畫質", "畫素", "3840", "2160", "pixel"],
+        "操作设置": ["變暗", "節能", "安靜", "亮度", "恆定", "恆定模式", "操作模式", "溫度", "保護"]
     };
 
     const menuData = [
@@ -159,7 +164,7 @@
         ]},
         { cn: "2. 位置 (POSITION)", en: "POSITION", children: [
             { cn: "移位", en: "SHIFT", options: ["垂直移位", "水平移位", "返回原始設置位置"] },
-            { cn: "宽高比", en: "ASPECT", options: ["16:10", "16:9", "4:3", "THROUGH (點對點顯示)", "AUTO"] },
+            { cn: "宽高比", en: "ASPECT", options: ["16:10", "16:9", "4:3", "THROUGH (點對點)", "AUTO"] },
             { cn: "变焦 / 聚焦", en: "ZOOM / FOCUS", options: ["变焦", "聚焦"] },
             { cn: "几何矫正", en: "GEOMETRY", children: [
                 { cn: "梯形矫正", en: "KEYSTONE", options: ["垂直梯形", "水平梯形", "平衡修正"] },
@@ -177,7 +182,7 @@
         ]},
         { cn: "4. 显示语种 (LANGUAGE)", en: "LANGUAGE", options: ["中文", "ENGLISH", "日本語", "한국어"] },
         { cn: "5. 显示方式选项 (DISPLAY OPTION)", en: "DISPLAY OPTION", children: [
-            { cn: "HDMI EDID 设置", en: "HDMI EDID", options: ["EDID MODE (DEFAULT/USER)", "EDID SELECT (4K/60p/2K)", "解析度/掃描頻率手動設定"] },
+            { cn: "HDMI EDID 设置", en: "HDMI EDID", options: ["EDID MODE (DEFAULT/USER)", "EDID SELECT (4K/60p/2K)"] },
             { cn: "色彩匹配", en: "COLOR MATCHING", options: ["3-Colors / 7-Colors"] },
             { cn: "屏幕设定", en: "SCREEN SETTING", options: ["屏幕格式 (16:10)", "屏幕位置", "屏幕标识"] },
             { cn: "显示菜单", en: "DISPLAY MENU", options: ["OSD位置", "OSD 旋转"] }
@@ -193,10 +198,8 @@
                 { cn: "出厂重置", en: "FACTORY RESET", options: ["用户设置", "仅限登录信号", "仅限网络"] }
             ]}
         ]},
-        { cn: "7. 测试模式 (TEST PATTERN)", en: "TEST PATTERN", options: ["网格 (Grid)", "全白 (Full White)", "彩條 (Color Bar)", "黑場 (Full Black)", "RGB 單色"] },
-        { cn: "8. 登录信号一览 (SIGNAL LIST)", en: "SIGNAL LIST", options: ["解析度檢查", "頻率檢查", "標示紅色為不支援訊號"] },
-        { cn: "9. 安全 (SECURITY)", en: "SECURITY", options: ["PIN 碼變更", "操作面板鎖定", "安全性鎖定"] },
-        { cn: "10. 网络 (NETWORK)", en: "NETWORK", options: ["有線網路設定 (Wired LAN)", "Web 控制介面 (Web Control)", "投影機 ID 設定"] }
+        { cn: "7. 测试模式 (TEST PATTERN)", en: "TEST PATTERN", options: ["网格", "全白", "彩條", "RGB"] },
+        { cn: "8. 登录信号一览 (SIGNAL LIST)", en: "SIGNAL LIST", options: ["檢查輸入訊號解析度與頻率"] }
     ];
 
     function handleTreeTabClick() {
