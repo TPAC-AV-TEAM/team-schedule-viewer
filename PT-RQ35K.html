@@ -21,8 +21,6 @@
         }
 
         .main-wrapper { width: 100%; height: 100%; display: flex; flex-direction: column; }
-        
-        /* 頁首佈局修改 */
         header { 
             background: #000; 
             color: var(--gold); 
@@ -48,19 +46,12 @@
         .tab-btn.gold.active { background: var(--gold); color: black; border-color: var(--gold); }
         .tab-btn.red.active { background: var(--danger); color: white; border-color: var(--danger); }
 
-        .content-container { 
-            flex: 1; 
-            overflow-y: auto; 
-            padding: 12px 12px 100px 12px; 
-            scroll-behavior: smooth; 
-            -webkit-overflow-scrolling: touch;
-        }
+        .content-container { flex: 1; overflow-y: auto; padding: 12px 12px 100px 12px; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
         .view-section { display: none; width: 100%; }
         .view-section.active { display: block; }
 
         .node { margin-bottom: 8px; width: 100%; }
         .node.hidden { display: none; }
-        
         .label { cursor: pointer; padding: 15px 12px 15px 42px; border-radius: 12px; background: var(--card-bg); border: 1px solid #2a2a2a; display: flex; align-items: center; position: relative; }
         .label::before { content: '▶'; font-size: 9px; position: absolute; left: 18px; color: var(--gold); transition: 0.2s; }
         .node.expanded > .label::before { transform: rotate(90deg); }
@@ -97,7 +88,7 @@
 
     <div class="top-fixed-area">
         <div class="search-container">
-            <input type="text" id="searchInput" placeholder="搜尋：還原、大小、扭曲、代碼..." oninput="globalSearch()">
+            <input type="text" id="searchInput" placeholder="搜尋：4K、還原、變色、代碼..." oninput="globalSearch()">
             <button id="clearSearch" class="clear-btn" onclick="clearInput()">✕</button>
         </div>
         <div class="tab-group">
@@ -114,44 +105,40 @@
 
         <section id="sopSection" class="view-section">
             <h3>🚀 安裝與初次使用指南</h3>
-            <div class="card"><span class="step-tag">1</span><b>鏡頭安裝安全守則</b><br>更換鏡頭前必須<b>關閉主電源</b>。移除孔蓋後插入並順時針旋至「喀嚓」聲，務必鎖緊螺絲防止掉落。</div>
-            <div class="card"><span class="step-tag">2</span><b>電源與亮度限制</b><br>使用 AC 100-120V 時亮度會降至約 1/3。全亮度輸出需接 <b>AC 200-240V</b> 電源。</div>
-            <div class="card"><span class="step-tag">3</span><b>初步位移歸位</b><br>在進行幾何校正前，建議先執行位移歸位。
-                <span class="path-hint">操作路徑：[位置 (POSITION)] -> [移位 (SHIFT)] -> [返回原始設置位置]</span>
+            <div class="card"><span class="step-tag">1</span><b>鏡頭安裝安全守則</b><br>更換鏡頭前必須<b>關閉主電源</b>。移除孔蓋後插入並順時針旋至「喀嚓」聲，務必鎖緊螺絲。</div>
+            <div class="card"><span class="step-tag">2</span><b>電源與亮度限制</b><br>使用 AC 100-120V 時亮度降至 1/3。全亮度輸出需接 <b>AC 200-240V</b> 電源。</div>
+            <div class="card"><span class="step-tag">3</span><b>初步位移歸位</b><br>進行調整前，建議先執行位移歸位。
+                <span class="path-hint">路徑：[位置 (POSITION)] -> [移位 (SHIFT)] -> [返回原始設置位置]</span>
             </div>
-            <div class="card"><span class="step-tag">4</span><b>全機初始化 (Initialize)</b><br>若選單設定異常，可恢復出廠狀態。
-                <span class="path-hint">操作路徑：[投影机设置 (PROJECTOR SETUP)] -> 下一頁 -> [初始化 (INITIALIZE)] -> [出厂重置]</span>
+            <div class="card"><span class="step-tag">4</span><b>4K 解析度啟動 (Quad Pixel Drive)</b><br>確保投影機處於 3840 x 2400 (4K) 輸出狀態。
+                <span class="path-hint">路徑：[ADVANCED 菜单] -> [QUAD PIXEL DRIVE] -> [ON]</span>
             </div>
-            <div class="card"><span class="step-tag">5</span><b>執行鏡頭校正</b><br>每次更換鏡頭後，請執行校正以確保馬達精準度。
-                <span class="path-hint">操作路徑：[投影机设置 (PROJECTOR SETUP)] -> [镜头 (LENS)] -> [镜头校正 (LENS CALIBRATION)]</span>
+            <div class="card"><span class="step-tag">5</span><b>執行鏡頭校正</b><br>更換鏡頭後必做動作。
+                <span class="path-hint">路徑：[投影机设置] -> [镜头] -> [镜头校正]</span>
             </div>
         </section>
 
         <section id="faultSection" class="view-section">
-            <h3>⚠️ 故障排除診斷</h3>
-            <div class="card fault-card"><span class="fault-q">Q: 無訊號或顯示 Invalid Format？</span>
-                1. 檢查輸入訊號格式是否支援。<br>
-                2. 嘗試切換 HDMI 版本設定。
-                <span class="path-hint">對應選單：[登录信号一览 (SIGNAL LIST)] (檢查紅色項目)</span>
-                <span class="path-hint">對應選單：[显示方式选项 (DISPLAY OPTION)] -> [HDMI EDID]</span>
+            <h3>⚠️ 故障排除與手冊整合</h3>
+            <div class="card fault-card"><span class="fault-q">Q: 解析度不正確或顯示 Invalid Format？</span>
+                1. 檢查 <b>[SIGNAL LIST]</b>，紅色代表頻率不支援。<br>
+                2. 若要強制特定解析度，需修改 EDID 模式。
+                <span class="path-hint">路徑：[显示方式选项] -> [HDMI EDID] -> [EDID MODE] 設為 [USER]</span>
             </div>
             <div class="card fault-card"><span class="fault-q">Q: 畫面亮度異常變暗？</span>
-                1. 確認是否誤觸節能模式。<br>
-                2. 檢查機身進氣溫度。
-                <span class="path-hint">對應選單：[投影机设置] -> [操作设置] -> 確認為 [普通]</span>
-                <span class="path-hint">對應選單：[投影机设置] -> [状态 (STATUS)] -> 查看 [光源輸出]</span>
+                1. <b>電壓檢查</b>：是否誤接 110V 電源？<br>
+                2. <b>恆定模式</b>：檢查是否開啟了自動亮度限制。<br>
+                3. <b>操作模式</b>：確認是否設為 [ECO] 或 [QUIET]。
+                <span class="path-hint">路徑：[投影机设置] -> [操作设置] -> [恆定模式/操作模式]</span>
+            </div>
+            <div class="card fault-card"><span class="fault-q">Q: 指示燈與代碼診斷 (U/F)？</span>
+                1. <b>U12/U13</b>：溫度異常。檢查環境溫度是否超過 35°C 或濾網堵塞。<br>
+                2. <b>F 系列代碼</b>：風扇或硬體錯誤，請聯絡維修。<br>
+                3. <b>紅燈長亮</b>：部分雷射單元損壞，光輸出會下降。
+                <span class="path-hint">查閱：[ADVANCED 菜单] -> [状态 (STATUS)] 查看詳細錯誤</span>
             </div>
             <div class="card fault-card"><span class="fault-q">Q: 畫面變黑但有綠燈慢閃？</span>
-                快門 (SHUTTER) 已啟動。指示燈會呈<b>綠色 2 秒週期慢閃</b>。按遙控器快門鍵即可回復。
-            </div>
-            <div class="card fault-card"><span class="fault-q">Q: 指示燈紅燈快閃或 U 代碼？</span>
-                1. <b>U12/U13</b>：溫度異常，請清理濾網。<br>
-                2. <b>紅燈快閃</b>：風扇或硬體錯誤。
-                <span class="path-hint">查看代碼：[ADVANCED 菜单] -> [状态 (STATUS)] -> 詳細資訊</span>
-            </div>
-            <div class="card fault-card"><span class="fault-q">Q: 幾何校正無法儲存或歪斜？</span>
-                請先執行鏡頭校正，再重新進行幾何調整。
-                <span class="path-hint">對應選單：[位置 (POSITION)] -> [几何矫正 (GEOMETRY)]</span>
+                快門 (SHUTTER) 已啟動。指示燈會呈<b>綠色 2 秒週期慢閃</b>。按遙控器快門鍵回復。
             </div>
         </section>
     </div>
@@ -163,56 +150,55 @@
         "几何矫正": ["變形", "扭曲", "歪了", "斜了", "梯形", "修正", "geometry", "keystone", "歪歪的"],
         "变焦 / 聚焦": ["大小", "縮放", "模糊", "對焦", "zoom", "focus", "放大", "縮小"],
         "屏幕设定": ["正投", "背投", "鏡射", "翻轉", "倒投", "screen", "天花板"],
-        "操作设置": ["變暗", "節能", "安靜", "亮度", "eco", "quiet", "低噪音"],
-        "移位": ["位置", "移動", "上下", "左右", "shift", "偏移"]
+        "操作设置": ["變暗", "節能", "安靜", "亮度", "eco", "quiet", "低噪音", "恆定", "溫度"],
+        "QUAD PIXEL DRIVE": ["4K", "解析度", "畫質", "畫素", "3840", "2160"]
     };
 
     const menuData = [
         { cn: "1. 图像", en: "PICTURE", children: [
             { cn: "图像模式", en: "PICTURE MODE", options: ["标准", "电影", "自然", "图形", "动态"] },
             { cn: "对比度 / 亮度", en: "CONTRAST / BRIGHTNESS", options: ["对比度", "亮度", "彩色", "色度", "色温设定"] },
-            { cn: "动态对比度", en: "DYNAMIC CONTRAST", options: ["关", "1 / 2 / 3", "開"] },
+            { cn: "动态对比度", en: "DYNAMIC CONTRAST", options: ["关", "1 / 2 / 3", "開 (LIGHTS OUT)"] },
             { cn: "SYSTEM DAYLIGHT VIEW", en: "系统昼光视图", options: ["调整环境光补偿"] }
         ]},
         { cn: "2. 位置", en: "POSITION", children: [
-            { cn: "移位", en: "SHIFT", options: ["垂直移位", "水平移位", "返回原始设置位置"] },
-            { cn: "宽高比", en: "ASPECT", options: ["16:10", "16:9", "4:3", "AUTO"] },
+            { cn: "移位", en: "SHIFT", options: ["垂直移位", "水平移位", "返回原始設置位置"] },
+            { cn: "宽高比", en: "ASPECT", options: ["16:10", "16:9", "4:3", "THROUGH (點對點)"] },
             { cn: "变焦 / 聚焦", en: "ZOOM / FOCUS", options: ["变焦", "聚焦"] },
             { cn: "几何矫正", en: "GEOMETRY", children: [
                 { cn: "梯形矫正", en: "KEYSTONE", options: ["垂直梯形", "水平梯形", "平衡修正"] },
                 { cn: "角/枕形", en: "CORNER / PINCUSHION", options: ["左上/右上/左下/右下", "線性", "枕形"] },
-                { cn: "曲面矫正", en: "CURVED CORRECTION", options: ["垂直弧形", "水平弧形", "保持宽高比"] },
+                { cn: "曲面矫正", en: "CURVED CORRECTION", options: ["垂直弧形", "水平弧形"] },
                 { cn: "自由网格", en: "FREE GRID", options: ["2x2 ~ 16x16 點位細調"] }
             ]}
         ]},
         { cn: "3. ADVANCED 菜单", en: "ADVANCED MENU", children: [
+            { cn: "QUAD PIXEL DRIVE", en: "4K 驱动", options: ["ON (3840x2400)", "OFF (1920x1200)"] },
             { cn: "边缘混合", en: "EDGE BLENDING", options: ["标记 (Marker)", "宽度调整", "黑阶补偿"] },
             { cn: "灰度平滑器", en: "GRAYSCALE SMOOTHER", options: ["关", "开"] },
-            { cn: "裁切", en: "CLIPPING", options: ["影像裁切設定"] },
-            { cn: "状态", en: "STATUS", options: ["詳細機身診斷資訊"] }
+            { cn: "DIGITAL CINEMA REALITY", en: "数字电影真彩", options: ["提高垂直解析度"] },
+            { cn: "状态", en: "STATUS", options: ["詳細機身診斷資訊", "溫度/代碼"] }
         ]},
-        { cn: "4. 显示语种(LANGUAGE)", en: "LANGUAGE", options: ["中文", "ENGLISH", "日本語", "한국어"] },
+        { cn: "4. 显示语种(LANGUAGE)", en: "LANGUAGE", options: ["中文", "ENGLISH", "日本語"] },
         { cn: "5. 显示方式选项", en: "DISPLAY OPTION", children: [
+            { cn: "HDMI EDID", en: "HDMI EDID 设置", options: ["EDID MODE (DEFAULT/USER)", "EDID SELECT (4K/60p/2K)"] },
             { cn: "色彩匹配", en: "COLOR MATCHING", options: ["3-Colors / 7-Colors"] },
-            { cn: "屏幕设定", en: "SCREEN SETTING", options: ["屏幕格式 (16:10)", "屏幕位置", "屏幕标识"] },
-            { cn: "显示菜单", en: "DISPLAY MENU", options: ["OSD位置", "OSD 旋转", "菜单模式 (普通/简易)"] }
+            { cn: "屏幕设定", en: "SCREEN SETTING", options: ["屏幕格式 (16:10)", "投影方式 (正/背/天花板)"] },
+            { cn: "显示菜单", en: "DISPLAY MENU", options: ["OSD位置", "OSD 旋转"] }
         ]},
         { cn: "6. 投影机设置", en: "PROJECTOR SETUP", children: [
             { cn: "镜头", en: "LENS", children: [
-                { cn: "镜头记录", en: "LENS MEMORY", options: ["儲存/調用位置設定"] },
-                { cn: "镜头校正", en: "LENS CALIBRATION", options: ["执行校正 (马達重置)"] },
-                { cn: "主动式聚焦优化器", en: "ACTIVE FOCUS OPTIMIZER", options: ["开 / 关"] }
+                { cn: "镜头记录", en: "LENS MEMORY", options: ["儲存/調用位置"] },
+                { cn: "镜头校正", en: "LENS CALIBRATION", options: ["执行校正 (马達重置)"] }
             ]},
-            { cn: "操作设置", en: "OPERATION SETTING", options: ["普通 (NORMAL)", "节能 (节能)", "低噪音 (低噪音)"] },
+            { cn: "操作设置", en: "OPERATION SETTING", options: ["操作模式 (NORMAL/ECO/QUIET)", "恆定模式 (CONSTANT MODE)", "光源輸出 (LIGHT OUTPUT)"] },
             { cn: "初始化", en: "INITIALIZE", children: [
-                { cn: "出厂重置", en: "FACTORY RESET", options: ["用户设置", "仅限登录信号", "仅限网络/邮件"] }
+                { cn: "出厂重置", en: "FACTORY RESET", options: ["用户设置", "仅限登录信号"] }
             ]},
-            { cn: "状态", en: "STATUS", options: ["光源输出", "输入电压", "日期和时间"] }
+            { cn: "状态", en: "STATUS", options: ["光源輸出 %", "輸入電壓 (110V/220V辨識)"] }
         ]},
         { cn: "7. 测试模式", en: "TEST PATTERN", options: ["网格", "全白", "彩條"] },
-        { cn: "8. 登录信号一览", en: "SIGNAL LIST", options: ["檢查紅色不支援訊號項目"] },
-        { cn: "9. 安全", en: "SECURITY", options: ["PIN 碼變更", "安全性鎖定"] },
-        { cn: "10. 网络", en: "NETWORK", options: ["有線網絡", "Web 控制"] }
+        { cn: "8. 登录信号一览", en: "SIGNAL LIST", options: ["檢查紅色不支援訊號項目"] }
     ];
 
     function handleTreeTabClick() {
@@ -239,23 +225,18 @@
         const labels = document.querySelectorAll('.label');
         const cards = document.querySelectorAll('.card');
         const clearBtn = document.getElementById('clearSearch');
-
         clearBtn.classList.toggle('active', rawInput !== "");
-
         if (!rawInput) {
             nodes.forEach(n => { n.classList.remove('hidden', 'expanded'); n.querySelector('.label').classList.remove('highlight'); });
             cards.forEach(c => c.classList.remove('hidden'));
             return;
         }
-
         let searchPool = [rawInput];
         for (let key in ALIAS_MAP) {
             if (ALIAS_MAP[key].some(a => a.includes(rawInput)) || key.includes(rawInput)) searchPool.push(key.toLowerCase());
         }
-
         let treeMatchCount = 0;
         nodes.forEach(n => n.classList.add('hidden'));
-
         labels.forEach(l => {
             const text = l.innerText.toLowerCase();
             const isHit = searchPool.some(k => text.includes(k));
@@ -271,13 +252,11 @@
                 }
             } else { l.classList.remove('highlight'); }
         });
-
         cards.forEach(c => {
             const content = c.innerText.toLowerCase();
             const isHit = searchPool.some(k => content.includes(k));
             c.classList.toggle('hidden', !isHit);
         });
-
         if (treeMatchCount > 0 && !document.getElementById('treeSection').classList.contains('active')) switchView('tree');
     }
 
