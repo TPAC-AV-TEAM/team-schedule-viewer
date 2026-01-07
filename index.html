@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>視聽班表系統 | V7.3 Marquee Fixed</title>
+    <title>視聽班表系統 | V7.4 Scroll Alignment Fixed</title>
 
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -64,9 +64,7 @@
         .day-block-today { background: #48484a !important; border: 2px solid var(--mac-blue) !important; box-shadow: 0 0 20px rgba(10, 132, 255, 0.3) !important; }
         .master-today-highlight { background: rgba(10, 132, 255, 0.2) !important; border-left: 1.5px solid var(--mac-blue) !important; border-right: 1.5px solid var(--mac-blue) !important; }
 
-        /* --- 修正後的跑馬燈 CSS --- */
         .marquee-container { overflow: hidden; white-space: nowrap; position: relative; width: 100%; }
-        /* 統一使用慢速 20s 滾動，適合演出名稱 */
         .marquee-active { display: inline-block; padding-left: 100%; animation: marquee-slow 20s linear infinite; }
         @keyframes marquee-slow { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
     </style>
@@ -122,18 +120,28 @@
             const [aliasMap, setAliasMap] = useState({}), [queryStaff, setQueryStaff] = useState(null), [queryVenue, setQueryVenue] = useState(null);
             const [showMasterModal, setShowMasterModal] = useState(false);
 
+            // --- 修復：滾動函式邏輯 ---
             const scrollToElement = useCallback((fullKey, containerId) => {
                 setTimeout(() => {
                     const container = document.getElementById(containerId);
                     if (!container) return;
-                    let elId = containerId === "nav-scroll-container" ? `nav-date-${fullKey}` : containerId === "master-scroll-container" ? `master-nav-date-${fullKey}` : `modal-row-${fullKey}`;
+                    
+                    // 精準比對所有可能頁面的元素 ID
+                    let elId = "";
+                    if (containerId === "nav-scroll-container") elId = `nav-date-${fullKey}`;
+                    else if (containerId === "master-scroll-container") elId = `master-nav-date-${fullKey}`;
+                    else if (containerId === "venue-scroll-container" || containerId === "staff-scroll-container") elId = `modal-row-${fullKey}`;
+
                     const el = document.getElementById(elId);
                     if (el) {
-                        const isH = containerId.includes("nav") || containerId === "master-scroll-container";
-                        if (isH) { container.scrollTo({ left: el.offsetLeft - (container.offsetWidth / 2) + (el.offsetWidth / 2), behavior: 'smooth' }); }
-                        else { container.scrollTo({ top: el.offsetTop - (container.offsetHeight / 2) + (el.offsetHeight / 2), behavior: 'smooth' }); }
+                        const isHorizontal = containerId.includes("nav") || containerId === "master-scroll-container";
+                        if (isHorizontal) {
+                            container.scrollTo({ left: el.offsetLeft - (container.offsetWidth / 2) + (el.offsetWidth / 2), behavior: 'smooth' });
+                        } else {
+                            container.scrollTo({ top: el.offsetTop - (container.offsetHeight / 2) + (el.offsetHeight / 2), behavior: 'smooth' });
+                        }
                     }
-                }, 200);
+                }, 100);
             }, []);
 
             const handleStaffClick = useCallback((name) => { setQueryStaff(name); setQueryVenue(null); setShowMasterModal(false); }, []);
