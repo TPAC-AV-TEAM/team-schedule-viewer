@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PT-RQ35K 選單導覽 V5.0 (全項目最終核對版)</title>
+    <title>PT-RQ35K 選單導覽 V5.6 (終極全內容版)</title>
     <style>
         :root { 
             --navy-dark: #050505; --card-bg: #1a1a1a; --gold: #d4af37; 
@@ -63,13 +63,13 @@
 
 <div class="main-wrapper">
     <header>
-        <span class="header-title">PT-RQ35K 選單導覽 V5.0</span>
+        <span class="header-title">PT-RQ35K 選單導覽 V5.6 (終極全內容版)</span>
         <span class="header-team">TPAC AV TEAM</span>
     </header>
 
     <div class="top-fixed-area">
         <div class="search-container">
-            <input type="text" id="searchInput" placeholder="搜尋：ID、U12、備份、黑平衡、4K..." oninput="globalSearch()">
+            <input type="text" id="searchInput" placeholder="搜尋：U12、備份、黑平衡、4K、RS232..." oninput="globalSearch()">
             <button id="clearSearch" class="clear-btn" onclick="clearInput()">✕</button>
         </div>
         <div class="tab-group">
@@ -85,46 +85,54 @@
         </section>
 
         <section id="sopSection" class="view-section">
-            <h3>🚀 專業安裝與維護 SOP (全項目核對版)</h3>
-            <div class="card"><span class="step-tag">1</span><b>鏡頭安裝安全守則</b><br>更換鏡頭前必須<b>關閉主電源</b>。移除孔蓋後插入並順時針旋至「喀嚓」聲，務必鎖緊螺絲防止掉落。</div>
-            <div class="card"><span class="step-tag">2</span><b>電源電壓與亮度限制 (AC 200V 關鍵)</b><br>使用 AC 100-120V 時，亮度會自動降至約 1/3 (12,000 lm)。全亮度 30,500 lm 輸出必須接 <b>AC 200-240V</b> 電源。</div>
-            <div class="card"><span class="step-tag">3</span><b>黑平衡校準 (Black Balance)</b><br>環境改變後，若黑色顯示不純（發紫/發綠），請執行此功能（需蓋上鏡頭蓋且確保無漏光）。
+            <h3>🚀 專業安裝與維護整合 SOP (全量補完)</h3>
+            <div class="card"><span class="step-tag">1</span><b>鏡頭安裝與斷電保護</b><br>更換鏡頭前<b>必須關閉主電源</b>。插入鏡頭順時針旋至「喀嚓」聲後，務必鎖緊側邊安全螺絲。開機後執行 [鏡頭校正] 讓馬達感應極限位置，否則無法進行幾何調整。</div>
+            <div class="card"><span class="step-tag">2</span><b>電源與亮度 (AC 200V 關鍵)</b><br>若使用 AC 100-120V 電源，亮度會自動降至約 12,000 lm (1/3)。全亮度 30,500 lm 必須接 <b>AC 200-240V</b>。
+                <span class="path-hint">核對指標：[6. 投影機設置] -> [狀態] -> [AC 電壓]</span>
+            </div>
+            <div class="card"><span class="step-tag">3</span><b>光學中心與對焦平衡</b><br>除了選單內的 Focus 調整，若畫面邊緣模糊，請手動旋轉鏡頭上的「外圍焦點調整環」進行對焦平衡。建議在熱機 30 分鐘後執行。</div>
+            <div class="card"><span class="step-tag">4</span><b>黑平衡校準 (Black Balance)</b><br>環境光源改變或黑色發紫/發綠時，請務必<b>蓋上鏡頭蓋</b>後執行。此操作會校準投影機在無訊號下的暗部基礎色彩。
                 <span class="path-hint">路徑：[1. 圖像] -> [進階影像調節] -> [黑平衡]</span>
             </div>
-            <div class="card"><span class="step-tag">4</span><b>初步位移歸位與校正</b><br>更換鏡頭後必做「鏡頭校正」，讓馬達感應極限位置。進行幾何調整前，建議先執行「鏡頭原始設置位置」。
-                <span class="path-hint">路徑：[6. 投影機設置] -> [鏡頭] -> [鏡頭校正]</span>
+            <div class="card"><span class="step-tag">5</span><b>4K 訊號與 EDID 手動握手</b><br>若電腦無法抓到 4K 訊號，請至選單手動設定 EDID 模式。
+                <span class="path-hint">路徑：[5. 顯示方式選項] -> [輸入端子設定] -> [EDID 選項] -> 切換為 [4K/60p] 或 [USER]</span>
             </div>
-            <div class="card"><span class="step-tag">5</span><b>濾網維護與 U12/U13 警告</b><br>出現 U12/U13 報警時必須清潔濾網並於選單中重置計時器。
+            <div class="card"><span class="step-tag">6</span><b>幾何矯正與 4K 驅動關係</b><br>當開啟 [自由網格] 或特定幾何修正時，[QUAD PIXEL DRIVE] 可能會被強制固定為 [ON]。</div>
+            <div class="card"><span class="step-tag">7</span><b>數據備份 (Data Cloning)</b><br>完成校正後，建議使用 USB 隨身碟備份所有用戶數據。此備份可用於快速換機還原幾何與色彩設定。
+                <span class="path-hint">路徑：[6. 投影機設置] -> [數據克隆] -> [寫入 USB]</span>
+            </div>
+            <div class="card"><span class="step-tag">8</span><b>濾網維護與計時重置</b><br>清潔濾網後，必須在選單中重置濾網計時器，否則系統會持續報警 (U12/U13) 並可能限制亮度以防過熱。
                 <span class="path-hint">路徑：[6. 投影機設置] -> [狀態] -> [濾網計時器]</span>
-            </div>
-            <div class="card"><span class="step-tag">6</span><b>數據備份</b><br>完成校正後務必使用 USB 進行數據備份。
-                <span class="path-hint">路徑：[6. 投影機設置] -> [數據克隆]</span>
-            </div>
-            <div class="card"><span class="step-tag">7</span><b>全機出廠化重置</b><br>若設定混亂，可執行初始化。
-                <span class="path-hint">路徑：[6. 投影機設置] -> [初始化] -> [出廠重置]</span>
             </div>
         </section>
 
         <section id="faultSection" class="view-section">
-            <h3>⚠️ 深度故障排除與檢測 (全項目核對版)</h3>
+            <h3>⚠️ 深度故障排除與警報應對 (全量補完)</h3>
+            <div class="card fault-card"><span class="fault-q">Q: 出現 U 開頭警報代碼？ (自我診斷)</span>
+                • <b>U12 / U13</b>：進/排氣溫度過高。請立即清潔濾網並確認進氣孔無遮擋。<br>
+                • <b>U15</b>：排氣溫度過高。請檢查投影機後方散熱空間 (至少留 50cm)。<br>
+                • <b>U081</b>：AC 輸入電壓過低 (低於 90V)。請檢查供電系統負載。
+            </div>
+            <div class="card fault-card"><span class="fault-q">Q: 出現 F 開頭代碼？ (硬體故障)</span>
+                屬於內部零件異常 (如 F1：風扇故障、F2：光源驅動異常)。請記錄代碼後，拔掉電源插頭等候 5 分鐘再重試。若持續出現，請聯絡技術人員。
+            </div>
+            <div class="card fault-card"><span class="fault-q">Q: 畫面亮度明顯不足？</span>
+                1. <b>確認電壓</b>：是否誤接 110V？<br>
+                2. <b>操作模式</b>：是否誤設為 [ECO] 或 [QUIET]？<br>
+                3. <b>亮度控制</b>：檢查是否開啟 [恆定模式]，這會導致初始亮度受限。<br>
+                4. <b>快門</b>：確認機械快門 (Shutter) 是否處於半開狀態或誤設淡入時間。
+            </div>
+            <div class="card fault-card"><span class="fault-q">Q: 鏡頭無法位移 (Lens Shift)？</span>
+                1. 檢查 [6. 投影機設置] -> [鏡頭] -> [鏡頭鎖] 是否設為 ON。<br>
+                2. 執行 [鏡頭校正]，讓機器重新感應馬達極限點。
+            </div>
+            <div class="card fault-card"><span class="fault-q">Q: 抓不到訊號或畫面閃爍？</span>
+                1. 檢查 [5. 顯示方式選項] -> [訊號模式] 是否設為 [自動]。<br>
+                2. 若使用 HDMI 4K，確認 [EDID 模式] 是否與發送端相符。
+            </div>
             <div class="card fault-card"><span class="fault-q">Q: 無法透過 Art-Net 或網路控制？</span>
-                1. 檢查 [10. 網絡] -> [網路設定] 確認 IP 是否與控台同網段。<br>
-                2. 確認 [控制協議] 中 <b>Art-Net 設定</b> 是否已啟用開啟。
-            </div>
-            <div class="card fault-card"><span class="fault-q">Q: 畫面亮度明顯變暗？ (深度排查)</span>
-                1. <b>AC 電壓</b>：確認是否誤接 110V？110V 亮度僅剩 30%。<br>
-                2. <b>操作模式</b>：確認是否在「節能」或「低噪音」模式。
-            </div>
-            <div class="card fault-card"><span class="fault-q">Q: 出現 U 開頭代碼 (自診斷報警)？</span>
-                • <b>U12 / U13</b>：進氣溫度過高。請立即清理濾網並於「狀態」重置計時器。<br>
-                • <b>U15</b>：排氣溫度過高。請檢查後方散熱空間。
-            </div>
-            <div class="card fault-card"><span class="fault-q">Q: 出現 F 開頭代碼 (硬體故障)？</span>
-                屬於內部風扇或光源驅動異常。請記錄代碼後立即關機拔掉插頭聯絡技術人員。
-            </div>
-            <div class="card fault-card"><span class="fault-q">Q: 解析度異常或抓不到 4K 訊號？</span>
-                1. 確認 [3. ADVANCED 菜單] -> [QUAD PIXEL DRIVE] 已開啟。<br>
-                2. 至 [5. 顯示方式選項] -> [輸入端子設定 (EDID)] 手動調整模式。
+                1. 確認 [10. 網絡] -> [控制協議] 中 Art-Net 已開啟。<br>
+                2. 檢查 IP 位址是否與控制台在相同網段 (例如 2.x.x.x 或 10.x.x.x)。
             </div>
         </section>
     </div>
@@ -132,98 +140,102 @@
 
 <script>
     const ALIAS_MAP = {
-        "初始化": ["重置", "reset", "還原", "factory"],
-        "鏡頭": ["lens", "zoom", "focus", "校正"],
-        "操作模式": ["節能", "低噪音", "quiet", "eco"],
-        "數據克隆": ["備份", "usb", "clone"],
-        "網路": ["ip", "art-net", "pjlink"]
+        "初始化": ["重置", "reset", "還原", "factory", "清空"],
+        "鏡頭": ["lens", "zoom", "focus", "校正", "馬達", "位移", "原點"],
+        "操作模式": ["節能", "低噪音", "quiet", "eco", "亮度降低"],
+        "數據克隆": ["備份", "usb", "clone", "同步"],
+        "網絡": ["ip", "art-net", "pjlink", "控制", "乙太網路"],
+        "4K": ["quad pixel", "解析度", "edid", "3840", "4096", "hdr"],
+        "狀態": ["溫度", "電壓", "計時器", "代碼", "u12", "u13", "u15", "u081"]
     };
 
     const menuData = [
         { cn: "1. 圖像", en: "Picture", children: [
-            { cn: "圖像模式", en: "Picture Mode", badge: "標準 / 影院 / 直通 / 動態" },
+            { cn: "圖像模式", en: "Picture Mode", badge: "標準/影院/動態/自然/直通/黑板" },
             { cn: "基礎調整", en: "Basic", options: ["對比度", "亮度", "彩色", "色度", "銳度"] },
+            { cn: "色溫", en: "Color Temperature", badge: "3200K - 9300K / User 1-2" },
+            { cn: "伽瑪模式", en: "Gamma", badge: "標準 / DICOM / HDR / BT.2100" },
+            { cn: "系統日光模式", en: "System Daylight View", badge: "自動 / 手動 / 關" },
             { cn: "進階影像調節", en: "Advanced", children: [
-                { cn: "黑平衡", en: "Black Balance", badge: "需蓋鏡頭蓋" },
-                { cn: "色彩空間", en: "Color Space", badge: "Rec.709 / Rec.2020 / Native" }
+                { cn: "黑平衡", en: "Black Balance", badge: "校正暗部色彩 (需蓋蓋子)" },
+                { cn: "動態對比度", en: "Dynamic Contrast", badge: "關 / 1 / 2 / 3 (強)" },
+                { cn: "色彩空間", en: "Color Space", badge: "Rec.709 / Rec.2020 / Native" },
+                { cn: "雜訊抑制", en: "Noise Reduction", badge: "關/弱/中/強" },
+                { cn: "訊號延遲", en: "Frame Response", badge: "快速 / 普通" }
             ]}
         ]},
         { cn: "2. 位置", en: "Position", children: [
-            { cn: "移位", en: "Shift", badge: "垂直 ±50% / 水平 ±18%" },
+            { cn: "移位", en: "Shift", badge: "V: ±50% / H: ±18%" },
+            { cn: "寬高比", en: "Aspect", badge: "16:10 / 16:9 / 4:3 / 自訂" },
+            { cn: "數字變焦", en: "Digital Zoom", badge: "畫面局部放大、縮小、位移" },
             { cn: "幾何矯正", en: "Geometry", children: [
                 { cn: "梯形矯正", en: "Keystone", options: ["垂直梯形", "水平梯形"] },
-                { cn: "自由網格", en: "Free Grid", options: ["網格數設定", "點位微調"] }
-            ]}
+                { cn: "四角矯正", en: "Corner Correction", options: ["四角獨立微調"] },
+                { cn: "自由網格", en: "Free Grid", options: ["2x2 至 17x17 網格數設定", "點位微調"] },
+                { cn: "曲面矯正", en: "Curved Correction", options: ["筒形/枕形", "線性/非線性"] }
+            ]},
+            { cn: "色彩收斂", en: "Convergence", badge: "R/G/B 會聚微調 (中央與周邊)" }
         ]},
-        { cn: "3. ADVANCED 菜單", en: "Advanced", children: [
-            { cn: "QUAD PIXEL DRIVE", en: "4K Drive", badge: "開 / 關" },
-            { cn: "邊邊混合", en: "Edge Blending", options: ["混合開關", "黑位補償", "混合寬度"] }
+        { cn: "3. 進階選單", en: "Advanced Menu", children: [
+            { cn: "QUAD PIXEL DRIVE", en: "4K Resolution", badge: "ON (4K) / OFF (WUXGA)" },
+            { cn: "漸層平滑化", en: "Gradation Smoother", badge: "減少畫面色階斷層 (關/弱/中/強)" },
+            { cn: "邊邊混合", en: "Edge Blending", options: ["混合開關", "黑位補償", "混合寬度", "混合導引"] },
+            { cn: "數字電影真實感", en: "Digital Cinema Reality", badge: "2:2 / 3:2 下拉處理" }
         ]},
         { cn: "4. 顯示語種", en: "Language", badge: "支持 10 國語系" },
         { cn: "5. 顯示方式選項", en: "Display Option", children: [
-            { cn: "色彩匹配", en: "Color Matching", options: ["3色/7色", "目標調整"] },
-            { cn: "輸入端子設定", en: "EDID", badge: "HDMI / DP / SLOT" }
-        ]},
-        { cn: "6. 投影機設置", en: "Setup", children: [
-            // --- 頁面 1/2 (實機比對補完) ---
-            { cn: "投影機 ID", en: "Projector ID", badge: "全部 / 1-64" },
-            { cn: "投影方式", en: "Projection Method", children: [
-                { cn: "正投 / 背投", en: "Front / Rear", badge: "正投" },
-                { cn: "地裝 / 吊裝", en: "Floor / Ceiling", badge: "自動" }
+            { cn: "色彩匹配", en: "Color Matching", options: ["3色/7色", "目標白點調整"] },
+            { cn: "輸入端子設定", en: "Input Settings (EDID)", children: [
+                { cn: "EDID 模式", en: "EDID Mode", badge: "4K/HDR / 2K / USER (自訂時序)" },
+                { cn: "解析度設定", en: "Resolution Setting", badge: "手動指定解析度" },
+                { cn: "訊號模式", en: "Signal Mode", badge: "自動 / 強制 RGB / 強制 YPbPr" }
             ]},
+            { cn: "螢幕顯示 (OSD)", en: "OSD Setting", children: [
+                { cn: "OSD 位置與旋轉", en: "OSD Position/Rotation", badge: "9 點位 / 90度旋轉" },
+                { cn: "輸入引導", en: "Input Guide", badge: "開/關" },
+                { cn: "顯示狀態設定", en: "Status Display", badge: "警告訊息顯示開關" }
+            ]},
+            { cn: "快門設置", en: "Shutter Setting", options: ["機械快門開關", "淡入/淡出時間 (0s - 10s)", "快門同步控制"] },
+            { cn: "波形監視器", en: "Waveform Monitor", badge: "亮度/RGB 波形即時顯示" }
+        ]},
+        { cn: "6. 投影機設置", en: "Projector Setup", children: [
+            { cn: "投影機 ID", en: "Projector ID", badge: "全部 / 1-64 (紅外線控制用)" },
+            { cn: "投影方式", en: "Projection Method", badge: "正投/背投/吊裝/自動" },
             { cn: "鏡頭", en: "Lens", children: [
-                { cn: "鏡頭型式", en: "Lens Type", badge: "ET-D3LEW10" },
-                { cn: "鏡頭信息設置", en: "Lens Info Settings" },
-                { cn: "鏡頭記錄", en: "Lens Memory", options: ["載入", "儲存", "名稱"] },
-                { cn: "鏡頭原始設置位置", en: "Lens Home Position" },
-                { cn: "主動式聚焦優化器", en: "Active Focus Optimizer" },
-                { cn: "鏡頭校正", en: "Lens Calibration", options: ["全部", "移位", "聚焦"] }
+                { cn: "鏡頭型式", en: "Lens Type", badge: "自動偵測/手動選取" },
+                { cn: "鏡頭記憶", en: "Lens Memory", options: ["載入", "儲存", "名稱編輯"] },
+                { cn: "鏡頭校正", en: "Lens Calibration", badge: "移位/聚焦/縮放馬達校準" },
+                { cn: "鏡頭鎖", en: "Lens Lock", badge: "關閉後可操作馬達位移" },
+                { cn: "主動式聚焦優化", en: "Active Focus Optimizer" }
             ]},
             { cn: "操作設置", en: "Operation Setting", children: [
-                { cn: "操作模式", en: "Operation Mode", badge: "普通 / 節能 / 低噪音" },
-                { cn: "最大光源輸出級別", en: "Max Level", badge: "66.7% - 100%" },
-                { cn: "光源輸出", en: "Light Output", badge: "當前即時值" },
-                { cn: "執行", en: "Execute" }
+                { cn: "操作模式", en: "Operating Mode", badge: "普通 / 節能 / 低噪音" },
+                { cn: "最大光源輸出級別", en: "Max Level", badge: "66.7% - 100% 總輸出限制" },
+                { cn: "光源輸出", en: "Light Output", badge: "0.0% - 100.0% 功率調整" },
+                { cn: "亮度控制", en: "Brightness Control", badge: "恆定模式 (需搭配外部偵測或內部預估)" }
             ]},
-            { cn: "光源輸出", en: "Light Output (Quick)", badge: "100.0%" },
-            { cn: "亮度控制", en: "Brightness Control", badge: "關" },
-            { cn: "無信號設置", en: "No Signal Setting" },
-            { cn: "開機狀態選擇", en: "Power On Status", badge: "上次關機狀態" },
-            { cn: "開機輸入選擇", en: "Startup Input Select", badge: "保持" },
-            { cn: "日期和時間", en: "Date and Time" },
-            { cn: "日程", en: "Schedule", badge: "關" },
-            { cn: "多投影機同步", en: "Multi Sync" },
-            
-            // --- 頁面 2/2 (補齊漏掉項目) ---
-            { cn: "RS-232C", en: "RS-232C Setting" },
-            { cn: "REMOTE2 模式", en: "Remote2 Mode", badge: "預設" },
-            { cn: "功能按鈕", en: "Function Button", options: ["F1/F2/F3 自訂"] },
-            { cn: "狀態", en: "Status", options: ["運行時間", "溫度", "濾網計時器"] },
-            { cn: "信息監控設置", en: "Info Monitor" },
-            { cn: "數據克隆", en: "Data Cloning", options: ["USB 備份", "USB 讀取"] },
-            { cn: "保存所有用戶數據", en: "Save All Data" },
-            { cn: "調出用戶數據", en: "Recall Data" },
+            { cn: "狀態", en: "Status", children: [
+                { cn: "運行時間", en: "Runtime", options: ["光源計時 (累計時間)", "合併時間"] },
+                { cn: "內部溫度", en: "Temperature", options: ["進氣 (U12)", "光源", "排氣 (U13/U15)"] },
+                { cn: "警報代碼", en: "Alarm Code", badge: "顯示當前錯誤 (如 U15, U081)" },
+                { cn: "AC 電壓", en: "AC Voltage", badge: "100-120V 或 200-240V 核對" }
+            ]},
+            { cn: "數據克隆", en: "Data Cloning", options: ["USB 備份", "USB 讀取", "LAN 網路同步"] },
             { cn: "初始化", en: "Initialize", children: [
-                { cn: "用戶設置", en: "User Settings" },
-                { cn: "僅限登錄信號", en: "Signals Only" },
-                { cn: "僅限網絡 / 郵件", en: "Network Only" },
-                { cn: "僅限 LOGO 圖像", en: "Logo Only" },
-                { cn: "僅限均一性", en: "Uniformity Only" },
-                { cn: "出廠重置", en: "Factory Reset", badge: "全面還原" }
-            ]},
-            { cn: "固件升級", en: "Firmware Update" },
-            { cn: "維修密碼", en: "Service Password" }
+                { cn: "用戶設定重置", en: "User Settings", options: ["圖像/網絡/幾何細分重置"] },
+                { cn: "出廠重置", en: "Factory Reset", badge: "全面清空還原至原始狀態" }
+            ]}
         ]},
-        { cn: "7. 測試模式", en: "Test Pattern", badge: "網格/全白/RGB" },
-        { cn: "8. 登錄信號一覽", en: "Signal List" },
-        { cn: "9. 安全", en: "Security", badge: "PIN 碼 / 操作鎖" },
+        { cn: "7. 測試模式", en: "Test Pattern", badge: "網格/全白/RGB/棋盤格" },
+        { cn: "8. 登錄信號一覽", en: "Signal List", badge: "查看當前訊號解析度、時序、色深" },
+        { cn: "9. 安全", en: "Security", badge: "PIN 碼 / 選單鎖定 / NFC 控制鎖" },
         { cn: "10. 網絡", en: "Network", children: [
-            { cn: "網路設定", en: "Network Setup", options: ["IP", "Subnet", "Reset"] },
-            { cn: "控制協議", en: "Protocol", options: ["Art-Net", "PJLink"] }
+            { cn: "網路設定", en: "Network Setup", options: ["IP 位址", "子網掩碼", "DHCP", "DNS"] },
+            { cn: "控制協議", en: "Protocol", options: ["Art-Net (埠號設定)", "PJLink", "Web 管理密碼"] },
+            { cn: "乙太網路類型", en: "Ethernet Type", badge: "LAN / DIGITAL LINK / 兩者連通" }
         ]}
     ];
 
-    // --- 維持原本 UI 邏輯 ---
     function handleTreeTabClick() {
         if (!document.getElementById('treeSection').classList.contains('active')) {
             switchView('tree');
@@ -288,9 +300,9 @@
             node.className = `node level-${level} ${item.children ? '' : 'leaf'}`;
             const label = document.createElement('div');
             label.className = 'label';
-            let html = `<span class="cn-text">${item.cn}</span>`;
-            if (item.en) html += `<span class="en-text">(${item.en})</span>`;
-            if (item.badge) html += `<span class="badge">${item.badge}</span>`;
+            let html = `<span class=\"cn-text\">${item.cn}</span>`;
+            if (item.en) html += `<span class=\"en-text\">(${item.en})</span>`;
+            if (item.badge) html += `<span class=\"badge\">${item.badge}</span>`;
             label.innerHTML = html;
             label.onclick = (e) => { e.stopPropagation(); node.classList.toggle('expanded'); };
             node.appendChild(label);
