@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PT-RQ35K 選單導覽 V5.6 (終極全內容版)</title>
+    <title>PT-RQ35K 選單導覽 V6.1 (全內容實機同步版)</title>
     <style>
         :root { 
             --navy-dark: #050505; --card-bg: #1a1a1a; --gold: #d4af37; 
@@ -63,7 +63,7 @@
 
 <div class="main-wrapper">
     <header>
-        <span class="header-title">PT-RQ35K 選單導覽 V5.6 (終極全內容版)</span>
+        <span class="header-title">PT-RQ35K 選單導覽 V6.1 (全內容實機同步版)</span>
         <span class="header-team">TPAC AV TEAM</span>
     </header>
 
@@ -126,14 +126,6 @@
                 1. 檢查 [6. 投影機設置] -> [鏡頭] -> [鏡頭鎖] 是否設為 ON。<br>
                 2. 執行 [鏡頭校正]，讓機器重新感應馬達極限點。
             </div>
-            <div class="card fault-card"><span class="fault-q">Q: 抓不到訊號或畫面閃爍？</span>
-                1. 檢查 [5. 顯示方式選項] -> [訊號模式] 是否設為 [自動]。<br>
-                2. 若使用 HDMI 4K，確認 [EDID 模式] 是否與發送端相符。
-            </div>
-            <div class="card fault-card"><span class="fault-q">Q: 無法透過 Art-Net 或網路控制？</span>
-                1. 確認 [10. 網絡] -> [控制協議] 中 Art-Net 已開啟。<br>
-                2. 檢查 IP 位址是否與控制台在相同網段 (例如 2.x.x.x 或 10.x.x.x)。
-            </div>
         </section>
     </div>
 </div>
@@ -160,8 +152,7 @@
                 { cn: "黑平衡", en: "Black Balance", badge: "校正暗部色彩 (需蓋蓋子)" },
                 { cn: "動態對比度", en: "Dynamic Contrast", badge: "關 / 1 / 2 / 3 (強)" },
                 { cn: "色彩空間", en: "Color Space", badge: "Rec.709 / Rec.2020 / Native" },
-                { cn: "雜訊抑制", en: "Noise Reduction", badge: "關/弱/中/強" },
-                { cn: "訊號延遲", en: "Frame Response", badge: "快速 / 普通" }
+                { cn: "雜訊抑制", en: "Noise Reduction", badge: "關/弱/中/強" }
             ]}
         ]},
         { cn: "2. 位置", en: "Position", children: [
@@ -176,66 +167,77 @@
             ]},
             { cn: "色彩收斂", en: "Convergence", badge: "R/G/B 會聚微調 (中央與周邊)" }
         ]},
-        { cn: "3. 進階選單", en: "Advanced Menu", children: [
-            { cn: "QUAD PIXEL DRIVE", en: "4K Resolution", badge: "ON (4K) / OFF (WUXGA)" },
-            { cn: "漸層平滑化", en: "Gradation Smoother", badge: "減少畫面色階斷層 (關/弱/中/強)" },
-            { cn: "邊邊混合", en: "Edge Blending", options: ["混合開關", "黑位補償", "混合寬度", "混合導引"] },
-            { cn: "數字電影真實感", en: "Digital Cinema Reality", badge: "2:2 / 3:2 下拉處理" }
+        { cn: "3. 進階選單", en: "ADVANCED", children: [
+            { cn: "DIGITAL CINEMA REALITY", en: "Cinema Reality" },
+            { cn: "灰度平滑器", en: "Grayscale Smoother" },
+            { cn: "裁切", en: "Cropping" },
+            { cn: "边缘混合", en: "Edge Blending", badge: "关", options: ["混合开关", "黑色电平补偿", "混合宽度", "混合标记"] },
+            { cn: "帧响应", en: "Frame Response" },
+            { cn: "帧延迟", en: "Frame Delay" },
+            { cn: "QUAD PIXEL DRIVE", en: "4K Drive", badge: "开" },
+            { cn: "光栅位置选择", en: "Raster Position Selection" }
         ]},
         { cn: "4. 顯示語種", en: "Language", badge: "支持 10 國語系" },
         { cn: "5. 顯示方式選項", en: "Display Option", children: [
-            { cn: "色彩匹配", en: "Color Matching", options: ["3色/7色", "目標白點調整"] },
-            { cn: "輸入端子設定", en: "Input Settings (EDID)", children: [
-                { cn: "EDID 模式", en: "EDID Mode", badge: "4K/HDR / 2K / USER (自訂時序)" },
-                { cn: "解析度設定", en: "Resolution Setting", badge: "手動指定解析度" },
-                { cn: "訊號模式", en: "Signal Mode", badge: "自動 / 強制 RGB / 強制 YPbPr" }
+            { cn: "色彩匹配", en: "Color Matching", badge: "关", options: ["色彩匹配开关", "目标白點", "三色匹配", "七色匹配"] },
+            { cn: "屏幕設定", en: "Screen Setting", children: [
+                { cn: "屏幕格式", en: "Screen Format", badge: "16:10" },
+                { cn: "屏幕位置", en: "Screen Position" },
+                { cn: "屏幕標識", en: "Screen Branding", badge: "关" }
             ]},
-            { cn: "螢幕顯示 (OSD)", en: "OSD Setting", children: [
-                { cn: "OSD 位置與旋轉", en: "OSD Position/Rotation", badge: "9 點位 / 90度旋轉" },
-                { cn: "輸入引導", en: "Input Guide", badge: "開/關" },
-                { cn: "顯示狀態設定", en: "Status Display", badge: "警告訊息顯示開關" }
+            { cn: "輸入自動設定", en: "Auto Input Selection", badge: "关" },
+            { cn: "自動設置", en: "Auto Setup" },
+            { cn: "備用輸入設置", en: "Backup Input Setting" },
+            { cn: "同步輸入設定", en: "Synchronized Input Setting" },
+            { cn: "HDMI IN", children: [
+                { cn: "EDID 選項", badge: "4K/HDR / 2K / USER" },
+                { cn: "解析度設定" }
             ]},
-            { cn: "快門設置", en: "Shutter Setting", options: ["機械快門開關", "淡入/淡出時間 (0s - 10s)", "快門同步控制"] },
-            { cn: "波形監視器", en: "Waveform Monitor", badge: "亮度/RGB 波形即時顯示" }
+            { cn: "DIGITAL LINK IN", badge: "接收參數" },
+            { cn: "SLOT IN", badge: "擴充槽" },
+            { cn: "顯示菜單", en: "Display Menu", children: [
+                { cn: "OSD位置", badge: "2" },
+                { cn: "OSD旋转", badge: "关" },
+                { cn: "OSD颜色", badge: "1" },
+                { cn: "OSD记忆", badge: "关" },
+                { cn: "輸入向導", badge: "开" },
+                { cn: "報警信息", badge: "关" }
+            ]},
+            { cn: "菜單模式", en: "Menu Mode", badge: "普通 / 简易" },
+            { cn: "背景色", en: "Background Color", badge: "黑" },
+            { cn: "開機 LOGO", en: "Startup LOGO", badge: "默认LOGO" }
         ]},
         { cn: "6. 投影機設置", en: "Projector Setup", children: [
-            { cn: "投影機 ID", en: "Projector ID", badge: "全部 / 1-64 (紅外線控制用)" },
-            { cn: "投影方式", en: "Projection Method", badge: "正投/背投/吊裝/自動" },
+            { cn: "投影機 ID", en: "Projector ID" },
+            { cn: "投影方式", en: "Projection Method" },
             { cn: "鏡頭", en: "Lens", children: [
-                { cn: "鏡頭型式", en: "Lens Type", badge: "自動偵測/手動選取" },
-                { cn: "鏡頭記憶", en: "Lens Memory", options: ["載入", "儲存", "名稱編輯"] },
-                { cn: "鏡頭校正", en: "Lens Calibration", badge: "移位/聚焦/縮放馬達校準" },
-                { cn: "鏡頭鎖", en: "Lens Lock", badge: "關閉後可操作馬達位移" },
-                { cn: "主動式聚焦優化", en: "Active Focus Optimizer" }
+                { cn: "鏡頭型式", en: "Lens Type", badge: "ET-D3LEW10" },
+                { cn: "鏡頭信息設置", en: "Lens Info" },
+                { cn: "鏡頭記錄", en: "Lens Memory", options: ["载入", "存储", "名称编辑", "删除"] },
+                { cn: "鏡頭原始設置位置", en: "Lens Home Position", options: ["执行", "取消"] },
+                { cn: "主動式聚焦優化器", en: "Active Focus Optimizer" },
+                { cn: "鏡頭校正", en: "Lens Calibration", children: [
+                    { cn: "移位 / 聚焦 / 變焦", en: "Shift/Focus/Zoom" },
+                    { cn: "移位 / 聚焦", en: "Shift/Focus" },
+                    { cn: "變焦", en: "Zoom" }
+                ]}
             ]},
-            { cn: "操作設置", en: "Operation Setting", children: [
-                { cn: "操作模式", en: "Operating Mode", badge: "普通 / 節能 / 低噪音" },
-                { cn: "最大光源輸出級別", en: "Max Level", badge: "66.7% - 100% 總輸出限制" },
-                { cn: "光源輸出", en: "Light Output", badge: "0.0% - 100.0% 功率調整" },
-                { cn: "亮度控制", en: "Brightness Control", badge: "恆定模式 (需搭配外部偵測或內部預估)" }
-            ]},
+            { cn: "操作設置", en: "Operation" },
             { cn: "狀態", en: "Status", children: [
-                { cn: "運行時間", en: "Runtime", options: ["光源計時 (累計時間)", "合併時間"] },
+                { cn: "運行時間", en: "Runtime" },
                 { cn: "內部溫度", en: "Temperature", options: ["進氣 (U12)", "光源", "排氣 (U13/U15)"] },
-                { cn: "警報代碼", en: "Alarm Code", badge: "顯示當前錯誤 (如 U15, U081)" },
-                { cn: "AC 電壓", en: "AC Voltage", badge: "100-120V 或 200-240V 核對" }
+                { cn: "AC 電壓", en: "AC Voltage", badge: "核對 200-240V" }
             ]},
-            { cn: "數據克隆", en: "Data Cloning", options: ["USB 備份", "USB 讀取", "LAN 網路同步"] },
-            { cn: "初始化", en: "Initialize", children: [
-                { cn: "用戶設定重置", en: "User Settings", options: ["圖像/網絡/幾何細分重置"] },
-                { cn: "出廠重置", en: "Factory Reset", badge: "全面清空還原至原始狀態" }
-            ]}
+            { cn: "數據克隆", en: "Data Cloning", options: ["USB 備份", "USB 讀取"] },
+            { cn: "初始化", en: "Initialize" }
         ]},
-        { cn: "7. 測試模式", en: "Test Pattern", badge: "網格/全白/RGB/棋盤格" },
-        { cn: "8. 登錄信號一覽", en: "Signal List", badge: "查看當前訊號解析度、時序、色深" },
-        { cn: "9. 安全", en: "Security", badge: "PIN 碼 / 選單鎖定 / NFC 控制鎖" },
-        { cn: "10. 網絡", en: "Network", children: [
-            { cn: "網路設定", en: "Network Setup", options: ["IP 位址", "子網掩碼", "DHCP", "DNS"] },
-            { cn: "控制協議", en: "Protocol", options: ["Art-Net (埠號設定)", "PJLink", "Web 管理密碼"] },
-            { cn: "乙太網路類型", en: "Ethernet Type", badge: "LAN / DIGITAL LINK / 兩者連通" }
-        ]}
+        { cn: "7. 測試模式", en: "Test Pattern" },
+        { cn: "8. 登錄信號一覽", en: "Signal List" },
+        { cn: "9. 安全", en: "Security" },
+        { cn: "10. 網絡", en: "Network" }
     ];
 
+    // --- 渲染與搜尋邏輯 (維持 V5.8 以降穩定版) ---
     function handleTreeTabClick() {
         if (!document.getElementById('treeSection').classList.contains('active')) {
             switchView('tree');
@@ -300,9 +302,9 @@
             node.className = `node level-${level} ${item.children ? '' : 'leaf'}`;
             const label = document.createElement('div');
             label.className = 'label';
-            let html = `<span class=\"cn-text\">${item.cn}</span>`;
-            if (item.en) html += `<span class=\"en-text\">(${item.en})</span>`;
-            if (item.badge) html += `<span class=\"badge\">${item.badge}</span>`;
+            let html = `<span class="cn-text">${item.cn}</span>`;
+            if (item.en) html += `<span class="en-text">(${item.en})</span>`;
+            if (item.badge) html += `<span class="badge">${item.badge}</span>`;
             label.innerHTML = html;
             label.onclick = (e) => { e.stopPropagation(); node.classList.toggle('expanded'); };
             node.appendChild(label);
