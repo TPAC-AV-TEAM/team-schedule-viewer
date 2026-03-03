@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>視聽班表系統 | V7.4 Scroll Alignment Fixed</title>
+    <title>視聽班表系統 | V7.5 ST-Support</title>
 
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -26,6 +26,7 @@
             --women-text: #FFD6E0; --men-text: #E0F7FF; --special-text: #FFFFE0;
             --women-dot: #FF375F; --men-dot: #00FFFF; --special-dot: #FFD60A;
             --master-gt: #8B0000; --master-bb: #008B8B; --master-gp: #006400; 
+            --master-st: #B8860B; /* 新增：ST 專用深金黃色 */
             --reminder-pink: #FF69B4;
         }
         body { font-family: 'Inter', 'Noto Sans TC', sans-serif; height: 100vh; overflow: hidden; background: var(--mac-bg); color: #FFFFFF; -webkit-font-smoothing: antialiased; }
@@ -120,18 +121,14 @@
             const [aliasMap, setAliasMap] = useState({}), [queryStaff, setQueryStaff] = useState(null), [queryVenue, setQueryVenue] = useState(null);
             const [showMasterModal, setShowMasterModal] = useState(false);
 
-            // --- 修復：滾動函式邏輯 ---
             const scrollToElement = useCallback((fullKey, containerId) => {
                 setTimeout(() => {
                     const container = document.getElementById(containerId);
                     if (!container) return;
-                    
-                    // 精準比對所有可能頁面的元素 ID
                     let elId = "";
                     if (containerId === "nav-scroll-container") elId = `nav-date-${fullKey}`;
                     else if (containerId === "master-scroll-container") elId = `master-nav-date-${fullKey}`;
                     else if (containerId === "venue-scroll-container" || containerId === "staff-scroll-container") elId = `modal-row-${fullKey}`;
-
                     const el = document.getElementById(elId);
                     if (el) {
                         const isHorizontal = containerId.includes("nav") || containerId === "master-scroll-container";
@@ -208,11 +205,13 @@
 
             const dData = useMemo(() => {
                 const d = dates[dateIdx]; if (!d) return null;
-                const res = { s: { GT:{A:[],B:[]}, BB:{A:[],B:[]}, GP:{A:[],B:[]}, "辦公":[], "休假":[] } };
+                // --- 微調 1：初始化加入 ST ---
+                const res = { s: { GT:{A:[],B:[]}, BB:{A:[],B:[]}, GP:{A:[],B:[]}, ST:{A:[],B:[]}, "辦公":[], "休假":[] } };
                 const rawR = schedule.roster[d.fullKey] || {}, rawS = schedule.statuses[d.fullKey] || {};
                 STAFF_ORDER.forEach(n => {
                     let onDuty = false;
-                    ['GT','BB','GP'].forEach(v => { if (rawR[v]?.[n]) { res.s[v][rawR[v][n].shift].push(n); onDuty = true; } });
+                    // --- 微調 2：掃描範圍加入 ST ---
+                    ['GT','BB','GP','ST'].forEach(v => { if (rawR[v]?.[n]) { res.s[v][rawR[v][n].shift].push(n); onDuty = true; } });
                     if (!onDuty) { if ((rawS[n] || "").match(/辦公|其他/)) res.s["辦公"].push(n); else res.s["休假"].push(n); }
                 });
                 return res;
@@ -264,19 +263,20 @@
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-2 mb-6">
-                            {['GT','BB','GP'].map(v=>{
-                                const vC = v==='GT'?'#FF2D55':v==='BB'?'#00FFFF':'#32DE84';
+                        {/* --- 微調 3：主劃面 Grid 加入 ST 顯示 --- */}
+                        <div className="grid grid-cols-4 gap-2 mb-6">
+                            {['GT','BB','GP','ST'].map(v=>{
+                                const vC = v==='GT'?'#FF2D55':v==='BB'?'#00FFFF':v==='GP'?'#32DE84':'#FFD60A';
                                 const sName = schedule.shows?.[dates[dateIdx]?.fullKey]?.[v] || "";
                                 return (
-                                    <div key={v} className="bg-[var(--mac-card)] rounded-[1.5rem] overflow-hidden flex flex-col shadow-lg border-2" style={{ borderColor: vC }}>
-                                        <button onClick={() => setQueryVenue(v)} className="py-2 font-black text-xl bg-white/[0.05]" style={{color: vC}}>{v}</button>
-                                        <div className="px-1 py-1 min-h-[30px] flex items-center justify-center border-b border-white/5 bg-black/20 text-center overflow-hidden text-[13px] font-bold italic">
+                                    <div key={v} className="bg-[var(--mac-card)] rounded-[1.2rem] overflow-hidden flex flex-col shadow-lg border-2" style={{ borderColor: vC }}>
+                                        <button onClick={() => setQueryVenue(v)} className="py-2 font-black text-lg bg-white/[0.05]" style={{color: vC}}>{v}</button>
+                                        <div className="px-1 py-1 min-h-[30px] flex items-center justify-center border-b border-white/5 bg-black/20 text-center overflow-hidden text-[11px] font-bold italic">
                                             <div className="marquee-container">
-                                                <span className={sName.length > 8 ? "marquee-active" : "truncate"}>{sName}</span>
+                                                <span className={sName.length > 6 ? "marquee-active" : "truncate"}>{sName}</span>
                                             </div>
                                         </div>
-                                        <div className="p-1 space-y-1">{['A','B'].map(sh=>(<div key={sh} className="bg-white/5 rounded-[1rem] p-1 flex flex-col gap-1 min-h-[60px]">{dData?.s[v][sh].map(n=><StaffButton key={n} name={n} aliasMap={aliasMap} mode="small" onClick={handleStaffClick} />)}</div>))}</div>
+                                        <div className="p-1 space-y-1">{['A','B'].map(sh=>(<div key={sh} className="bg-white/5 rounded-[0.8rem] p-1 flex flex-col gap-1 min-h-[50px]">{dData?.s[v][sh].map(n=><StaffButton key={n} name={n} aliasMap={aliasMap} mode="small" onClick={handleStaffClick} />)}</div>))}</div>
                                     </div>
                                 );
                             })}
@@ -324,7 +324,16 @@
                                                     {dates.map((d) => {
                                                         const dk = d.fullKey, isW = d.w === '六' || d.w === '日';
                                                         let label = "—", cls = "bg-white/5 text-white/10", hasS = false, isB = false, activeV = "";
-                                                        ['GT','BB','GP'].forEach(v => { if (schedule.roster[dk]?.[v]?.[staff]) { const sh = schedule.roster[dk][v][staff].shift; label = `${v}-${sh}`; cls = `bg-[${v === 'GT' ? 'var(--master-gt)' : v === 'BB' ? 'var(--master-bb)' : 'var(--master-gp)'}] bg-opacity-30 text-white text-[11px]`; hasS = true; activeV = v; if (sh === 'B') isB = true; } });
+                                                        // --- 微調 4：總表掃描範圍加入 ST ---
+                                                        ['GT','BB','GP','ST'].forEach(v => { 
+                                                            if (schedule.roster[dk]?.[v]?.[staff]) { 
+                                                                const sh = schedule.roster[dk][v][staff].shift; 
+                                                                label = `${v}-${sh}`; 
+                                                                const colorVar = v === 'GT' ? 'var(--master-gt)' : v === 'BB' ? 'var(--master-bb)' : v === 'GP' ? 'var(--master-gp)' : 'var(--master-st)';
+                                                                cls = `bg-[${colorVar}] bg-opacity-30 text-white text-[11px]`; 
+                                                                hasS = true; activeV = v; if (sh === 'B') isB = true; 
+                                                            } 
+                                                        });
                                                         if (schedule.statuses[dk]?.[staff]?.match(/辦公|其他/)) { label = "辦"; cls = "bg-orange-500/40 text-orange-200 text-[14px]"; } 
                                                         else if (!hasS && (schedule.statuses[dk]?.[staff] === "" || schedule.statuses[dk]?.[staff]?.match(/休|例|假|病|補|事|公/))) { label = "休"; cls = "bg-gray-700/80 text-white/50 text-[14px]"; }
                                                         return (
@@ -379,7 +388,15 @@
                                             );
                                         }
                                         let st = "辦公", co = "#FF9500", hasS = false, activeV = "";
-                                        ['GT','BB','GP'].forEach(v => { if (schedule.roster[d.fullKey]?.[v]?.[queryStaff]) { const sh = schedule.roster[d.fullKey][v][queryStaff].shift; st = `${v}-${sh}`; co = v==='GP'?'#32DE84':v==='BB'?'#00FFFF':'#FF2D55'; hasS = true; activeV = v; } }); 
+                                        // --- 微調 5：個人查詢掃描範圍加入 ST ---
+                                        ['GT','BB','GP','ST'].forEach(v => { 
+                                            if (schedule.roster[d.fullKey]?.[v]?.[queryStaff]) { 
+                                                const sh = schedule.roster[d.fullKey][v][queryStaff].shift; 
+                                                st = `${v}-${sh}`; 
+                                                co = v==='GP'?'#32DE84':v==='BB'?'#00FFFF':v==='GT'?'#FF2D55':'#FFD60A'; 
+                                                hasS = true; activeV = v; 
+                                            } 
+                                        }); 
                                         if (schedule.statuses[d.fullKey]?.[queryStaff]?.match(/休|例|假/)) { st = "休假"; co = "#8E8E93"; }
                                         const pSName = hasS ? (schedule.shows[d.fullKey]?.[activeV] || "") : "";
                                         return (
@@ -399,7 +416,7 @@
                             </div>
                         </div>
                     )}
-                    <footer className="fixed bottom-0 left-0 right-0 py-2 text-center opacity-20 pointer-events-none text-[8px] font-black tracking-[0.2em]">STABLE VIEW ARCHITECTURE | LAST UPDATED: 2026-01-07</footer>
+                    <footer className="fixed bottom-0 left-0 right-0 py-2 text-center opacity-20 pointer-events-none text-[8px] font-black tracking-[0.2em]">STABLE VIEW ARCHITECTURE | LAST UPDATED: 2026-03-03</footer>
                 </div>
             );
         };
