@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cloud Sync | Pro Publisher V3.3 (Clean Sync)</title>
+    <title>Cloud Sync | Pro Publisher V3.4 (ST Integrated)</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -24,18 +24,14 @@
         :root { --mac-blue: #0A84FF; --vip-color: #CEE6FF; --women-color: #FFCCFF; --men-color: #D1FFFF; --special-color: #FEFFD1; }
         body { font-family: 'Inter', 'Noto Sans TC', sans-serif; background: #050505; color: #fff; min-height: 100vh; overflow: hidden; -webkit-font-smoothing: antialiased; }
         .aura-bg { position: fixed; inset: 0; background: radial-gradient(circle at 50% 50%, #081021 0%, #050505 100%); z-index: -1; }
-        
         @keyframes rotate-orbit { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .racing-beam { position: absolute; inset: -6px; border-radius: 50%; background: conic-gradient(from 0deg, transparent 40%, #0A84FF 80%, #ffffff 100%); mask: radial-gradient(transparent 65%, black 67%); -webkit-mask: radial-gradient(transparent 65%, black 67%); filter: blur(1.2px); pointer-events: none; }
         .animate-orbit { animation: rotate-orbit 3s linear infinite; }
-        
         .mac-glass { background: rgba(15, 15, 17, 0.95); backdrop-filter: blur(60px); border: 1px solid rgba(255,255,255,0.12); }
         .v3-name-block { @apply w-[56px] h-[56px] shrink-0 flex items-center justify-center rounded-[1.2rem] border font-black text-xl tracking-tighter shadow-lg; background: rgba(255,255,255,0.05); }
         .mapping-input { @apply bg-gray-700 w-[140px] h-[38px] text-center rounded-full px-4 text-lg font-black outline-none text-cyan-400 border-none shadow-xl transition-all focus:ring-4 focus:ring-cyan-400/20; }
-        
         .mac-checkbox { width: 22px; height: 22px; border-radius: 6px; border: 2.5px solid rgba(255,255,255,0.2); margin-right: 18px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; }
         .active .mac-checkbox { background: #60a5fa; border-color: #60a5fa; }
-        
         .custom-scroll::-webkit-scrollbar { width: 4px; }
         .custom-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 10px; }
         .page-fade-in { animation: fadeIn 0.6s ease-out forwards; }
@@ -47,7 +43,6 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo, memo, useCallback } = React;
 
-        // --- Constants & Config ---
         const FIREBASE_CONFIG = { apiKey: "AIzaSyAx2aYlfqHBUe3V7a3sT5ZPVNYyr2JY8OA", authDomain: "tpac-schedule.firebaseapp.com", projectId: "tpac-schedule", storageBucket: "tpac-schedule.firebasestorage.app", messagingSenderId: "70955835780", appId: "1:70955835780:web:9d3b0958738557d1f7fdd1" };
         const APP_ID = "tpac-schedule";
         const STAFF_LIST = ["王志剛", "張國飛", "張劭如", "謝祥玄", "張懷德", "楊淯舒", "黎祐甄", "廖俊龍", "曾健洋", "劉智敏"];
@@ -61,7 +56,6 @@
         const EXCEL_ROWS_START = [4, 52, 100, 148, 196, 244];
         const EXCEL_COLS_INDEX = [2, 5, 8, 11, 14, 17, 20];
 
-        // --- Utility Functions ---
         const parseExcelDate = (cellValue) => {
             if (typeof cellValue === 'number') {
                 const d = new Date(Math.round((cellValue - 25569) * 86400 * 1000));
@@ -109,16 +103,18 @@
                         } else if (code.match(/辦公|支援|居家|其他|其它/)) {
                             fS[dateKey][name] = "辦公";
                         } else {
-                            // --- 改動重點在此 ---
+                            // --- 修改重點：加入 ST 的判斷與拆解 ---
                             const match = code.match(/(GT|BB|GP|ST)-([A-F])/i);
                             if (match) {
                                 const v = match[1].toUpperCase();
                                 const s = ["A", "C", "E"].includes(match[2].toUpperCase()) ? "A" : "B";
                                 
                                 if (v === 'ST') {
+                                    // 若是 ST，則同時將資料塞入 GT 和 BB
                                     fR[dateKey]['GT'][name] = { shift: s };
                                     fR[dateKey]['BB'][name] = { shift: s };
                                 } else {
+                                    // 一般場地維持原樣
                                     fR[dateKey][v][name] = { shift: s };
                                 }
                                 fS[dateKey][name] = ""; 
@@ -132,11 +128,9 @@
             return { fR, fS, fH, fN };
         };
 
-        // --- Icons ---
         const Icon = memo(({ name, className = "w-4 h-4" }) => {
             const icons = {
                 cloud: <path d="M17.5 19c2.5 0 4.5-2 4.5-4.5 0-2.2-1.6-4-3.7-4.4-.5-3.1-3.2-5.6-6.3-5.6-2.5 0-4.7 1.5-5.7 3.6-2 .4-3.3 2.1-3.3 4.1C3 15.2 5.2 18 8 18h9.5z" />,
-                // 修正馬甲圖示為 Alias 意象
                 alias: (
                     <React.Fragment>
                         <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
@@ -272,7 +266,6 @@
                 e.target.value = null;
             }, []);
 
-            // 同步前自動清空舊資料
             const runSync = async () => {
                 if (!selectedSheets.length || !db) return;
                 setStatus('syncing');
@@ -280,7 +273,6 @@
 
                 try {
                     const docRef = Firebase.doc(db, 'artifacts', APP_ID, 'public', 'data', 'rosters', 'master');
-                    // 初始化為空，實現同步前自動清空
                     let existingData = { fR: {}, fS: {}, fH: {}, fN: {} };
 
                     selectedSheets.forEach(name => {
@@ -328,7 +320,6 @@
                 <div className="h-screen w-screen bg-[#050505] text-white flex flex-col items-center justify-between p-10 relative overflow-hidden select-none">
                     <div className="aura-bg"></div>
                     <header className="w-full flex justify-between items-start z-40">
-                        {/* 套用新圖示 */}
                         <button onClick={() => setShowAliasModal(true)} className="p-3 bg-white/5 border border-white/10 rounded-2xl active:scale-95 transition-all hover:bg-white/10"><Icon name="alias" className="text-blue-400 w-5 h-5" /></button>
                         <div className="text-center">
                             <h1 className="text-4xl font-black italic tracking-tighter uppercase leading-none">Cloud Sync</h1>
@@ -355,9 +346,8 @@
                     <AliasModal show={showAliasModal} onClose={() => setShowAliasModal(false)} mapping={nameMapping} setMapping={setNameMapping} onSave={saveMapping} />
                     <SheetPickerModal show={status === 'picking'} sheets={sheetNames} selected={selectedSheets} setSelected={setSelectedSheets} onConfirm={runSync} onWipe={wipeData} onClose={() => setStatus('idle')} />
                     
-                    {/* 加入程式碼更新日期標記 */}
                     <footer className="w-full shrink-0 text-center opacity-30 mt-6 font-black tracking-widest text-[8px] text-white">
-                        © 2026 Stable Sync Architecture | LAST UPDATED: 2026-01-06
+                        © 2026 Stable Sync Architecture | LAST UPDATED: 2026-03-03
                     </footer>
                     
                     <input type="file" ref={fileInputRef} className="hidden" onChange={onFileChange} accept=".xlsx" />
