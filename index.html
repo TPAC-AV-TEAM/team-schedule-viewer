@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>視聽班表系統 | V7.7 ST-Integration Fixed</title>
+    <title>視聽班表系統 | V7.4 ST-Integration</title>
 
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -26,25 +26,45 @@
             --women-text: #FFD6E0; --men-text: #E0F7FF; --special-text: #FFFFE0;
             --women-dot: #FF375F; --men-dot: #00FFFF; --special-dot: #FFD60A;
             --master-gt: #8B0000; --master-bb: #008B8B; --master-gp: #006400; 
-            --master-st: #B8860B;
+            --master-st: #B8860B; /* 新增 ST 專用金黃色 */
             --reminder-pink: #FF69B4;
         }
         body { font-family: 'Inter', 'Noto Sans TC', sans-serif; height: 100vh; overflow: hidden; background: var(--mac-bg); color: #FFFFFF; -webkit-font-smoothing: antialiased; }
         .aura-bg { position: fixed; inset: 0; background: radial-gradient(circle at 50% 0%, #3a3a3c 0%, #1c1c1e 100%); z-index: 0; pointer-events: none; }
         .mac-glass { background: rgba(44, 44, 46, 0.9); backdrop-filter: blur(40px) saturate(200%); border-bottom: 0.5px solid rgba(255,255,255,0.15); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
+        
         .btn-today { background: var(--mac-blue); color: white; padding: 4px 12px; border-radius: 9999px; font-size: 10px; font-weight: 900; box-shadow: 0 4px 10px rgba(10, 132, 255, 0.3); transition: all 0.2s ease; flex-shrink: 0; }
+        .btn-today:active { transform: scale(0.9); }
+
         .weekend-bg { background: rgba(255, 100, 130, 0.05) !important; }
+
         .b-shift-glow { animation: b-glow-adaptive 1.5s infinite alternate; }
-        @keyframes b-glow-adaptive { 0% { box-shadow: 0 0 2px rgba(255,255,255,0.4); } 100% { box-shadow: 0 0 8px #fff, 0 0 15px rgba(255,255,255,0.6), 0 0 30px rgba(255,255,255,0.4); } }
+        @keyframes b-glow-adaptive {
+            0% { box-shadow: 0 0 2px rgba(255,255,255,0.4); }
+            100% { box-shadow: 0 0 8px #fff, 0 0 15px rgba(255,255,255,0.6), 0 0 30px rgba(255,255,255,0.4); }
+        }
+
+        .master-cell-btn { transition: all 0.2s ease; cursor: pointer; }
+        .master-cell-btn:hover { filter: brightness(1.3); transform: scale(1.05); z-index: 10; }
+
+        @keyframes reminder-pulse-pink {
+            0% { box-shadow: 0 0 5px rgba(255, 105, 180, 0.2); border-color: rgba(255, 105, 180, 0.3); }
+            50% { box-shadow: 0 0 25px rgba(255, 105, 180, 0.6); border-color: var(--reminder-pink); }
+            100% { box-shadow: 0 0 5px rgba(255, 105, 180, 0.2); border-color: rgba(255, 105, 180, 0.3); }
+        }
+        .reminder-active-glow { animation: reminder-pulse-pink 2s infinite ease-in-out; border-width: 1.5px !important; }
+
         .master-left-column { position: absolute; left: 0; top: 0; bottom: 0; width: 85px; z-index: 50; background-color: var(--mac-card); border-right: 2px solid rgba(255,255,255,0.3); display: flex; flex-direction: column; }
         .master-right-content { margin-left: 85px; overflow-x: auto; overflow-y: hidden; display: block; }
         .master-cell-unit { min-width: 80px; flex-shrink: 0; text-align: center; border-left: 1px solid rgba(255,255,255,0.05); }
         .master-header-height { height: 50px; }
         .master-row-height { height: 48px; display: flex; align-items: center; }
+
         .day-block-card { background: var(--mac-card-light); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 1rem; padding: 12px; margin-bottom: 10px; }
         .day-block-today { background: #48484a !important; border: 2px solid var(--mac-blue) !important; box-shadow: 0 0 20px rgba(10, 132, 255, 0.3) !important; }
         .master-today-highlight { background: rgba(10, 132, 255, 0.2) !important; border-left: 1.5px solid var(--mac-blue) !important; border-right: 1.5px solid var(--mac-blue) !important; }
+
         .marquee-container { overflow: hidden; white-space: nowrap; position: relative; width: 100%; }
         .marquee-active { display: inline-block; padding-left: 100%; animation: marquee-slow 20s linear infinite; }
         @keyframes marquee-slow { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
@@ -72,11 +92,11 @@
             const icons = {
                 refresh: <React.Fragment><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" /><path d="M16 21h5v-5" /></React.Fragment>,
                 check: <path d="M20 6 9 17l-5-5" />,
-                info: <React.Fragment><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></React.Fragment>,
-                sun: <path d="M12 2v2m0 16v2m10-10h-2M4 12H2m15.364-7.364l-1.414 1.414M7.05 16.95l-1.414 1.414M16.95 16.95l1.414 1.414M5.636 5.636l1.414 1.414M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z" />,
-                briefcase: <React.Fragment><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></React.Fragment>,
-                chevronLeft: <path d="m15 18-6-6 6-6" />,
-                chevronRight: <path d="m9 18 6-6-6-6" />
+                info: <React.Fragment><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2=\"12\"/><line x1=\"12\" y1=\"8\" x2=\"12.01\" y2=\"8\"/></React.Fragment>,
+                sun: <path d=\"M12 2v2m0 16v2m10-10h-2M4 12H2m15.364-7.364l-1.414 1.414M7.05 16.95l-1.414 1.414M16.95 16.95l1.414 1.414M5.636 5.636l1.414 1.414M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z\" />,
+                briefcase: <React.Fragment><rect x=\"2\" y=\"7\" width=\"20\" height=\"14\" rx=\"2\" ry=\"2\"/><path d=\"M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16\"/></React.Fragment>,
+                chevronLeft: <path d=\"m15 18-6-6 6-6\" />,
+                chevronRight: <path d=\"m9 18 6-6-6-6\" />
             };
             return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>{icons[name] || icons.refresh}</svg>;
         });
@@ -122,15 +142,24 @@
 
             const handleBackToday = useCallback(() => {
                 const tK = formatK(new Date()), idx = dates.findIndex(d => d.fullKey === tK); 
-                if(idx!==-1) { setDateIdx(idx); scrollToElement(tK, "nav-scroll-container"); } 
-            }, [dates, scrollToElement]);
+                if(idx!==-1) {
+                    setDateIdx(idx);
+                    scrollToElement(tK, "nav-scroll-container");
+                    if (showMasterModal) scrollToElement(tK, "master-scroll-container");
+                    if (queryVenue) scrollToElement(tK, "venue-scroll-container");
+                    if (queryStaff) scrollToElement(tK, "staff-scroll-container");
+                } 
+            }, [dates, showMasterModal, queryVenue, queryStaff, scrollToElement]);
 
             const shiftWeek = useCallback((dir) => {
                 const newIdx = Math.max(0, Math.min(dates.length - 1, dateIdx + (dir * 7)));
                 const tK = dates[newIdx].fullKey;
                 setDateIdx(newIdx);
                 scrollToElement(tK, "nav-scroll-container");
-            }, [dateIdx, dates, scrollToElement]);
+                if (showMasterModal) scrollToElement(tK, "master-scroll-container");
+                if (queryVenue) scrollToElement(tK, "venue-scroll-container");
+                if (queryStaff) scrollToElement(tK, "staff-scroll-container");
+            }, [dateIdx, dates, showMasterModal, queryVenue, queryStaff, scrollToElement]);
 
             useEffect(() => {
                 const checkFirebase = setInterval(() => {
@@ -139,7 +168,11 @@
                         const app = Firebase.getApps().length === 0 ? Firebase.initializeApp(FIREBASE_CONFIG) : Firebase.getApp();
                         Firebase.signInAnonymously(Firebase.getAuth(app)).then(() => {
                             Firebase.onAuthStateChanged(Firebase.getAuth(app), async (u) => { 
-                                if(u) { setUser(u); const mapSnap = await Firebase.getDoc(Firebase.doc(Firebase.getFirestore(app), 'artifacts', 'tpac-schedule', 'public', 'data', 'configs', 'name_mapping')); if (mapSnap.exists()) setAliasMap(mapSnap.data().maps || {}); }
+                                if(u) {
+                                    setUser(u);
+                                    const mapSnap = await Firebase.getDoc(Firebase.doc(Firebase.getFirestore(app), 'artifacts', 'tpac-schedule', 'public', 'data', 'configs', 'name_mapping'));
+                                    if (mapSnap.exists()) setAliasMap(mapSnap.data().maps || {});
+                                }
                             });
                         });
                     }
@@ -154,14 +187,7 @@
                     if (snap.exists()) {
                         const data = snap.data(), roster = JSON.parse(data.roster || '{}'), statuses = JSON.parse(data.statuses || '{}'), shows = JSON.parse(data.shows || '{}'), notes = JSON.parse(data.notes || '{}');
                         const keys = Object.keys(roster).sort();
-
-                        // 【安全解析】：修正三月份星期偏移，並維持原本 sd 結構
-                        const sd = keys.map(k => { 
-                            const pts = k.split('/');
-                            const dObj = new Date(parseInt(pts[0]), parseInt(pts[1]) - 1, parseInt(pts[2]));
-                            return { d: `${dObj.getMonth()+1}/${dObj.getDate()}`, w: ['日','一','二','三','四','五','六'][dObj.getDay()], fullKey: k }; 
-                        });
-
+                        const sd = keys.map(k => { const d = new Date(k); return { d: `${d.getMonth()+1}/${d.getDate()}`, w: ['日','一','二','三','四','五','六'][d.getDay()], fullKey: k }; });
                         setSchedule({ roster, statuses, shows, notes, updated: data.lastUpdated });
                         setDates(sd); setIsUnlocked(true); 
                         const tK = formatK(new Date()), match = keys.indexOf(tK);
@@ -170,27 +196,24 @@
                 });
             }, [user, scrollToElement]);
 
-            // --- 核心整合邏輯：ST 班同時顯示於 GT 與 BB ---
+            useEffect(() => { if (showMasterModal) scrollToElement(dates[dateIdx]?.fullKey, "master-scroll-container"); }, [showMasterModal, dateIdx, dates, scrollToElement]);
+            useEffect(() => { if (queryVenue) scrollToElement(dates[dateIdx]?.fullKey, "venue-scroll-container"); }, [queryVenue, dateIdx, dates, scrollToElement]);
+            useEffect(() => { if (queryStaff) scrollToElement(dates[dateIdx]?.fullKey, "staff-scroll-container"); }, [queryStaff, dateIdx, dates, scrollToElement]);
+
+            // --- 修改處 1：dData 處理邏輯，整合 ST 顯示 ---
             const dData = useMemo(() => {
                 const d = dates[dateIdx]; if (!d) return null;
                 const res = { s: { GT:{A:[],B:[]}, BB:{A:[],B:[]}, GP:{A:[],B:[]}, "辦公":[], "休假":[] } };
                 const rawR = schedule.roster[d.fullKey] || {}, rawS = schedule.statuses[d.fullKey] || {};
-                
                 STAFF_ORDER.forEach(n => {
                     let onDuty = false;
-                    // 1. 一般場地處理
-                    ['GT', 'BB', 'GP'].forEach(v => {
-                        if (rawR[v] && rawR[v][n]) {
-                            const sh = (rawR[v][n].shift || 'A').toUpperCase();
-                            if (res.s[v][sh]) { res.s[v][sh].push(n); onDuty = true; }
-                        }
-                    });
-                    // 2. ST 班特別處理：同時注入 GT 與 BB
-                    if (rawR['ST'] && rawR['ST'][n]) {
-                        let sh = (rawR['ST'][n].shift || 'A').toUpperCase();
-                        if (sh !== 'B') sh = 'A'; // 容錯處理
-                        res.s['GT'][sh].push(n);
-                        res.s['BB'][sh].push(n);
+                    // 檢查標準廳院
+                    ['GT','BB','GP'].forEach(v => { if (rawR[v]?.[n]) { res.s[v][rawR[v][n].shift].push(n); onDuty = true; } });
+                    // 核心修改：如果出現 ST，同時 push 進 GT 和 BB
+                    if (rawR['ST']?.[n]) {
+                        const shift = rawR['ST'][n].shift;
+                        if (res.s['GT'][shift]) res.s['GT'][shift].push(n);
+                        if (res.s['BB'][shift]) res.s['BB'][shift].push(n);
                         onDuty = true;
                     }
                     if (!onDuty) { if ((rawS[n] || "").match(/辦公|其他/)) res.s["辦公"].push(n); else res.s["休假"].push(n); }
@@ -225,7 +248,6 @@
                             <div id="nav-scroll-container" className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
                                 {dates.map((d, idx) => {
                                     const active = dateIdx === idx, isW = d.w === '六' || d.w === '日';
-                                    // 維持 flex-col 以確保週幾在日期正上方
                                     return (
                                         <button key={d.fullKey} id={`nav-date-${d.fullKey}`} onClick={()=>setDateIdx(idx)} className={`flex-none w-[55px] py-2 rounded-xl transition-all flex flex-col items-center justify-center border-2 ${active ? 'border-blue-500 bg-blue-500/10' : 'border-transparent bg-white/5 opacity-50'}`}>
                                             <span className={`font-black uppercase text-[10px] ${isW ? 'text-[var(--weekend-pink)]' : 'text-white/70'}`}>週{d.w}</span>
@@ -245,7 +267,6 @@
                             </div>
                         </div>
 
-                        {/* 維持三欄位排班區域 */}
                         <div className="grid grid-cols-3 gap-2 mb-6">
                             {['GT','BB','GP'].map(v=>{
                                 const vC = v==='GT'?'#FF2D55':v==='BB'?'#00FFFF':'#32DE84';
@@ -254,7 +275,9 @@
                                     <div key={v} className="bg-[var(--mac-card)] rounded-[1.5rem] overflow-hidden flex flex-col shadow-lg border-2" style={{ borderColor: vC }}>
                                         <button onClick={() => setQueryVenue(v)} className="py-2 font-black text-xl bg-white/[0.05]" style={{color: vC}}>{v}</button>
                                         <div className="px-1 py-1 min-h-[30px] flex items-center justify-center border-b border-white/5 bg-black/20 text-center overflow-hidden text-[13px] font-bold italic">
-                                            <div className="marquee-container"><span className={sName.length > 8 ? "marquee-active" : "truncate"}>{sName}</span></div>
+                                            <div className="marquee-container">
+                                                <span className={sName.length > 8 ? "marquee-active" : "truncate"}>{sName}</span>
+                                            </div>
                                         </div>
                                         <div className="p-1 space-y-1">{['A','B'].map(sh=>(<div key={sh} className="bg-white/5 rounded-[1rem] p-1 flex flex-col gap-1 min-h-[60px]">{dData?.s[v][sh].map(n=><StaffButton key={n} name={n} aliasMap={aliasMap} mode="small" onClick={handleStaffClick} />)}</div>))}</div>
                                     </div>
@@ -267,7 +290,6 @@
                         </div>
                     </main>
 
-                    {/* Master Modal 與其它彈窗維持正確邏輯 ... */}
                     {showMasterModal && (
                         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-2 bg-black/95 backdrop-blur-3xl" onClick={() => setShowMasterModal(false)}>
                             <div className="bg-[var(--mac-bg)] border border-white/10 w-full max-w-4xl rounded-[2rem] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
@@ -292,7 +314,12 @@
                                             <div className="flex bg-[var(--mac-card-light)] border-b border-white/20 sticky top-0 z-40 master-header-height">
                                                 {dates.map((d) => {
                                                     const isW = d.w === '六' || d.w === '日';
-                                                    return ( <div key={d.fullKey} id={`master-nav-date-${d.fullKey}`} className={`master-cell-unit p-2 ${d.fullKey === todayK ? 'master-today-highlight' : ''} ${isW ? 'weekend-bg' : ''}`}><div className={`font-black text-[10px] ${isW ? 'text-[var(--weekend-pink)]' : 'text-white/60'}`}>週{d.w}</div><div className={`text-[13px] font-bold ${isW ? 'text-[var(--weekend-pink)]' : ''}`}>{d.d}</div></div> );
+                                                    return (
+                                                        <div key={d.fullKey} id={`master-nav-date-${d.fullKey}`} className={`master-cell-unit p-2 ${d.fullKey === todayK ? 'master-today-highlight' : ''} ${isW ? 'weekend-bg' : ''}`}>
+                                                            <div className={`font-black text-[10px] ${isW ? 'text-[var(--weekend-pink)]' : 'text-white/60'}`}>週{d.w}</div>
+                                                            <div className={`text-[13px] font-bold ${isW ? 'text-[var(--weekend-pink)]' : ''}`}>{d.d}</div>
+                                                        </div>
+                                                    );
                                                 })}
                                             </div>
                                             {STAFF_ORDER.map((staff) => (
@@ -300,6 +327,7 @@
                                                     {dates.map((d) => {
                                                         const dk = d.fullKey, isW = d.w === '六' || d.w === '日';
                                                         let label = "—", cls = "bg-white/5 text-white/10", hasS = false, isB = false, activeV = "";
+                                                        // --- 修改處 2：總表邏輯，增加 ST 識別 ---
                                                         ['GT','BB','GP','ST'].forEach(v => { 
                                                             if (schedule.roster[dk]?.[v]?.[staff]) { 
                                                                 const sh = schedule.roster[dk][v][staff].shift; 
@@ -309,8 +337,12 @@
                                                             } 
                                                         });
                                                         if (schedule.statuses[dk]?.[staff]?.match(/辦公|其他/)) { label = "辦"; cls = "bg-orange-500/40 text-orange-200 text-[14px]"; } 
-                                                        else if (!hasS && (schedule.statuses[dk]?.[staff] === "" || schedule.statuses[dk]?.[staff]?.match(/休|例|假/))) { label = "休"; cls = "bg-gray-700/80 text-white/50 text-[14px]"; }
-                                                        return ( <div key={dk} className={`master-cell-unit p-1 ${dk === todayK ? 'master-today-highlight' : ''} ${isW ? 'weekend-bg' : ''}`}><div className={`master-cell-btn w-full h-8 flex items-center justify-center rounded-md ${cls} ${isB ? 'b-shift-glow border border-white' : ''}`} onClick={() => { if(hasS) alert(`【${dk} ${activeV}】\n${schedule.shows[dk]?.[activeV]||"無演出內容"}`); }}>{label}</div></div> );
+                                                        else if (!hasS && (schedule.statuses[dk]?.[staff] === "" || schedule.statuses[dk]?.[staff]?.match(/休|例|假|病|補|事|公/))) { label = "休"; cls = "bg-gray-700/80 text-white/50 text-[14px]"; }
+                                                        return (
+                                                            <div key={dk} className={`master-cell-unit p-1 ${dk === todayK ? 'master-today-highlight' : ''} ${isW ? 'weekend-bg' : ''}`}>
+                                                                <div className={`master-cell-btn w-full h-8 flex items-center justify-center rounded-md ${cls} ${isB ? 'b-shift-glow border border-white' : ''}`} onClick={() => { if(hasS) alert(`【${dk} ${activeV}】\n${schedule.shows[dk]?.[activeV]||"無演出內容"}`); }}>{label}</div>
+                                                            </div>
+                                                        );
                                                     })}
                                                 </div>
                                             ))}
@@ -320,8 +352,74 @@
                             </div>
                         </div>
                     )}
-                    
-                    <footer className="fixed bottom-0 left-0 right-0 py-2 text-center opacity-20 pointer-events-none text-[8px] font-black tracking-[0.2em]">ST INTEGRATED | DATE ALIGNMENT FIXED | 2026-03-03</footer>
+
+                    {(queryStaff || queryVenue) && (
+                        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-6 bg-black/90 backdrop-blur-2xl" onClick={() => { setQueryStaff(null); setQueryVenue(null); }}>
+                            <div className="bg-[var(--mac-bg)] border border-white/10 w-full max-w-lg rounded-[2.5rem] shadow-2xl flex flex-col max-h-[85vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
+                                <div className="p-4 border-b border-white/10 flex items-center justify-between bg-[var(--mac-card)]">
+                                    <div className="flex items-center gap-3">
+                                        <button onClick={() => { setQueryStaff(null); setQueryVenue(null); }} className="w-8 h-8 rounded-full bg-white/10 text-2xl">×</button>
+                                        <button onClick={handleBackToday} className="btn-today">Today</button>
+                                        <h3 className="text-xl font-black italic">{queryVenue ? `${queryVenue} Weekly` : (aliasMap[queryStaff] || queryStaff)}</h3>
+                                    </div>
+                                    <div className="flex bg-white/5 rounded-full px-1 py-1">
+                                        <button onClick={() => shiftWeek(-1)} className="p-1 hover:text-white transition-colors"><Icon name="chevronLeft" className="w-3 h-3" /></button>
+                                        <button onClick={() => shiftWeek(1)} className="p-1 hover:text-white transition-colors"><Icon name="chevronRight" className="w-3 h-3" /></button>
+                                    </div>
+                                </div>
+                                <div id={queryVenue ? "venue-scroll-container" : "staff-scroll-container"} className="flex-1 overflow-y-auto p-3 space-y-3 no-scrollbar scroll-smooth">
+                                    {dates.map((d) => {
+                                        const isS = d.fullKey === dates[dateIdx]?.fullKey, isW = d.w === '六' || d.w === '日';
+                                        if (queryVenue) {
+                                            const vSName = schedule.shows[d.fullKey]?.[queryVenue] || "—";
+                                            return (
+                                                <div key={d.fullKey} id={`modal-row-${d.fullKey}`} className={`day-block-card ${isS ? 'day-block-today' : ''}`}>
+                                                    <div className={`mb-2 pb-2 border-b border-white/10 text-sm font-light italic opacity-60 text-right overflow-hidden`}>
+                                                        <div className="marquee-container">
+                                                            <span className={vSName.length > 8 ? "marquee-active" : ""}>{vSName}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-start gap-4">
+                                                        <div className="flex flex-col text-left pr-2 border-r border-white/10 w-20 leading-none justify-center">
+                                                            <span className={`font-black mb-1 text-[12px] ${isW ? 'text-[var(--weekend-pink)]' : 'text-white/50'}`}>週{d.w}</span>
+                                                            <span className={`text-[24px] font-black tracking-tighter ${isW ? 'text-[var(--weekend-pink)]' : ''}`}>{d.d}</span>
+                                                        </div>
+                                                        <div className="flex-1 grid grid-cols-2 gap-2">
+                                                            {['A','B'].map(sh => (
+                                                                <div key={sh} className="bg-black/20 rounded-xl p-1 min-h-[40px] flex flex-col gap-1">
+                                                                    {/* --- 修改處 3：查詢特定場地時，也撈出 ST 的人員 --- */}
+                                                                    {Object.entries(schedule.roster[d.fullKey]?.[queryVenue]||{}).filter(([_,v])=>v.shift===sh).map(([n])=><StaffButton key={n} name={n} aliasMap={aliasMap} onClick={handleStaffClick} mode="small" />)}
+                                                                    {(queryVenue === 'GT' || queryVenue === 'BB') && Object.entries(schedule.roster[d.fullKey]?.['ST']||{}).filter(([_,v])=>v.shift===sh).map(([n])=><StaffButton key={n} name={n} aliasMap={aliasMap} onClick={handleStaffClick} mode="small" />)}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+                                        let st = "辦公", co = "#FF9500", hasS = false, activeV = "";
+                                        // --- 修改處 4：個人查詢掃描增加 ST 判斷 ---
+                                        ['GT','BB','GP','ST'].forEach(v => { if (schedule.roster[d.fullKey]?.[v]?.[queryStaff]) { const sh = schedule.roster[d.fullKey][v][queryStaff].shift; st = `${v}-${sh}`; co = v==='GP'?'#32DE84':v==='BB'?'#00FFFF':v==='GT'?'#FF2D55':'#FFD60A'; hasS = true; activeV = v; } }); 
+                                        if (schedule.statuses[d.fullKey]?.[queryStaff]?.match(/休|例|假/)) { st = "休假"; co = "#8E8E93"; }
+                                        const pSName = hasS ? (schedule.shows[d.fullKey]?.[activeV] || "") : "";
+                                        return (
+                                            <div key={d.fullKey} id={`modal-row-${d.fullKey}`} className={`flex items-center gap-3 day-block-card ${isS ? 'day-block-today' : ''}`}>
+                                                <div className="flex flex-col text-left pr-3 border-r border-white/10 w-20 leading-none shrink-0 justify-center">
+                                                    <span className={`font-black mb-1 text-[12px] ${isW ? 'text-[var(--weekend-pink)]' : 'text-white/50'}`}>週{d.w}</span>
+                                                    <span className={`text-[24px] font-black tracking-tighter ${isW ? 'text-[var(--weekend-pink)]' : ''}`}>{d.d}</span>
+                                                </div>
+                                                <div className="flex-1 marquee-container text-[18px] font-light text-white opacity-50 italic">
+                                                    <span className={pSName.length > 10 ? "marquee-active" : ""}>{pSName}</span>
+                                                </div>
+                                                <span className={`text-lg font-black px-3 py-1 rounded-lg shrink-0`} style={{ color: co }}>{st}</span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    <footer className="fixed bottom-0 left-0 right-0 py-2 text-center opacity-20 pointer-events-none text-[8px] font-black tracking-[0.2em]">STABLE VIEW ARCHITECTURE | LAST UPDATED: 2026-01-07</footer>
                 </div>
             );
         };
