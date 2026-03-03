@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>視聽班表系統 | V7.4 ST-Integration</title>
+    <title>視聽班表系統 | V7.4 Scroll Alignment Fixed</title>
 
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -26,7 +26,6 @@
             --women-text: #FFD6E0; --men-text: #E0F7FF; --special-text: #FFFFE0;
             --women-dot: #FF375F; --men-dot: #00FFFF; --special-dot: #FFD60A;
             --master-gt: #8B0000; --master-bb: #008B8B; --master-gp: #006400; 
-            --master-st: #B8860B; /* 新增 ST 專用金黃色 */
             --reminder-pink: #FF69B4;
         }
         body { font-family: 'Inter', 'Noto Sans TC', sans-serif; height: 100vh; overflow: hidden; background: var(--mac-bg); color: #FFFFFF; -webkit-font-smoothing: antialiased; }
@@ -92,11 +91,11 @@
             const icons = {
                 refresh: <React.Fragment><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" /><path d="M16 21h5v-5" /></React.Fragment>,
                 check: <path d="M20 6 9 17l-5-5" />,
-                info: <React.Fragment><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2=\"12\"/><line x1=\"12\" y1=\"8\" x2=\"12.01\" y2=\"8\"/></React.Fragment>,
-                sun: <path d=\"M12 2v2m0 16v2m10-10h-2M4 12H2m15.364-7.364l-1.414 1.414M7.05 16.95l-1.414 1.414M16.95 16.95l1.414 1.414M5.636 5.636l1.414 1.414M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z\" />,
-                briefcase: <React.Fragment><rect x=\"2\" y=\"7\" width=\"20\" height=\"14\" rx=\"2\" ry=\"2\"/><path d=\"M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16\"/></React.Fragment>,
-                chevronLeft: <path d=\"m15 18-6-6 6-6\" />,
-                chevronRight: <path d=\"m9 18 6-6-6-6\" />
+                info: <React.Fragment><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></React.Fragment>,
+                sun: <path d="M12 2v2m0 16v2m10-10h-2M4 12H2m15.364-7.364l-1.414 1.414M7.05 16.95l-1.414 1.414M16.95 16.95l1.414 1.414M5.636 5.636l1.414 1.414M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z" />,
+                briefcase: <React.Fragment><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></React.Fragment>,
+                chevronLeft: <path d="m15 18-6-6 6-6" />,
+                chevronRight: <path d="m9 18 6-6-6-6" />
             };
             return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>{icons[name] || icons.refresh}</svg>;
         });
@@ -121,19 +120,26 @@
             const [aliasMap, setAliasMap] = useState({}), [queryStaff, setQueryStaff] = useState(null), [queryVenue, setQueryVenue] = useState(null);
             const [showMasterModal, setShowMasterModal] = useState(false);
 
+            // --- 修復：滾動函式邏輯 ---
             const scrollToElement = useCallback((fullKey, containerId) => {
                 setTimeout(() => {
                     const container = document.getElementById(containerId);
                     if (!container) return;
+                    
+                    // 精準比對所有可能頁面的元素 ID
                     let elId = "";
                     if (containerId === "nav-scroll-container") elId = `nav-date-${fullKey}`;
                     else if (containerId === "master-scroll-container") elId = `master-nav-date-${fullKey}`;
                     else if (containerId === "venue-scroll-container" || containerId === "staff-scroll-container") elId = `modal-row-${fullKey}`;
+
                     const el = document.getElementById(elId);
                     if (el) {
                         const isHorizontal = containerId.includes("nav") || containerId === "master-scroll-container";
-                        if (isHorizontal) container.scrollTo({ left: el.offsetLeft - (container.offsetWidth / 2) + (el.offsetWidth / 2), behavior: 'smooth' });
-                        else container.scrollTo({ top: el.offsetTop - (container.offsetHeight / 2) + (el.offsetHeight / 2), behavior: 'smooth' });
+                        if (isHorizontal) {
+                            container.scrollTo({ left: el.offsetLeft - (container.offsetWidth / 2) + (el.offsetWidth / 2), behavior: 'smooth' });
+                        } else {
+                            container.scrollTo({ top: el.offsetTop - (container.offsetHeight / 2) + (el.offsetHeight / 2), behavior: 'smooth' });
+                        }
                     }
                 }, 100);
             }, []);
@@ -200,22 +206,13 @@
             useEffect(() => { if (queryVenue) scrollToElement(dates[dateIdx]?.fullKey, "venue-scroll-container"); }, [queryVenue, dateIdx, dates, scrollToElement]);
             useEffect(() => { if (queryStaff) scrollToElement(dates[dateIdx]?.fullKey, "staff-scroll-container"); }, [queryStaff, dateIdx, dates, scrollToElement]);
 
-            // --- 修改處 1：dData 處理邏輯，整合 ST 顯示 ---
             const dData = useMemo(() => {
                 const d = dates[dateIdx]; if (!d) return null;
                 const res = { s: { GT:{A:[],B:[]}, BB:{A:[],B:[]}, GP:{A:[],B:[]}, "辦公":[], "休假":[] } };
                 const rawR = schedule.roster[d.fullKey] || {}, rawS = schedule.statuses[d.fullKey] || {};
                 STAFF_ORDER.forEach(n => {
                     let onDuty = false;
-                    // 檢查標準廳院
                     ['GT','BB','GP'].forEach(v => { if (rawR[v]?.[n]) { res.s[v][rawR[v][n].shift].push(n); onDuty = true; } });
-                    // 核心修改：如果出現 ST，同時 push 進 GT 和 BB
-                    if (rawR['ST']?.[n]) {
-                        const shift = rawR['ST'][n].shift;
-                        if (res.s['GT'][shift]) res.s['GT'][shift].push(n);
-                        if (res.s['BB'][shift]) res.s['BB'][shift].push(n);
-                        onDuty = true;
-                    }
                     if (!onDuty) { if ((rawS[n] || "").match(/辦公|其他/)) res.s["辦公"].push(n); else res.s["休假"].push(n); }
                 });
                 return res;
@@ -327,15 +324,7 @@
                                                     {dates.map((d) => {
                                                         const dk = d.fullKey, isW = d.w === '六' || d.w === '日';
                                                         let label = "—", cls = "bg-white/5 text-white/10", hasS = false, isB = false, activeV = "";
-                                                        // --- 修改處 2：總表邏輯，增加 ST 識別 ---
-                                                        ['GT','BB','GP','ST'].forEach(v => { 
-                                                            if (schedule.roster[dk]?.[v]?.[staff]) { 
-                                                                const sh = schedule.roster[dk][v][staff].shift; 
-                                                                label = `${v}-${sh}`; 
-                                                                cls = `bg-[${v === 'GT' ? 'var(--master-gt)' : v === 'BB' ? 'var(--master-bb)' : v === 'GP' ? 'var(--master-gp)' : 'var(--master-st)'}] bg-opacity-30 text-white text-[11px]`; 
-                                                                hasS = true; activeV = v; if (sh === 'B') isB = true; 
-                                                            } 
-                                                        });
+                                                        ['GT','BB','GP'].forEach(v => { if (schedule.roster[dk]?.[v]?.[staff]) { const sh = schedule.roster[dk][v][staff].shift; label = `${v}-${sh}`; cls = `bg-[${v === 'GT' ? 'var(--master-gt)' : v === 'BB' ? 'var(--master-bb)' : 'var(--master-gp)'}] bg-opacity-30 text-white text-[11px]`; hasS = true; activeV = v; if (sh === 'B') isB = true; } });
                                                         if (schedule.statuses[dk]?.[staff]?.match(/辦公|其他/)) { label = "辦"; cls = "bg-orange-500/40 text-orange-200 text-[14px]"; } 
                                                         else if (!hasS && (schedule.statuses[dk]?.[staff] === "" || schedule.statuses[dk]?.[staff]?.match(/休|例|假|病|補|事|公/))) { label = "休"; cls = "bg-gray-700/80 text-white/50 text-[14px]"; }
                                                         return (
@@ -384,22 +373,13 @@
                                                             <span className={`font-black mb-1 text-[12px] ${isW ? 'text-[var(--weekend-pink)]' : 'text-white/50'}`}>週{d.w}</span>
                                                             <span className={`text-[24px] font-black tracking-tighter ${isW ? 'text-[var(--weekend-pink)]' : ''}`}>{d.d}</span>
                                                         </div>
-                                                        <div className="flex-1 grid grid-cols-2 gap-2">
-                                                            {['A','B'].map(sh => (
-                                                                <div key={sh} className="bg-black/20 rounded-xl p-1 min-h-[40px] flex flex-col gap-1">
-                                                                    {/* --- 修改處 3：查詢特定場地時，也撈出 ST 的人員 --- */}
-                                                                    {Object.entries(schedule.roster[d.fullKey]?.[queryVenue]||{}).filter(([_,v])=>v.shift===sh).map(([n])=><StaffButton key={n} name={n} aliasMap={aliasMap} onClick={handleStaffClick} mode="small" />)}
-                                                                    {(queryVenue === 'GT' || queryVenue === 'BB') && Object.entries(schedule.roster[d.fullKey]?.['ST']||{}).filter(([_,v])=>v.shift===sh).map(([n])=><StaffButton key={n} name={n} aliasMap={aliasMap} onClick={handleStaffClick} mode="small" />)}
-                                                                </div>
-                                                            ))}
-                                                        </div>
+                                                        <div className="flex-1 grid grid-cols-2 gap-2">{['A','B'].map(sh => (<div key={sh} className="bg-black/20 rounded-xl p-1 min-h-[40px] flex flex-col gap-1">{Object.entries(schedule.roster[d.fullKey]?.[queryVenue]||{}).filter(([_,v])=>v.shift===sh).map(([n])=><StaffButton key={n} name={n} aliasMap={aliasMap} onClick={handleStaffClick} mode="small" />)}</div>))}</div>
                                                     </div>
                                                 </div>
                                             );
                                         }
                                         let st = "辦公", co = "#FF9500", hasS = false, activeV = "";
-                                        // --- 修改處 4：個人查詢掃描增加 ST 判斷 ---
-                                        ['GT','BB','GP','ST'].forEach(v => { if (schedule.roster[d.fullKey]?.[v]?.[queryStaff]) { const sh = schedule.roster[d.fullKey][v][queryStaff].shift; st = `${v}-${sh}`; co = v==='GP'?'#32DE84':v==='BB'?'#00FFFF':v==='GT'?'#FF2D55':'#FFD60A'; hasS = true; activeV = v; } }); 
+                                        ['GT','BB','GP'].forEach(v => { if (schedule.roster[d.fullKey]?.[v]?.[queryStaff]) { const sh = schedule.roster[d.fullKey][v][queryStaff].shift; st = `${v}-${sh}`; co = v==='GP'?'#32DE84':v==='BB'?'#00FFFF':'#FF2D55'; hasS = true; activeV = v; } }); 
                                         if (schedule.statuses[d.fullKey]?.[queryStaff]?.match(/休|例|假/)) { st = "休假"; co = "#8E8E93"; }
                                         const pSName = hasS ? (schedule.shows[d.fullKey]?.[activeV] || "") : "";
                                         return (
