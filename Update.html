@@ -109,11 +109,18 @@
                         } else if (code.match(/辦公|支援|居家|其他|其它/)) {
                             fS[dateKey][name] = "辦公";
                         } else {
-                            const match = code.match(/(GT|BB|GP)-([A-F])/i);
+                            // --- 改動重點在此 ---
+                            const match = code.match(/(GT|BB|GP|ST)-([A-F])/i);
                             if (match) {
                                 const v = match[1].toUpperCase();
                                 const s = ["A", "C", "E"].includes(match[2].toUpperCase()) ? "A" : "B";
-                                fR[dateKey][v][name] = { shift: s };
+                                
+                                if (v === 'ST') {
+                                    fR[dateKey]['GT'][name] = { shift: s };
+                                    fR[dateKey]['BB'][name] = { shift: s };
+                                } else {
+                                    fR[dateKey][v][name] = { shift: s };
+                                }
                                 fS[dateKey][name] = ""; 
                             } else {
                                 fS[dateKey][name] = "辦公"; 
