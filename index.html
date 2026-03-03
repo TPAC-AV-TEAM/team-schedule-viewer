@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>視聽班表系統 | V9 | claude.ai </title>
+    <title>視聽班表系統 | V9 | claude.ai</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -119,11 +119,64 @@ const StaffBtn = memo(({ name, aliasMap={}, forceName=null, onClick, mode="norma
     );
 });
 
+const CalendarPicker = memo(({ dates, onSelect, onClose, calMonth, setCalMonth }) => {
+    const dateSet = useMemo(()=>new Set(dates.map(d=>d.fullKey)),[dates]);
+    const {y,m} = calMonth;
+    const firstDay = new Date(y,m,1).getDay();
+    const daysInMonth = new Date(y,m+1,0).getDate();
+    const todayK=(()=>{const n=new Date();return `${n.getFullYear()}/${(n.getMonth()+1).toString().padStart(2,'0')}/${n.getDate().toString().padStart(2,'0')}`;})();
+    const cells=[];
+    for(let i=0;i<firstDay;i++)cells.push(null);
+    for(let d=1;d<=daysInMonth;d++)cells.push(d);
+    const toKey=d=>`${y}/${(m+1).toString().padStart(2,'0')}/${d.toString().padStart(2,'0')}`;
+    const prev=()=>setCalMonth(p=>p.m===0?{y:p.y-1,m:11}:{y:p.y,m:p.m-1});
+    const next=()=>setCalMonth(p=>p.m===11?{y:p.y+1,m:0}:{y:p.y,m:p.m+1});
+    return(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl" onClick={onClose}>
+            <div className="bg-[#2c2c2e] border border-white/15 rounded-[2rem] shadow-2xl w-full max-w-xs p-5" onClick={e=>e.stopPropagation()}>
+                <div className="flex items-center justify-between mb-4">
+                    <button onClick={prev} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:bg-white/20 text-lg">&#8249;</button>
+                    <span className="font-black text-base tracking-wide">{y}年{m+1}月</span>
+                    <button onClick={next} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:bg-white/20 text-lg">&#8250;</button>
+                </div>
+                <div className="grid grid-cols-7 mb-1">
+                    {['日','一','二','三','四','五','六'].map((w,i)=>(
+                        <div key={w} className={`text-center text-[10px] font-black py-1 ${i===0||i===6?'text-[var(--weekend-pink)]':'text-white/30'}`}>{w}</div>
+                    ))}
+                </div>
+                <div className="grid grid-cols-7 gap-y-1">
+                    {cells.map((d,i)=>{
+                        if(!d)return <div key={"e"+i}/>;
+                        const fk=toKey(d);
+                        const has=dateSet.has(fk);
+                        const isToday=fk===todayK;
+                        const dow=(firstDay+d-1)%7;
+                        const isWk=dow===0||dow===6;
+                        return(
+                            <button key={fk} disabled={!has} onClick={()=>{onSelect(fk);onClose();}}
+                                className={"h-9 w-full rounded-xl text-[13px] font-black transition-all "+(
+                                    isToday?'bg-[var(--mac-blue)] text-white shadow-lg':
+                                    has?(isWk?'text-[var(--weekend-pink)] bg-white/5 hover:bg-white/15':'text-white bg-white/5 hover:bg-white/15'):
+                                    'text-white/15 cursor-default'
+                                )}>
+                                {d}
+                            </button>
+                        );
+                    })}
+                </div>
+                <button onClick={onClose} className="mt-4 w-full py-2 rounded-full bg-white/5 text-white/40 text-[11px] font-black uppercase tracking-widest hover:bg-white/10">Close</button>
+            </div>
+        </div>
+    );
+});
+
 const App = () => {
     const [dates,setDates]=useState([]), [schedule,setSchedule]=useState({roster:{},statuses:{},shows:{},notes:{}});
     const [dateIdx,setDateIdx]=useState(0), [isUnlocked,setIsUnlocked]=useState(false), [user,setUser]=useState(null);
     const [aliasMap,setAliasMap]=useState({}), [queryStaff,setQueryStaff]=useState(null), [queryVenue,setQueryVenue]=useState(null);
     const [showMaster,setShowMaster]=useState(false);
+    const [showCalendar,setShowCalendar]=useState(false);
+    const [calMonth,setCalMonth]=useState(()=>{const n=new Date();return{y:n.getFullYear(),m:n.getMonth()};});
 
     const scrollTo = useCallback((fk, cid) => {
         setTimeout(() => {
@@ -144,6 +197,11 @@ const App = () => {
     const handleBackToday = useCallback(()=>{ const tK=formatK(new Date()); const i=dates.findIndex(d=>d.fullKey===tK); if(i!==-1)goDate(i,tK); },[dates,goDate]);
     const shiftWeek = useCallback(dir=>{ const ni=Math.max(0,Math.min(dates.length-1,dateIdx+dir*7)); goDate(ni,dates[ni].fullKey); },[dateIdx,dates,goDate]);
     const handleStaffClick = useCallback(name=>{ setQueryStaff(name); setQueryVenue(null); },[]);
+
+    const handleCalendarSelect = useCallback(fk=>{
+        const i=dates.findIndex(d=>d.fullKey===fk); if(i===-1)return;
+        goDate(i,fk); setShowCalendar(false);
+    },[dates,goDate]);
 
     useEffect(()=>{
         const t=setInterval(()=>{
@@ -204,9 +262,9 @@ const App = () => {
             <header className="mac-glass pt-10 pb-3 px-4 flex items-center justify-between shrink-0 z-50">
                 <div className="flex items-center gap-3">
                     <button onClick={handleBackToday} className="btn-today">Today</button>
-                    <h1 className="text-xl font-black italic cursor-pointer" onClick={()=>setShowMaster(true)}>視聽班表系統 V9</h1>
+                    <h1 className="text-xl font-black italic cursor-pointer" onClick={()=>setShowMaster(true)}>視聽班表系統</h1>
                 </div>
-                <button onClick={()=>window.location.reload()} className="h-7 w-7 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/50"><Icon name="refresh" className="w-3 h-3"/></button>
+                <div className="flex items-center gap-2"><button onClick={()=>{setCalMonth({y:new Date().getFullYear(),m:new Date().getMonth()});setShowCalendar(true);}} className="h-7 w-7 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/50"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button><button onClick={()=>window.location.reload()} className="h-7 w-7 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/50"><Icon name="refresh" className="w-3 h-3"/></button></div>
             </header>
 
             <main className="flex-1 overflow-y-auto px-2 py-3 no-scrollbar pb-24 z-10 text-left">
@@ -283,6 +341,7 @@ const App = () => {
                             <button onClick={()=>setShowMaster(false)} className="w-8 h-8 rounded-full bg-white/10 text-xl">×</button>
                             <button onClick={handleBackToday} className="btn-today">Today</button>
                             <h3 className="text-lg font-black italic">Master Roster</h3>
+                            <button onClick={()=>{setCalMonth({y:new Date().getFullYear(),m:new Date().getMonth()});setShowCalendar(true);}} className="ml-auto w-8 h-8 rounded-full bg-white/10 border border-white/15 flex items-center justify-center text-white/60 hover:bg-white/20 transition-all"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button>
                         </div>
                         <div className="flex-1 overflow-hidden relative">
                             <div className="master-left-col">
@@ -342,10 +401,18 @@ const App = () => {
             {(queryStaff||queryVenue)&&(
                 <div className="fixed inset-0 z-[2000] flex items-center justify-center p-6 bg-black/90 backdrop-blur-2xl" onClick={()=>{setQueryStaff(null);setQueryVenue(null);}}>
                     <div className="bg-[var(--mac-bg)] border border-white/10 w-full max-w-lg rounded-[2.5rem] shadow-2xl flex flex-col max-h-[85vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
-                        <div className="p-4 border-b border-white/10 flex items-center gap-3 bg-[var(--mac-card)]">
-                            <button onClick={()=>{setQueryStaff(null);setQueryVenue(null);}} className="w-8 h-8 rounded-full bg-white/10 text-2xl">×</button>
-                            <button onClick={handleBackToday} className="btn-today">Today</button>
-                            <h3 className="text-xl font-black italic">{queryVenue?`${queryVenue} Weekly`:(aliasMap[queryStaff]||queryStaff)}</h3>
+                        <div className="p-4 border-b border-white/10 bg-[var(--mac-card)]">
+                            <div className="flex items-center gap-3">
+                                <button onClick={()=>{setQueryStaff(null);setQueryVenue(null);}} className="w-8 h-8 rounded-full bg-white/10 text-2xl">×</button>
+                                <button onClick={handleBackToday} className="btn-today">Today</button>
+                                <h3 className="text-xl font-black italic">{queryVenue?`${queryVenue} Weekly`:(aliasMap[queryStaff]||queryStaff)}</h3>
+                                <button onClick={()=>{setCalMonth({y:new Date().getFullYear(),m:new Date().getMonth()});setShowCalendar(true);}} className="ml-auto w-8 h-8 rounded-full bg-white/10 border border-white/15 flex items-center justify-center text-white/60 hover:bg-white/20 transition-all"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button>
+                            </div>
+                            {queryVenue&&(
+                                <div className="flex gap-1.5 mt-2.5">
+                                    {VENUES.map(v=>(<button key={v.id} onClick={()=>setQueryVenue(v.id)} className={`flex-1 py-1.5 rounded-xl text-[13px] font-black transition-all border ${queryVenue===v.id?'bg-white/10 border-white/20':'border-transparent text-white/25 hover:text-white/50'}`} style={{color:queryVenue===v.id?v.color:undefined}}>{v.id}</button>))}
+                                </div>
+                            )}
                         </div>
                         <div id={queryVenue?"venue-scroll-container":"staff-scroll-container"} className="flex-1 overflow-y-auto p-3 space-y-3 no-scrollbar scroll-smooth">
                             {dates.map(d=>{
@@ -391,13 +458,18 @@ const App = () => {
                                             <span className={`text-[24px] font-black tracking-tighter ${isW?'text-[var(--weekend-pink)]':''}`}>{d.d}</span>
                                         </div>
                                         <div className="flex-1 mq-wrap text-[18px] font-light text-white opacity-50 italic"><span className={sn.length>10?"mq-run":""}>{sn}</span></div>
-                                        <span className={`text-lg font-black px-3 py-1 rounded-lg shrink-0 ${isBShift?'b-badge-glow':''}`} style={{color:co}}>{st}</span>
+                                        <button onClick={()=>{if(hasS){setQueryStaff(null);setQueryVenue(activeV);}}} className={`text-lg font-black px-3 py-1 rounded-lg shrink-0 transition-all ${isBShift?'b-badge-glow':''} ${hasS?'hover:bg-white/10 active:scale-95 cursor-pointer':'cursor-default'}`} style={{color:co}}>{st}</button>
                                     </div>
                                 );
                             })}
                         </div>
                     </div>
                 </div>
+            )}
+
+
+            {showCalendar&&(
+                <CalendarPicker dates={dates} onSelect={handleCalendarSelect} onClose={()=>setShowCalendar(false)} calMonth={calMonth} setCalMonth={setCalMonth}/>
             )}
 
             <footer className="fixed bottom-0 left-0 right-0 py-2 text-center opacity-20 pointer-events-none text-[8px] font-black tracking-[0.2em]">TPAC SCHEDULE SYSTEM | V9 | 2026</footer>
@@ -407,4 +479,5 @@ const App = () => {
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
 </script>
 </body>
-</html>
+                            <h3 className="text-lg font-black italic">Master Roster</h3>
+                            <button onClick={()=>{setCalMonth({y:new Date().getFullYear(),m:new Date().getMonth()});setShowCalendar(true);}} className="ml-auto w-8 h-8 rounded-full bg-white/10 border border-white/15 flex items-center justify-center text-white/60 hover:bg-white/20 transition-all"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button>
