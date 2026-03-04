@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cloud Sync | V6 | claude.ai</title>
+    <title>Cloud Sync | V6</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -41,35 +41,24 @@
 const { useState, useEffect, useRef, memo, useCallback } = React;
 
 /* ══════════════════════════════════════════════════════════
-   CENTRAL CONFIG  ── 新增廳院 / 人員 / 班別只改這裡
+   1. CENTRAL CONFIG (單一真理來源)
    ══════════════════════════════════════════════════════════ */
-
-// 廳院設定：新增廳院在此加一筆
 const VENUES = [
     { id:'GT', color:'#FF2D55', masterBg:'#8B0000', excelRow: -4 },
     { id:'BB', color:'#00FFFF', masterBg:'#008B8B', excelRow: -3 },
     { id:'GP', color:'#32DE84', masterBg:'#006400', excelRow: -2 },
-    // 範例：{ id:'MH', color:'#FFD60A', masterBg:'#7A6500', excelRow: -1 }
-    // ⚠ 新增廳院時，Excel 模板也需對應新增一列節目名稱，並調整 EXCEL_NOTE_ROW_OFFSET
 ];
 const VENUE_IDS = VENUES.map(v => v.id);
 const VENUE_MAP = Object.fromEntries(VENUES.map(v => [v.id, v]));
 
-// ST 代碼對應的廳院（ST = 同時上 GT + BB）
-// 新增複合班別：在此加入，例如 { code:'ALL', venues:['GT','BB','GP'] }
 const ST_ALIAS = [
     { code:'ST', venues:['GT','BB'] },
 ];
 const ST_ALIAS_MAP = Object.fromEntries(ST_ALIAS.map(a => [a.code, a.venues]));
 
-// Excel 備注列相對日期列的 offset（節目列佔完之後緊接的那列）
 const EXCEL_NOTE_ROW_OFFSET = -1;
-
-// 班別轉換：Excel 代碼 → 系統班別
-// A/C/E → A班，B/D/F → B班
 const SHIFT_MAP = { A:'A', B:'B', C:'A', D:'B', E:'A', F:'B' };
 
-// 人員設定：gender M/F，type Normal/Special
 const STAFF_ORDER = ["王志剛","張國飛","張劭如","謝祥玄","張懷德","楊淯舒","黎祐甄","廖俊龍","曾健洋","劉智敏"];
 const STAFF_INFO = {
     "王志剛":{ gender:"M", type:"Normal"  }, "張國飛":{ gender:"M", type:"Normal"  },
@@ -79,17 +68,18 @@ const STAFF_INFO = {
     "曾健洋":{ gender:"M", type:"Special" }, "劉智敏":{ gender:"M", type:"Special" },
 };
 
-// Excel 結構設定
-const EXCEL_ROWS_START  = [4, 52, 100, 148, 196, 244];  // 每週日期列（0-indexed）
-const EXCEL_COLS_INDEX  = [2, 5, 8, 11, 14, 17, 20];    // 每天所在欄（0-indexed）
-const EXCEL_STAFF_RANGE = { start:2, end:30 };           // 相對日期列的人員列範圍（偶數步進）
+const EXCEL_ROWS_START  = [4, 52, 100, 148, 196, 244];  
+const EXCEL_COLS_INDEX  = [2, 5, 8, 11, 14, 17, 20];    
+const EXCEL_STAFF_RANGE = { start:2, end:30 };           
 
-/* ══════════════════════════════════════════════════════════ */
 const FIREBASE_CONFIG = { apiKey:"AIzaSyAx2aYlfqHBUe3V7a3sT5ZPVNYyr2JY8OA", authDomain:"tpac-schedule.firebaseapp.com", projectId:"tpac-schedule", storageBucket:"tpac-schedule.firebasestorage.app", messagingSenderId:"70955835780", appId:"1:70955835780:web:9d3b0958738557d1f7fdd1" };
 const APP_ID = "tpac-schedule";
 
-/* ── 日期解析 ── */
+/* ══════════════════════════════════════════════════════════
+   2. EXCEL PARSER SERVICE (純函數，無副作用)
+   ══════════════════════════════════════════════════════════ */
 const parseExcelDate = (cell) => {
+    if (!cell) return null;
     if (typeof cell === 'number') {
         const d = new Date(Math.round((cell-25569)*86400*1000));
         return `${d.getFullYear()}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getDate().toString().padStart(2,'0')}`;
@@ -97,83 +87,94 @@ const parseExcelDate = (cell) => {
     if (typeof cell === 'string') {
         const m = cell.match(/(\d{1,2})\/(\d{1,2})/);
         if (m) {
-            const now=new Date(), mm=parseInt(m[1]), dd=parseInt(m[2]);
-            let y=now.getFullYear();
-            if(now.getMonth()>=10&&mm<=2)y++; else if(now.getMonth()<=1&&mm>=11)y--;
+            const now = new Date(), mm = parseInt(m[1]), dd = parseInt(m[2]);
+            let y = now.getFullYear();
+            if(now.getMonth()>=10 && mm<=2) y++; 
+            else if(now.getMonth()<=1 && mm>=11) y--;
             return `${y}/${mm.toString().padStart(2,'0')}/${dd.toString().padStart(2,'0')}`;
         }
     }
     return null;
 };
 
-/* ── Excel 解析核心（完全動態，依 VENUES / ST_ALIAS / STAFF_ORDER） ── */
+/**
+ * 嚴格的純函數：接收 sheet 與舊狀態，返回全新的拷貝狀態，不污染原始資料。
+ */
 const processSheetData = (sheet, existing) => {
+    if (!sheet) return existing;
+    
+    // Deep Clone 確保 Immutability
+    const fR = JSON.parse(JSON.stringify(existing.fR || {}));
+    const fS = JSON.parse(JSON.stringify(existing.fS || {}));
+    const fH = JSON.parse(JSON.stringify(existing.fH || {}));
+    const fN = JSON.parse(JSON.stringify(existing.fN || {}));
+    
     const rows = XLSX.utils.sheet_to_json(sheet, { header:1, defval:"" });
-    let { fR, fS, fH, fN } = existing;
+    if (!rows || rows.length === 0) return { fR, fS, fH, fN }; // Early return 防禦
+
+    const allCodesRegex = new RegExp(`(${[...VENUE_IDS, ...Object.keys(ST_ALIAS_MAP)].join('|')})-([A-F])`, 'i');
 
     EXCEL_ROWS_START.forEach(rS => {
+        if (rS >= rows.length) return; // 避免越界
+
         EXCEL_COLS_INDEX.forEach(cI => {
             const dateKey = parseExcelDate(rows[rS]?.[cI]);
             if (!dateKey) return;
 
-            // 動態初始化廳院結構
             if (!fR[dateKey]) fR[dateKey] = Object.fromEntries(VENUE_IDS.map(id=>[id,{}]));
             if (!fS[dateKey]) fS[dateKey] = {};
 
-            // 動態讀取各廳院節目名稱（依 VENUES 的 excelRow）
             fH[dateKey] = Object.fromEntries(
                 VENUES.map(v => [v.id, (rows[rS + v.excelRow]?.[cI] || "").toString().trim()])
             );
             fN[dateKey] = (rows[rS + EXCEL_NOTE_ROW_OFFSET]?.[cI] || "").toString().trim();
 
-            // 讀取人員班表
-            for (let r=rS+EXCEL_STAFF_RANGE.start; r<=rS+EXCEL_STAFF_RANGE.end; r+=2) {
-                const name = (rows[r]?.[1] || "").trim();
+            for (let r = rS + EXCEL_STAFF_RANGE.start; r <= rS + EXCEL_STAFF_RANGE.end; r += 2) {
+                if (r >= rows.length) break;
+                
+                const name = (rows[r]?.[1] || "").toString().trim();
                 if (!STAFF_ORDER.includes(name)) continue;
+                
                 const code = (rows[r+1]?.[cI] || "").toString().trim();
 
-                // 休假類
-                if (code==="" || code.match(/休|例|休息|無排班|公假|婚假|喪假|病假|事假|特休|補休/)) {
+                if (code === "" || code.match(/休|例|休息|無排班|公假|婚假|喪假|病假|事假|特休|補休/)) {
                     fS[dateKey][name] = "休假";
                     continue;
                 }
-                // 辦公類
+                
                 if (code.match(/辦公|支援|居家|其他|其它/)) {
                     fS[dateKey][name] = "辦公";
                     continue;
                 }
 
-                // 上班類：解析 venue-shift 格式（如 GT-A、BB-B、ST-A）
-                // 支援所有 VENUE_IDS 及 ST_ALIAS 中定義的代碼
-                const allCodes = [...VENUE_IDS, ...Object.keys(ST_ALIAS_MAP)].join('|');
-                const match = code.match(new RegExp(`(${allCodes})-([A-F])`, 'i'));
+                const match = code.match(allCodesRegex);
                 if (match) {
                     const vid = match[1].toUpperCase();
                     const sh  = SHIFT_MAP[match[2].toUpperCase()] || 'A';
 
                     if (ST_ALIAS_MAP[vid]) {
-                        // 複合班別：同時寫入多個廳院
                         ST_ALIAS_MAP[vid].forEach(targetVid => {
                             if (!fR[dateKey][targetVid]) fR[dateKey][targetVid] = {};
-                            fR[dateKey][targetVid][name] = { shift:sh };
+                            fR[dateKey][targetVid][name] = { shift: sh };
                         });
                     } else {
-                        // 一般班別
                         if (!fR[dateKey][vid]) fR[dateKey][vid] = {};
-                        fR[dateKey][vid][name] = { shift:sh };
+                        fR[dateKey][vid][name] = { shift: sh };
                     }
                     fS[dateKey][name] = "";
                 } else {
-                    // 無法解析的代碼，視為辦公
                     fS[dateKey][name] = "辦公";
                 }
             }
         });
     });
+    
     return { fR, fS, fH, fN };
 };
 
-/* ── 人員顯示顏色（依 STAFF_INFO） ── */
+/* ══════════════════════════════════════════════════════════
+   3. UI HELPERS & COMPONENTS
+   ══════════════════════════════════════════════════════════ */
 const staffDisplayColor = (name) => {
     const info = STAFF_INFO[name];
     if (!info) return "#D1FFFF";
@@ -181,7 +182,6 @@ const staffDisplayColor = (name) => {
     return info.gender==="F" ? "#FFCCFF" : "#D1FFFF";
 };
 
-/* ── Icons ── */
 const Icon = memo(({name,className="w-4 h-4"})=>{
     const d = {
         cloud:  <path d="M17.5 19c2.5 0 4.5-2 4.5-4.5 0-2.2-1.6-4-3.7-4.4-.5-3.1-3.2-5.6-6.3-5.6-2.5 0-4.7 1.5-5.7 3.6-2 .4-3.3 2.1-3.3 4.1C3 15.2 5.2 18 8 18h9.5z"/>,
@@ -192,7 +192,6 @@ const Icon = memo(({name,className="w-4 h-4"})=>{
     return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>{d[name]}</svg>;
 });
 
-/* ── Success Screen ── */
 const SuccessScreen = ({report,onBack}) => (
     <div className="h-screen w-screen flex flex-col items-center bg-[#050505] p-6 page-fade-in text-center overflow-y-auto relative z-50">
         <div className="aura-bg fixed inset-0"></div>
@@ -213,7 +212,6 @@ const SuccessScreen = ({report,onBack}) => (
     </div>
 );
 
-/* ── Alias Modal（動態列出所有 STAFF_ORDER 人員） ── */
 const AliasModal = ({show,onClose,mapping,setMapping,onSave}) => {
     if(!show)return null;
     return(
@@ -246,7 +244,6 @@ const AliasModal = ({show,onClose,mapping,setMapping,onSave}) => {
     );
 };
 
-/* ── Sheet Picker Modal ── */
 const SheetPicker = ({show,sheets,selected,setSelected,onConfirm,onClose}) => {
     if(!show)return null;
     return(
@@ -274,7 +271,9 @@ const SheetPicker = ({show,sheets,selected,setSelected,onConfirm,onClose}) => {
     );
 };
 
-/* ── Main App ── */
+/* ══════════════════════════════════════════════════════════
+   4. MAIN APP (React Entry)
+   ══════════════════════════════════════════════════════════ */
 const App = () => {
     const [db,setDb]=useState(null), [user,setUser]=useState(null), [status,setStatus]=useState('connecting');
     const [sheetNames,setSheetNames]=useState([]), [selectedSheets,setSelectedSheets]=useState([]), [wb,setWb]=useState(null);
@@ -314,28 +313,38 @@ const App = () => {
             }catch{alert("Excel 讀取失敗，請確認格式");}
         };
         reader.readAsArrayBuffer(file);
-        e.target.value=null;
+        e.target.value=null; // Reset input
     },[]);
 
     const runSync = async () => {
         if(!selectedSheets.length||!db)return;
         setStatus('syncing');
-        await new Promise(r=>setTimeout(r,100));
+        await new Promise(r=>setTimeout(r,100)); // UI update buffer
         try{
             const docRef=Firebase.doc(db,'artifacts',APP_ID,'public','data','rosters','master');
             let data={fR:{},fS:{},fH:{},fN:{}};
-            selectedSheets.forEach(name=>{ data=processSheetData(wb.Sheets[name],data); });
+            
+            // 安全地處理多個 Sheet 的資料注入
+            selectedSheets.forEach(name=>{ 
+                data = processSheetData(wb.Sheets[name], data); 
+            });
+            
             const {fR,fS,fH,fN}=data;
             const allK=Object.keys(fR).sort();
             if(!allK.length)throw new Error("無有效排班資料被提取");
+            
             await Firebase.setDoc(docRef,{
                 roster:JSON.stringify(fR), statuses:JSON.stringify(fS),
                 shows:JSON.stringify(fH),  notes:JSON.stringify(fN),
                 lastUpdated:new Date().toISOString()
             });
+            
             setReport({total:allK.length,start:allK[0],end:allK[allK.length-1],sheets:selectedSheets});
             setStatus('success');
-        }catch(e){alert("同步失敗: "+e.message);setStatus('idle');}
+        }catch(e){
+            alert("同步失敗: "+e.message);
+            setStatus('idle');
+        }
     };
 
     const saveMapping = async () => {
@@ -351,7 +360,7 @@ const App = () => {
         alert("雲端已清空"); setStatus('idle');
     };
 
-    if(status==='success'&&report)return <SuccessScreen report={report} onBack={()=>setStatus('idle')}/>;
+    if(status==='success'&&report) return <SuccessScreen report={report} onBack={()=>setStatus('idle')}/>;
 
     return(
         <div className="h-screen w-screen bg-[#050505] text-white flex flex-col items-center justify-between p-10 relative overflow-hidden select-none">
@@ -361,7 +370,7 @@ const App = () => {
                     <Icon name="alias" className="text-blue-400 w-5 h-5"/>
                 </button>
                 <div className="text-center">
-                    <h1 className="text-4xl font-black italic tracking-tighter uppercase leading-none">Cloud Sync V6</h1>
+                    <h1 className="text-4xl font-black italic tracking-tighter uppercase leading-none">Cloud Sync V6.1</h1>
                     <div className={`mt-4 px-4 py-1 rounded-full border text-[9px] font-black uppercase inline-flex items-center gap-2 ${user?'border-emerald-500/30 text-emerald-500':'border-blue-500/30 text-blue-500'}`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${user?'bg-emerald-500 shadow-[0_0_10px_#30D158]':'bg-blue-500 animate-pulse'}`}></span>
                         {user?'LINK READY':'CONNECTING...'}
