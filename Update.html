@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cloud Sync | V6.2 (New Project)</title>
+    <title>Cloud Sync | V6.2</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -41,26 +41,22 @@
 const { useState, useEffect, useRef, memo, useCallback } = React;
 
 /* ══════════════════════════════════════════════════════════
-   1. CENTRAL CONFIG (更新為新專案配置)
+   1. CENTRAL CONFIG (單一真理來源)
    ══════════════════════════════════════════════════════════ */
-const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyA7tgFRxDCnZpOzEvfT978wIAcqcXNZXVQ",
-  authDomain: "team-schedule-viewer.firebaseapp.com",
-  projectId: "team-schedule-viewer",
-  storageBucket: "team-schedule-viewer.firebasestorage.app",
-  messagingSenderId: "202883367260",
-  appId: "1:202883367260:web:b31e495084a4ea8af20199"
-};
-const APP_ID = "team-schedule-viewer";
-
-/* ── 業務資料設定 ── */
 const VENUES = [
     { id:'GT', color:'#FF2D55', masterBg:'#8B0000', excelRow: -4 },
     { id:'BB', color:'#00FFFF', masterBg:'#008B8B', excelRow: -3 },
     { id:'GP', color:'#32DE84', masterBg:'#006400', excelRow: -2 },
 ];
 const VENUE_IDS = VENUES.map(v => v.id);
-const ST_ALIAS_MAP = { 'ST': ['GT','BB'] };
+const VENUE_MAP = Object.fromEntries(VENUES.map(v => [v.id, v]));
+
+const ST_ALIAS = [
+    { code:'ST', venues:['GT','BB'] },
+];
+const ST_ALIAS_MAP = Object.fromEntries(ST_ALIAS.map(a => [a.code, a.venues]));
+
+const EXCEL_NOTE_ROW_OFFSET = -1;
 const SHIFT_MAP = { A:'A', B:'B', C:'A', D:'B', E:'A', F:'B' };
 
 const STAFF_ORDER = ["王志剛","張國飛","張劭如","謝祥玄","張懷德","楊淯舒","黎祐甄","廖俊龍","曾健洋","劉智敏"];
@@ -76,8 +72,20 @@ const EXCEL_ROWS_START  = [4, 52, 100, 148, 196, 244];
 const EXCEL_COLS_INDEX  = [2, 5, 8, 11, 14, 17, 20];    
 const EXCEL_STAFF_RANGE = { start:2, end:30 };           
 
+/* ── 👇 這裡已經替換為最新的 API 設定 👇 ── */
+const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyA7tgFRxDCnZpOzEvfT978wIAcqcXNZXVQ",
+    authDomain: "team-schedule-viewer.firebaseapp.com",
+    projectId: "team-schedule-viewer",
+    storageBucket: "team-schedule-viewer.firebasestorage.app",
+    messagingSenderId: "202883367260",
+    appId: "1:202883367260:web:b31e495084a4ea8af20199"
+};
+const APP_ID = "team-schedule-viewer";
+/* ── 👆 替換完畢 👆 ── */
+
 /* ══════════════════════════════════════════════════════════
-   2. EXCEL PARSER SERVICE (純函數)
+   2. EXCEL PARSER SERVICE (純函數，無副作用)
    ══════════════════════════════════════════════════════════ */
 const parseExcelDate = (cell) => {
     if (!cell) return null;
@@ -98,162 +106,311 @@ const parseExcelDate = (cell) => {
     return null;
 };
 
+/**
+ * 嚴格的純函數：接收 sheet 與舊狀態，返回全新的拷貝狀態，不污染原始資料。
+ */
 const processSheetData = (sheet, existing) => {
     if (!sheet) return existing;
+    
+    // Deep Clone 確保 Immutability
     const fR = JSON.parse(JSON.stringify(existing.fR || {}));
     const fS = JSON.parse(JSON.stringify(existing.fS || {}));
     const fH = JSON.parse(JSON.stringify(existing.fH || {}));
     const fN = JSON.parse(JSON.stringify(existing.fN || {}));
     
     const rows = XLSX.utils.sheet_to_json(sheet, { header:1, defval:"" });
-    if (!rows || rows.length === 0) return { fR, fS, fH, fN };
+    if (!rows || rows.length === 0) return { fR, fS, fH, fN }; // Early return 防禦
 
     const allCodesRegex = new RegExp(`(${[...VENUE_IDS, ...Object.keys(ST_ALIAS_MAP)].join('|')})-([A-F])`, 'i');
 
     EXCEL_ROWS_START.forEach(rS => {
-        if (rS >= rows.length) return;
+        if (rS >= rows.length) return; // 避免越界
+
         EXCEL_COLS_INDEX.forEach(cI => {
             const dateKey = parseExcelDate(rows[rS]?.[cI]);
             if (!dateKey) return;
+
             if (!fR[dateKey]) fR[dateKey] = Object.fromEntries(VENUE_IDS.map(id=>[id,{}]));
             if (!fS[dateKey]) fS[dateKey] = {};
-            fH[dateKey] = Object.fromEntries(VENUES.map(v => [v.id, (rows[rS + v.excelRow]?.[cI] || "").toString().trim()]));
-            fN[dateKey] = (rows[rS - 1]?.[cI] || "").toString().trim();
+
+            fH[dateKey] = Object.fromEntries(
+                VENUES.map(v => [v.id, (rows[rS + v.excelRow]?.[cI] || "").toString().trim()])
+            );
+            fN[dateKey] = (rows[rS + EXCEL_NOTE_ROW_OFFSET]?.[cI] || "").toString().trim();
 
             for (let r = rS + EXCEL_STAFF_RANGE.start; r <= rS + EXCEL_STAFF_RANGE.end; r += 2) {
                 if (r >= rows.length) break;
+                
                 const name = (rows[r]?.[1] || "").toString().trim();
                 if (!STAFF_ORDER.includes(name)) continue;
+                
                 const code = (rows[r+1]?.[cI] || "").toString().trim();
+
                 if (code === "" || code.match(/休|例|休息|無排班|公假|婚假|喪假|病假|事假|特休|補休/)) {
-                    fS[dateKey][name] = "休假"; continue;
+                    fS[dateKey][name] = "休假";
+                    continue;
                 }
+                
                 if (code.match(/辦公|支援|居家|其他|其它/)) {
-                    fS[dateKey][name] = "辦公"; continue;
+                    fS[dateKey][name] = "辦公";
+                    continue;
                 }
+
                 const match = code.match(allCodesRegex);
                 if (match) {
-                    const vid = match[1].toUpperCase(), sh = SHIFT_MAP[match[2].toUpperCase()] || 'A';
+                    const vid = match[1].toUpperCase();
+                    const sh  = SHIFT_MAP[match[2].toUpperCase()] || 'A';
+
                     if (ST_ALIAS_MAP[vid]) {
-                        ST_ALIAS_MAP[vid].forEach(tVid => { if(!fR[dateKey][tVid]) fR[dateKey][tVid]={}; fR[dateKey][tVid][name]={shift:sh}; });
+                        ST_ALIAS_MAP[vid].forEach(targetVid => {
+                            if (!fR[dateKey][targetVid]) fR[dateKey][targetVid] = {};
+                            fR[dateKey][targetVid][name] = { shift: sh };
+                        });
                     } else {
-                        if(!fR[dateKey][vid]) fR[dateKey][vid]={}; fR[dateKey][vid][name]={shift:sh};
+                        if (!fR[dateKey][vid]) fR[dateKey][vid] = {};
+                        fR[dateKey][vid][name] = { shift: sh };
                     }
                     fS[dateKey][name] = "";
-                } else { fS[dateKey][name] = "辦公"; }
+                } else {
+                    fS[dateKey][name] = "辦公";
+                }
             }
         });
     });
+    
     return { fR, fS, fH, fN };
 };
 
 /* ══════════════════════════════════════════════════════════
-   3. UI COMPONENTS
+   3. UI HELPERS & COMPONENTS
    ══════════════════════════════════════════════════════════ */
+const staffDisplayColor = (name) => {
+    const info = STAFF_INFO[name];
+    if (!info) return "#D1FFFF";
+    if (info.type==="Special") return "#FEFFD1";
+    return info.gender==="F" ? "#FFCCFF" : "#D1FFFF";
+};
+
 const Icon = memo(({name,className="w-4 h-4"})=>{
     const d = {
-        cloud: <path d="M17.5 19c2.5 0 4.5-2 4.5-4.5 0-2.2-1.6-4-3.7-4.4-.5-3.1-3.2-5.6-6.3-5.6-2.5 0-4.7 1.5-5.7 3.6-2 .4-3.3 2.1-3.3 4.1C3 15.2 5.2 18 8 18h9.5z"/>,
-        alias: <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 8.5l-3.5 3.5L15 9"/></>,
-        check: <path d="M20 6 9 17l-5-5"/>,
-        trash: <><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></>,
+        cloud:  <path d="M17.5 19c2.5 0 4.5-2 4.5-4.5 0-2.2-1.6-4-3.7-4.4-.5-3.1-3.2-5.6-6.3-5.6-2.5 0-4.7 1.5-5.7 3.6-2 .4-3.3 2.1-3.3 4.1C3 15.2 5.2 18 8 18h9.5z"/>,
+        alias:  <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 8.5l-3.5 3.5L15 9"/></>,
+        check:  <path d="M20 6 9 17l-5-5"/>,
+        trash:  <><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></>,
     };
     return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>{d[name]}</svg>;
 });
 
+const SuccessScreen = ({report,onBack}) => (
+    <div className="h-screen w-screen flex flex-col items-center bg-[#050505] p-6 page-fade-in text-center overflow-y-auto relative z-50">
+        <div className="aura-bg fixed inset-0"></div>
+        <header className="w-full mt-10 mb-8 shrink-0"><h1 className="text-4xl font-black italic tracking-tighter uppercase leading-none">Uplink Success</h1></header>
+        <main className="w-full max-w-lg flex-1 flex flex-col items-center justify-center">
+            <div className="mac-glass rounded-[4rem] p-10 flex flex-col items-center border-white/10 shadow-2xl w-full">
+                <div className="w-full bg-white/5 rounded-[3rem] p-8 border border-white/5 space-y-6 mb-8 shadow-inner">
+                    <p className="text-[11px] font-black text-white/30 uppercase tracking-[0.3em]">雲端覆蓋跨度</p>
+                    <p className="text-[#30D158] text-xl font-black">{report.start} ➔ {report.end}</p>
+                    <div className="pt-6 border-t border-white/5 flex flex-wrap justify-center gap-2">
+                        {report.sheets.map(s=><span key={s} className="bg-blue-600/30 text-blue-200 text-xs px-3 py-1 rounded-full border border-blue-500/20 font-black">{s}</span>)}
+                    </div>
+                    <div className="pt-6 border-t border-white/5"><p className="text-white text-base font-black">共注入 {report.total} 天班表</p></div>
+                </div>
+                <button onClick={onBack} className="w-full py-6 rounded-full bg-blue-600 font-black text-xs uppercase tracking-widest text-white shadow-xl hover:bg-blue-500 transition-colors">Back to Hub</button>
+            </div>
+        </main>
+    </div>
+);
+
+const AliasModal = ({show,onClose,mapping,setMapping,onSave}) => {
+    if(!show)return null;
+    return(
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6" onClick={onClose}>
+            <div className="absolute inset-0 bg-black/95 backdrop-blur-3xl"></div>
+            <div className="mac-glass w-[95%] max-w-5xl rounded-[3rem] p-8 flex flex-col shadow-2xl relative border-white/10 max-h-[90vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
+                <h3 className="text-3xl font-black italic uppercase text-center mb-8 text-white">Alias Management</h3>
+                <div className="flex-1 overflow-y-auto custom-scroll pr-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {STAFF_ORDER.map(name=>{
+                            const color = staffDisplayColor(name);
+                            return(
+                                <div key={name} className="flex items-center gap-4 p-2 bg-white/[0.02] border border-white/5 rounded-[1.8rem]">
+                                    <div className="w-[56px] h-[56px] shrink-0 flex items-center justify-center rounded-[1.2rem] border font-black text-xl tracking-tighter shadow-lg bg-white/5" style={{color,borderColor:color}}>
+                                        {name[0]}
+                                    </div>
+                                    <div className="flex-1 flex items-center justify-between px-2">
+                                        <span className="text-lg font-bold opacity-80 text-white">{name}</span>
+                                        <input type="text" className="mapping-input" placeholder="Alias..."
+                                            value={mapping[name]||""} onChange={e=>setMapping({...mapping,[name]:e.target.value})}/>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+                <button onClick={onSave} className="mx-auto mt-6 px-12 py-4 bg-blue-600 rounded-full font-black text-xs uppercase tracking-widest shadow-xl text-white hover:bg-blue-500 transition-colors">Update Cloud Mapping</button>
+            </div>
+        </div>
+    );
+};
+
+const SheetPicker = ({show,sheets,selected,setSelected,onConfirm,onClose}) => {
+    if(!show)return null;
+    return(
+        <div className="fixed inset-0 z-[500] flex items-center justify-center p-6" onClick={onClose}>
+            <div className="absolute inset-0 bg-black/95 backdrop-blur-3xl"></div>
+            <div className="mac-glass w-full max-w-sm rounded-[3.5rem] p-8 flex flex-col shadow-2xl relative overflow-hidden text-center text-white max-h-[85vh]" onClick={e=>e.stopPropagation()}>
+                <h3 className="text-xl font-black italic uppercase tracking-widest mb-6">Select Sheets</h3>
+                <div className="flex-1 overflow-y-auto custom-scroll pr-1 border-t border-b border-white/5 py-4">
+                    {sheets.map(name=>(
+                        <div key={name} onClick={()=>setSelected(p=>p.includes(name)?p.filter(n=>n!==name):[...p,name])}
+                             className="h-14 flex items-center justify-center cursor-pointer transition-all hover:bg-white/5 rounded-2xl mb-1 select-none">
+                            <div className={`mac-checkbox ${selected.includes(name)?'active':''}`}>
+                                {selected.includes(name)&&<Icon name="check" className="text-white w-3.5 h-3.5"/>}
+                            </div>
+                            <span className={`text-xl font-black tracking-tighter ${selected.includes(name)?'text-blue-500':'text-white/20'}`}>{name}</span>
+                        </div>
+                    ))}
+                </div>
+                <button onClick={onConfirm} disabled={selected.length===0}
+                    className="w-full py-5 rounded-full bg-blue-600 mt-8 font-black text-xs uppercase tracking-widest text-white shadow-lg disabled:opacity-50 hover:bg-blue-500 transition-colors">
+                    Push to Cloud
+                </button>
+            </div>
+        </div>
+    );
+};
+
+/* ══════════════════════════════════════════════════════════
+   4. MAIN APP (React Entry)
+   ══════════════════════════════════════════════════════════ */
 const App = () => {
     const [db,setDb]=useState(null), [user,setUser]=useState(null), [status,setStatus]=useState('connecting');
     const [sheetNames,setSheetNames]=useState([]), [selectedSheets,setSelectedSheets]=useState([]), [wb,setWb]=useState(null);
-    const [report,setReport]=useState(null), [nameMapping,setNameMapping]=useState({});
+    const [report,setReport]=useState(null), [nameMapping,setNameMapping]=useState({}), [showAlias,setShowAlias]=useState(false);
     const fileRef = useRef(null);
 
     useEffect(()=>{
         const t=setInterval(()=>{
             if(!window.isFirebaseCoreLoaded||!window.Firebase)return;
             clearInterval(t);
-            const app=Firebase.getApps().length===0?Firebase.initializeApp(FIREBASE_CONFIG):Firebase.getApp();
-            const fs=Firebase.getFirestore(app); setDb(fs);
-            Firebase.signInAnonymously(Firebase.getAuth(app)).then(()=>{
-                Firebase.onAuthStateChanged(Firebase.getAuth(app),async u=>{
-                    if(!u)return; setUser(u); setStatus('idle');
-                    const s=await Firebase.getDoc(Firebase.doc(fs,'artifacts',APP_ID,'public','data','configs','name_mapping'));
-                    if(s.exists())setNameMapping(s.data().maps||{});
+            try{
+                const app=Firebase.getApps().length===0?Firebase.initializeApp(FIREBASE_CONFIG):Firebase.getApp();
+                const auth=Firebase.getAuth(app), fs=Firebase.getFirestore(app);
+                setDb(fs);
+                Firebase.signInAnonymously(auth).then(()=>{
+                    Firebase.onAuthStateChanged(auth,async u=>{
+                        if(!u)return; setUser(u); setStatus('idle');
+                        const s=await Firebase.getDoc(Firebase.doc(fs,'artifacts',APP_ID,'public','data','configs','name_mapping'));
+                        if(s.exists())setNameMapping(s.data().maps||{});
+                    });
                 });
-            });
+            }catch(e){setStatus('error');console.error(e);}
         },150);
         return()=>clearInterval(t);
     },[]);
 
-    const onFileChange = e => {
+    const onFileChange = useCallback(e=>{
         const file=e.target.files[0]; if(!file)return;
         const reader=new FileReader();
         reader.onload=evt=>{
-            const workbook=XLSX.read(new Uint8Array(evt.target.result),{type:'array'});
-            setWb(workbook); setSheetNames(workbook.SheetNames.filter(n=>!n.includes("設定")&&!n.includes("準則")));
-            setSelectedSheets([]); setStatus('picking');
+            try{
+                const workbook=XLSX.read(new Uint8Array(evt.target.result),{type:'array'});
+                setWb(workbook);
+                setSheetNames(workbook.SheetNames.filter(n=>!n.includes("設定")&&!n.includes("準則")));
+                setSelectedSheets([]);
+                setStatus('picking');
+            }catch{alert("Excel 讀取失敗，請確認格式");}
         };
-        reader.readAsArrayBuffer(file); e.target.value=null;
-    };
+        reader.readAsArrayBuffer(file);
+        e.target.value=null; // Reset input
+    },[]);
 
     const runSync = async () => {
+        if(!selectedSheets.length||!db)return;
         setStatus('syncing');
+        await new Promise(r=>setTimeout(r,100)); // UI update buffer
         try{
             const docRef=Firebase.doc(db,'artifacts',APP_ID,'public','data','rosters','master');
             let data={fR:{},fS:{},fH:{},fN:{}};
-            selectedSheets.forEach(name=>{ data = processSheetData(wb.Sheets[name], data); });
-            const allK=Object.keys(data.fR).sort();
+            
+            // 安全地處理多個 Sheet 的資料注入
+            selectedSheets.forEach(name=>{ 
+                data = processSheetData(wb.Sheets[name], data); 
+            });
+            
+            const {fR,fS,fH,fN}=data;
+            const allK=Object.keys(fR).sort();
+            if(!allK.length)throw new Error("無有效排班資料被提取");
+            
             await Firebase.setDoc(docRef,{
-                roster:JSON.stringify(data.fR), statuses:JSON.stringify(data.fS),
-                shows:JSON.stringify(data.fH), notes:JSON.stringify(data.fN),
+                roster:JSON.stringify(fR), statuses:JSON.stringify(fS),
+                shows:JSON.stringify(fH),  notes:JSON.stringify(fN),
                 lastUpdated:new Date().toISOString()
             });
+            
             setReport({total:allK.length,start:allK[0],end:allK[allK.length-1],sheets:selectedSheets});
             setStatus('success');
-        }catch(e){ alert("同步失敗: "+e.message); setStatus('idle'); }
+        }catch(e){
+            alert("同步失敗: "+e.message);
+            setStatus('idle');
+        }
     };
 
-    if(status==='success') return (
-        <div className="h-screen w-screen flex flex-col items-center bg-[#050505] p-6 text-center relative z-50">
-            <div className="aura-bg fixed inset-0"></div>
-            <h1 className="text-4xl font-black italic mt-20 mb-10">UPLINK SUCCESS</h1>
-            <div className="mac-glass rounded-[3rem] p-10 w-full max-w-sm">
-                <p className="text-[#30D158] text-xl font-black mb-4">{report.start} ➔ {report.end}</p>
-                <p className="text-white/40 text-sm mb-8">注入 {report.total} 天班表</p>
-                <button onClick={()=>setStatus('idle')} className="w-full py-5 rounded-full bg-blue-600 font-black">BACK</button>
-            </div>
-        </div>
-    );
+    const saveMapping = async () => {
+        try{
+            await Firebase.setDoc(Firebase.doc(db,'artifacts',APP_ID,'public','data','configs','name_mapping'),{maps:nameMapping,updatedAt:new Date().toISOString()});
+            setShowAlias(false); alert("馬甲更新完成");
+        }catch{alert("儲存失敗");}
+    };
+
+    const wipeData = async () => {
+        if(!confirm("⚠️ 確定清空雲端所有排班資料？"))return;
+        await Firebase.deleteDoc(Firebase.doc(db,'artifacts',APP_ID,'public','data','rosters','master'));
+        alert("雲端已清空"); setStatus('idle');
+    };
+
+    if(status==='success'&&report) return <SuccessScreen report={report} onBack={()=>setStatus('idle')}/>;
 
     return(
-        <div className="h-screen w-screen bg-[#050505] flex flex-col items-center justify-between p-10 relative overflow-hidden">
+        <div className="h-screen w-screen bg-[#050505] text-white flex flex-col items-center justify-between p-10 relative overflow-hidden select-none">
             <div className="aura-bg"></div>
-            <header className="text-center z-40">
-                <h1 className="text-3xl font-black italic uppercase">Cloud Sync V6.2</h1>
-                <div className="mt-4 px-4 py-1 rounded-full border border-blue-500/30 text-blue-500 text-[9px] font-black uppercase">
-                    {user?'LINK READY':'CONNECTING...'}
+            <header className="w-full flex justify-between items-start z-40">
+                <button onClick={()=>setShowAlias(true)} className="p-3 bg-white/5 border border-white/10 rounded-2xl active:scale-95 transition-all hover:bg-white/10" title="Alias Management">
+                    <Icon name="alias" className="text-blue-400 w-5 h-5"/>
+                </button>
+                <div className="text-center">
+                    <h1 className="text-4xl font-black italic tracking-tighter uppercase leading-none">Cloud Sync V6.2</h1>
+                    <div className={`mt-4 px-4 py-1 rounded-full border text-[9px] font-black uppercase inline-flex items-center gap-2 ${user?'border-emerald-500/30 text-emerald-500':'border-blue-500/30 text-blue-500'}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${user?'bg-emerald-500 shadow-[0_0_10px_#30D158]':'bg-blue-500 animate-pulse'}`}></span>
+                        {user?'LINK READY':'CONNECTING...'}
+                    </div>
                 </div>
+                <button onClick={wipeData} className="p-3 bg-white/5 border border-white/10 rounded-2xl active:scale-95 transition-all hover:bg-rose-500/20" title="Wipe Cloud Data">
+                    <Icon name="trash" className="text-rose-500 w-5 h-5"/>
+                </button>
             </header>
+
             <main className="flex-1 flex flex-col items-center justify-center relative w-full z-10">
-                <div onClick={()=>status==='idle'&&fileRef.current.click()} className="relative w-64 h-64 flex items-center justify-center cursor-pointer active:scale-95 transition-transform">
+                <div onClick={()=>status==='idle'&&fileRef.current.click()}
+                     className={`relative w-64 h-64 flex items-center justify-center transition-transform ${status==='idle'?'cursor-pointer active:scale-95 hover:scale-105':''}`}>
                     <div className="absolute inset-0 rounded-full border-4 border-white/5"></div>
-                    <div className="racing-beam animate-orbit"></div>
-                    <div className="w-48 h-48 rounded-full flex items-center justify-center bg-white/5 border border-white/10 backdrop-blur-sm">
-                        {status==='syncing' ? <div className="w-12 h-12 border-4 border-t-blue-500 rounded-full animate-spin"></div> : <Icon name="cloud" className="w-24 h-24 text-blue-200"/>}
+                    <div className={`racing-beam ${status==='idle'||status==='syncing'?'animate-orbit':'hidden'}`}></div>
+                    <div className="w-48 h-48 rounded-full flex items-center justify-center bg-white/5 border border-white/10 shadow-inner backdrop-blur-sm z-10">
+                        {status==='syncing'||status==='connecting'
+                            ? <div className="w-16 h-16 border-[5px] border-white/10 border-t-blue-500 rounded-full animate-spin"></div>
+                            : <Icon name="cloud" className="w-32 h-32 text-[#CEE6FF] drop-shadow-[0_0_20px_rgba(10,132,255,0.4)]"/>
+                        }
                     </div>
                 </div>
+                <p className="mt-12 text-[10px] font-black uppercase tracking-[0.6em] opacity-30 text-center select-none">Click core to upload</p>
             </main>
-            {status==='picking' && (
-                <div className="fixed inset-0 z-[500] bg-black/90 flex items-center justify-center p-6">
-                    <div className="mac-glass w-full max-w-sm rounded-[3rem] p-8 text-center">
-                        <h3 className="font-black mb-6">SELECT SHEETS</h3>
-                        <div className="max-h-60 overflow-y-auto mb-6">
-                            {sheetNames.map(n=>(
-                                <div key={n} onClick={()=>setSelectedSheets(p=>p.includes(n)?p.filter(x=>x!==n):[...p,n])} className={`p-3 rounded-xl mb-1 cursor-pointer ${selectedSheets.includes(n)?'bg-blue-600 text-white':'text-white/30'}`}>{n}</div>
-                            ))}
-                        </div>
-                        <button onClick={runSync} className="w-full py-4 bg-blue-600 rounded-full font-black">PUSH TO CLOUD</button>
-                    </div>
-                </div>
-            )}
+
+            <AliasModal show={showAlias} onClose={()=>setShowAlias(false)} mapping={nameMapping} setMapping={setNameMapping} onSave={saveMapping}/>
+            <SheetPicker show={status==='picking'} sheets={sheetNames} selected={selectedSheets} setSelected={setSelectedSheets} onConfirm={runSync} onClose={()=>setStatus('idle')}/>
+
+            <footer className="w-full shrink-0 text-center opacity-30 mt-6 font-black tracking-widest text-[8px] text-white">
+                © 2026 TPAC SCHEDULE SYSTEM | V6 | 2026
+            </footer>
             <input type="file" ref={fileRef} className="hidden" onChange={onFileChange} accept=".xlsx"/>
         </div>
     );
