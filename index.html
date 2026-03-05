@@ -54,17 +54,21 @@
             animation: b-glow-pulse 1.8s infinite ease-in-out;
             border: 1.5px solid rgba(255,255,255,0.75) !important;
         }
-        /* Master Roster 格子用 */
+        /* Master Roster 格子用：outline-color 閃爍，GPU 成本極低 */
+        @keyframes b-row-outline {
+            0%,100% { outline-color: rgba(255,255,255,0.2); }
+            50%      { outline-color: rgba(255,255,255,0.9); }
+        }
         .b-row-glow {
-            animation: b-glow-pulse 1.8s infinite ease-in-out;
-            outline: 1px solid rgba(255,255,255,0.65);
+            animation: b-row-outline 1.8s infinite ease-in-out;
+            outline: 1.5px solid rgba(255,255,255,0.2);
             outline-offset: -1px;
         }
 
         @keyframes window-spring { 0%{opacity:0;transform:scale(0.97) translateY(10px);}100%{opacity:1;transform:scale(1) translateY(0);} }
         .animate-window { animation:window-spring 0.35s cubic-bezier(0.16,1,0.3,1) forwards; }
 
-        .master-left-col { position:absolute; left:0; top:0; bottom:0; width:85px; z-index:50; background:rgba(30,30,32,0.85); backdrop-filter:blur(20px); border-right:1px solid rgba(255,255,255,0.12); display:flex; flex-direction:column; }
+        .master-left-col { position:absolute; left:0; top:0; bottom:0; width:85px; z-index:50; background:rgba(25,25,27,0.98); border-right:1px solid rgba(255,255,255,0.12); display:flex; flex-direction:column; }
         .master-right { margin-left:85px; overflow-x:auto; overflow-y:hidden; display:block; }
         .master-cell { min-width:80px; flex-shrink:0; text-align:center; border-left:1px solid rgba(255,255,255,0.03); }
         .master-hdr { height:50px; }
@@ -242,8 +246,10 @@ const App = () => {
     const [calMonth,setCalMonth]=useState(()=>{const n=new Date();return{y:n.getFullYear(),m:n.getMonth()};});
 
     /* ── scroll helpers ── */
+    const scrollTimers = React.useRef({});
     const scrollTo = useCallback((fk, cid) => {
-        setTimeout(()=>{
+        if (scrollTimers.current[cid]) clearTimeout(scrollTimers.current[cid]);
+        scrollTimers.current[cid] = setTimeout(()=>{
             const c=document.getElementById(cid); if(!c)return;
             const idMap={"nav-scroll-container":`nav-${fk}`,"master-scroll-container":`mnav-${fk}`};
             const el=document.getElementById(idMap[cid]||`mrow-${fk}`); if(!el)return;
@@ -394,7 +400,7 @@ const App = () => {
                     {VENUES.map(venue=>{
                         const sName=schedule.shows?.[curFk]?.[venue.id]||"";
                         return (
-                            <div key={venue.id} className="bg-[var(--mac-card)] rounded-[1.6rem] overflow-hidden flex flex-col border border-white/5 backdrop-blur-xl relative group">
+                            <div key={venue.id} className="bg-[var(--mac-card)] rounded-[1.6rem] overflow-hidden flex flex-col border border-white/5 relative group">
                                 <div className="absolute inset-0 opacity-10 pointer-events-none" style={{background:`radial-gradient(circle at 50% 0%, ${venue.color} 0%, transparent 70%)`}}></div>
                                 <button onClick={()=>setQueryVenue(venue.id)} className="py-2.5 font-bold text-[19px] tracking-tight bg-white/[0.02] border-b border-white/5 z-10 transition-colors hover:bg-white/[0.06]" style={{color:venue.color}}>{venue.id}</button>
                                 <div className="px-2 py-1.5 min-h-[32px] flex items-center justify-center border-b border-white/5 bg-black/20 text-center overflow-hidden text-[12px] font-medium text-white/60 z-10">
@@ -414,11 +420,11 @@ const App = () => {
 
                 {/* 辦公 / 休假 */}
                 <div className="space-y-4">
-                    <section className="bg-[var(--mac-card-light)] border border-white/5 rounded-[1.6rem] p-4 backdrop-blur-xl">
+                    <section className="bg-[var(--mac-card-light)] border border-white/5 rounded-[1.6rem] p-4">
                         <h4 className="text-orange-400 text-[13px] font-bold uppercase tracking-wider mb-3.5 flex items-center gap-2"><Icon name="brief"/> 辦公人員</h4>
                         <div className="grid grid-cols-4 gap-2.5">{dData?.s["辦公"]?.map(n=><StaffBtn key={n} name={n} aliasMap={aliasMap} mode="tiny" onClick={handleStaffClick}/>)}</div>
                     </section>
-                    <section className="bg-[var(--mac-card-light)] border border-white/5 rounded-[1.6rem] p-4 backdrop-blur-xl">
+                    <section className="bg-[var(--mac-card-light)] border border-white/5 rounded-[1.6rem] p-4">
                         <h4 className="text-white/40 text-[13px] font-bold uppercase tracking-wider mb-3.5 flex items-center gap-2"><Icon name="sun"/> 今日休假</h4>
                         <div className="grid grid-cols-4 gap-2.5">{dData?.s["休假"]?.map(n=><StaffBtn key={n} name={n} aliasMap={aliasMap} mode="tiny" onClick={handleStaffClick}/>)}</div>
                     </section>
@@ -427,8 +433,8 @@ const App = () => {
 
             {/* ════════════════ Master Roster Modal ════════════════ */}
             {showMaster&&(
-                <div className="fixed inset-0 z-[1000] flex items-center justify-center p-3 bg-black/50 backdrop-blur-2xl" onClick={()=>setShowMaster(false)}>
-                    <div className="animate-window bg-[rgba(30,30,32,0.88)] border border-white/10 w-full max-w-4xl rounded-[2.2rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col max-h-[90vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
+                <div className="fixed inset-0 z-[1000] flex items-center justify-center p-3 bg-black/70" onClick={()=>setShowMaster(false)}>
+                    <div className="animate-window bg-[rgba(28,28,30,0.98)] border border-white/10 w-full max-w-4xl rounded-[2.2rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col max-h-[90vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
                         <div className="p-4 border-b border-white/10 flex items-center gap-4 bg-white/[0.04]">
                             <button onClick={()=>setShowMaster(false)} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:bg-white/20 transition-all text-xl">×</button>
                             <button onClick={handleBackToday} className="btn-today">Today</button>
@@ -501,8 +507,8 @@ const App = () => {
 
             {/* ════════════════ Staff / Venue Query Modal ════════════════ */}
             {(queryStaff||queryVenue)&&(
-                <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-2xl" onClick={()=>{setQueryStaff(null);setQueryVenue(null);}}>
-                    <div className="animate-window bg-[rgba(30,30,32,0.88)] border border-white/10 w-full max-w-lg rounded-[2.2rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col max-h-[85vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
+                <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/70" onClick={()=>{setQueryStaff(null);setQueryVenue(null);}}>
+                    <div className="animate-window bg-[rgba(28,28,30,0.98)] border border-white/10 w-full max-w-lg rounded-[2.2rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col max-h-[85vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
                         {/* Modal header */}
                         <div className="p-4 border-b border-white/10 bg-white/[0.04]">
                             <div className="flex items-center gap-4">
