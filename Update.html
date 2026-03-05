@@ -225,7 +225,7 @@ const AliasModal = ({show,onClose,mapping,setMapping,onSave}) => {
     if(!show)return null;
     return(
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6" onClick={onClose}>
-            <div className="absolute inset-0 bg-black/95 backdrop-blur-3xl"></div>
+            <div className="absolute inset-0 bg-black/95"></div>
             <div className="mac-glass w-[95%] max-w-5xl rounded-[3rem] p-8 flex flex-col shadow-2xl relative border-white/10 max-h-[90vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
                 <h3 className="text-3xl font-black italic uppercase text-center mb-8 text-white">Alias Management</h3>
                 <div className="flex-1 overflow-y-auto custom-scroll pr-2">
@@ -257,7 +257,7 @@ const SheetPicker = ({show,sheets,selected,setSelected,onConfirm,onClose}) => {
     if(!show)return null;
     return(
         <div className="fixed inset-0 z-[500] flex items-center justify-center p-6" onClick={onClose}>
-            <div className="absolute inset-0 bg-black/95 backdrop-blur-3xl"></div>
+            <div className="absolute inset-0 bg-black/95"></div>
             <div className="mac-glass w-full max-w-sm rounded-[3.5rem] p-8 flex flex-col shadow-2xl relative overflow-hidden text-center text-white max-h-[85vh]" onClick={e=>e.stopPropagation()}>
                 <h3 className="text-xl font-black italic uppercase tracking-widest mb-6">Select Sheets</h3>
                 <div className="flex-1 overflow-y-auto custom-scroll pr-1 border-t border-b border-white/5 py-4">
