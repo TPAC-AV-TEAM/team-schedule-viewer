@@ -1326,43 +1326,7 @@ const MasterRosterModal = memo(({ show, onClose, visibleDates, schedule, aliasMa
     );
 });
 
-/* ════════════════════════════════════════════════════════════
-   分離重構：QueryModal (週表)
-   ════════════════════════════════════════════════════════════ */
-const QueryModal = memo(({ queryStaff, queryVenue, onClose, setQueryStaff, setQueryVenue, visibleDates, schedule, aliasMap, curFk, todayK, handleStaffClick, handleBackToday, openCal }) => {
-    if (!queryStaff && !queryVenue) return null;
-    return (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/70" onClick={onClose}>
-            <div className="animate-window bg-[rgba(28,28,30,0.98)] border border-white/10 w-full max-w-lg rounded-[2.2rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col max-h-[85vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
-                
-                <div className="p-3.5 border-b border-white/10 bg-white/[0.04] flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 w-[100px] shrink-0">
-                        <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:bg-white/20 transition-all text-xl">×</button>
-                        <button onClick={handleBackToday} className="btn-today">Today</button>
-                    </div>
-                    
-                    <div className="flex-1 flex justify-center overflow-hidden px-1">
-                        {queryVenue ? (
-                            <div className="flex bg-black/40 rounded-2xl p-1 border border-white/5 w-full max-w-sm">
-                                {VENUES.map(v=>(
-                                    <button key={v.id} onClick={()=>setQueryVenue(v.id)}
-                                        className={`flex-1 py-1.5 rounded-xl text-[15px] font-bold tracking-wider transition-all ${queryVenue===v.id?'bg-white/15 shadow-sm':'text-white/30 hover:text-white/70 hover:bg-white/5'}`}
-                                        style={{color:queryVenue===v.id?v.color:undefined}}>
-                                        {v.id}
-                                    </button>
-                                ))}
-                            </div>
-                        ) : (
-                            <h3 className="text-[17px] font-bold tracking-tight truncate px-2">{aliasMap[queryStaff]||queryStaff}</h3>
-                        )}
-                    </div>
-
-                    <div className="w-[100px] flex justify-end shrink-0">
-                        <CalBtn onClick={openCal}/>
-                    </div>
-                </div>
-
-                <div id={queryVenue?"venue-scroll-container":"staff-scroll-container"} className="flex-1 overflow-y-auto p-4 space-y-3.5 no-scrollbar scroll-smooth">
+<div id={queryVenue?"venue-scroll-container"
                     {visibleDates.map(d=>{
                         const isS=d.fullKey===curFk, isW=d.w==='六'||d.w==='日';
 
