@@ -464,7 +464,7 @@ const App = () => {
     const [calMonth,setCalMonth]=useState(()=>{const n=new Date();return{y:n.getFullYear(),m:n.getMonth()};});
     const [lastUpdated, setLastUpdated] = useState("");
     
-    const [rangeConfig, setRangeConfig] = useState({ type: 'default', past: 7, future: 60 });
+    const [rangeConfig, setRangeConfig] = useState({ type: 'default', past: 7, future: 30 });
 
     /* ── 動態計算可視範圍 (只限於表格使用) ── */
     const visibleDates = useMemo(()=>{
