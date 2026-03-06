@@ -356,10 +356,17 @@ const App = () => {
             {/* ── Header ── */}
             <header className="mac-glass pt-12 pb-4 px-5 flex items-center justify-between shrink-0 z-50">
                 <div className="flex items-center gap-4">
-                    <button onClick={handleBackToday} className="btn-today">Today</button>
-                    <h1 className="text-[22px] font-bold tracking-tight cursor-pointer opacity-90 hover:opacity-100 transition-opacity" onClick={()=>setShowMaster(true)}>視聽班表系統 V10.2</h1>
+                    <button onClick={handleBackToday} className="btn-today flex-shrink-0">Today</button>
+                    <div className="flex flex-col justify-center">
+                        <h1 className="text-[22px] font-bold tracking-tight cursor-pointer opacity-90 hover:opacity-100 transition-opacity leading-none" onClick={()=>setShowMaster(true)}>視聽班表系統 V10.2</h1>
+                        {lastUpdated && (
+                            <span className="text-[10px] text-[#FF375F] font-bold tracking-wider drop-shadow-[0_0_8px_rgba(255,55,95,0.4)] mt-1.5">
+                                LAST UPDATED: {lastUpdated}
+                            </span>
+                        )}
+                    </div>
                 </div>
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-2.5 flex-shrink-0">
                     <CalBtn onClick={openCal}/>
                     <button onClick={()=>window.location.reload()} className="w-8 h-8 rounded-full bg-white/[0.06] border border-white/10 flex items-center justify-center text-white/60 hover:bg-white/15 transition-all">
                         <Icon name="refresh" className="w-4 h-4"/>
@@ -619,14 +626,9 @@ const App = () => {
                 />
             )}
 
-            <footer className="fixed bottom-0 left-0 right-0 py-2 flex flex-col items-center justify-center pointer-events-none text-[10px] font-bold tracking-[0.25em] text-white/20">
-    <span>TPAC SCHEDULE SYSTEM | V10.2</span>
-    {lastUpdated && 
-        <span className="mt-1 text-[#FF375F] tracking-wider opacity-90 drop-shadow-[0_0_8px_rgba(255,55,95,0.4)]">
-            LAST UPDATED: {lastUpdated}
-        </span>
-    }
-</footer>
+            <footer className="fixed bottom-0 left-0 right-0 py-2 text-center pointer-events-none text-[9px] font-bold tracking-[0.25em] text-white/20">
+                TPAC SCHEDULE SYSTEM | V10.2
+            </footer>
         </div>
     );
 };
