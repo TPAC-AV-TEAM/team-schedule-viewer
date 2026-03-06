@@ -176,15 +176,26 @@ const CalBtn = ({ onClick }) => (
     </button>
 );
 
-/* ── Modal: 載入範圍選擇器 ── */
+/* ── 修改後的 RangePickerModal 內部邏輯 ── */
 const RangePickerModal = memo(({ show, onClose, currentRange, setRange }) => {
     const [cP, setCP] = useState(currentRange.past);
-    const [cF, setCF] = useState(60); // 讓自訂輸入框預設顯示 60
+    // 1. 這裡維持您要的初始預設值 60
+    const [cF, setCF] = useState(60); 
 
     useEffect(() => {
-        setCP(currentRange.past);
-        setCF(currentRange.future);
-    }, [currentRange, show]);
+        if (show) {
+            setCP(currentRange.past);
+            // 2. 關鍵判斷：如果目前系統是「自訂模式」，才同步數值；
+            // 如果是「標準模式」，讓輸入框維持在 60 方便使用者手動套用
+            if (currentRange.type === 'custom') {
+                setCF(currentRange.future);
+            } else {
+                setCF(60); 
+            }
+        }
+    }, [show, currentRange]); // 3. 確保開啟時執行
+
+    // ... 剩下的 UI 代碼不變
 
     if (!show) return null;
     return (
