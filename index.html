@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>視聽班表系統 | V10.2</title>
+    <title>視聽班表系統 | V10.3 (效能極致版)</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -43,18 +43,16 @@
         .btn-today:active { transform:scale(0.92); }
         .weekend-bg { background:rgba(255,55,95,0.05) !important; }
 
-        /* ── B班：drop-shadow 脈衝 + 白色外框（全瀏覽器一致） ── */
-        @keyframes b-glow-pulse {
-            0%   { filter: drop-shadow(0 0 2px rgba(255,255,255,0.3)); }
-            50%  { filter: drop-shadow(0 0 6px rgba(255,255,255,1)) drop-shadow(0 0 14px rgba(255,255,255,0.5)); }
-            100% { filter: drop-shadow(0 0 2px rgba(255,255,255,0.3)); }
+        /* ── B班動畫降載：徹底移除 drop-shadow，改為廉價的邊框/背景閃爍 ── */
+        @keyframes b-badge-pulse {
+            0%,100% { border-color: rgba(255,255,255,0.2); background-color: rgba(255,255,255,0.05); }
+            50%     { border-color: rgba(255,255,255,0.8); background-color: rgba(255,255,255,0.2); }
         }
-        /* 個人週表 badge 用 */
         .b-badge-glow {
-            animation: b-glow-pulse 1.8s infinite ease-in-out;
-            border: 1.5px solid rgba(255,255,255,0.75) !important;
+            animation: b-badge-pulse 1.8s infinite ease-in-out;
+            border-width: 1.5px !important; border-style: solid !important;
         }
-        /* Master Roster 格子用：outline-color 閃爍，GPU 成本極低 */
+        
         @keyframes b-row-outline {
             0%,100% { outline-color: rgba(255,255,255,0.2); }
             50%      { outline-color: rgba(255,255,255,0.9); }
@@ -66,7 +64,7 @@
         }
 
         @keyframes window-spring { 0%{opacity:0;transform:scale(0.97) translateY(10px);}100%{opacity:1;transform:scale(1) translateY(0);} }
-        .animate-window { animation:window-spring 0.35s cubic-bezier(0.16,1,0.3,1) forwards; }
+        .animate-window { animation:window-spring 0.35s cubic-bezier(0.16,1,0.3,1) forwards; will-change: transform, opacity; }
 
         .master-left-col { position:absolute; left:0; top:0; bottom:0; width:85px; z-index:50; background:rgba(25,25,27,0.98); border-right:1px solid rgba(255,255,255,0.12); display:flex; flex-direction:column; }
         .master-right { margin-left:85px; overflow-x:auto; overflow-y:hidden; display:block; }
@@ -82,7 +80,7 @@
         .mq-run { display:inline-block; padding-left:100%; animation:mq 25s linear infinite; }
         @keyframes mq { 0%{transform:translateX(0);}100%{transform:translateX(-100%);} }
 
-        /* ── 修改處：提醒事項改用 filter，效能更好，不觸發重繪 ── */
+        /* 提醒事項保留 filter（因為數量極少） */
         @keyframes reminder-pulse { 
             0%   { filter: drop-shadow(0 0 0px rgba(255,55,95,0)); border-color:rgba(255,55,95,0.2); }
             50%  { filter: drop-shadow(0 0 10px rgba(255,55,95,0.4)); border-color:rgba(255,55,95,0.8); }
@@ -90,7 +88,6 @@
         }
         .reminder-glow { animation:reminder-pulse 3s infinite ease-in-out; border-width:1px!important; }
 
-        /* 週末廳院底色（人員週表用） */
         .wk-GT  { background:rgba(255,59,48,0.08)  !important; border-color:rgba(255,59,48,0.2)  !important; }
         .wk-BB  { background:rgba(90,200,250,0.08) !important; border-color:rgba(90,200,250,0.2) !important; }
         .wk-GP  { background:rgba(52,199,89,0.08)  !important; border-color:rgba(52,199,89,0.2)  !important; }
@@ -103,7 +100,7 @@
 const { useState, useEffect, useMemo, memo, useCallback } = React;
 
 /* ══════════════════════════════════════════════════════════
-   CENTRAL CONFIG  ── 新增廳院 / 人員 / 班別只改這裡
+   CENTRAL CONFIG
    ══════════════════════════════════════════════════════════ */
 const VENUES = [
     { id:'GT', color:'#FF3B30', masterBg:'255,59,48'   },
@@ -123,8 +120,6 @@ const STAFF_INFO = {
     "曾健洋":{ gender:"M", type:"Special" }, "劉智敏":{ gender:"M", type:"Special" },
 };
 
-/* ══════════════════════════════════════════════════════════ */
-/* ── 👇 這裡已經替換為最新的 API 設定 👇 ── */
 const FIREBASE_CONFIG = {
     apiKey: "AIzaSyA7tgFRxDCnZpOzEvfT978wIAcqcXNZXVQ",
     authDomain: "team-schedule-viewer.firebaseapp.com",
@@ -134,9 +129,8 @@ const FIREBASE_CONFIG = {
     appId: "1:202883367260:web:b31e495084a4ea8af20199"
 };
 const APP_ID = "team-schedule-viewer";
-/* ── 👆 替換完畢 👆 ── */
 
-const formatK = d => `${d.getFullYear()}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getDate().toString().padStart(2,'0')}`;
+const formatK = d => `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
 
 const staffColors = info => {
     if (!info || info.type==="Special") return { text:"text-[var(--special-text)]", dot:"bg-[var(--special-dot)]" };
@@ -185,12 +179,12 @@ const CalendarPicker = memo(({ dates, onSelect, onClose, calMonth, setCalMonth }
     const cells = [];
     for(let i=0;i<firstDay;i++) cells.push(null);
     for(let d=1;d<=daysInMonth;d++) cells.push(d);
-    const toKey = d => `${y}/${(m+1).toString().padStart(2,'0')}/${d.toString().padStart(2,'0')}`;
+    const toKey = d => `${y}/${String(m+1).padStart(2,'0')}/${String(d).padStart(2,'0')}`;
     const prev = () => setCalMonth(p => p.m===0 ? {y:p.y-1,m:11} : {y:p.y,m:p.m-1});
     const next = () => setCalMonth(p => p.m===11 ? {y:p.y+1,m:0} : {y:p.y,m:p.m+1});
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-md" onClick={onClose}>
-            <div className="animate-window bg-[rgba(30,30,32,0.92)] border border-white/10 rounded-[1.8rem] shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-3xl w-full max-w-[280px] p-5" onClick={e=>e.stopPropagation()}>
+            <div className="animate-window bg-[rgba(30,30,32,0.92)] border border-white/10 rounded-[1.8rem] shadow-[0_20px_50px_rgba(0,0,0,0.6)] w-full max-w-[280px] p-5" onClick={e=>e.stopPropagation()}>
                 <div className="flex items-center justify-between mb-4 px-1">
                     <button onClick={prev} className="w-8 h-8 rounded-full flex items-center justify-center text-white/50 hover:bg-white/10 hover:text-white transition-all text-xl">&#8249;</button>
                     <span className="font-bold text-[15px]">{y} 年 {m+1} 月</span>
@@ -304,14 +298,26 @@ const App = () => {
             }
 
             const keys=Object.keys(roster).sort();
-            const sd=keys.map(k=>{
+            
+            // ✂️ 效能極致優化：資料截斷法 (只擷取 前10天 ~ 後60天)
+            const tObj = new Date();
+            const pastDate = new Date(tObj); pastDate.setDate(tObj.getDate() - 10);
+            const futureDate = new Date(tObj); futureDate.setDate(tObj.getDate() + 60);
+            const minK = formatK(pastDate);
+            const maxK = formatK(futureDate);
+
+            // 過濾 Keys
+            const slicedKeys = keys.filter(k => k >= minK && k <= maxK);
+
+            const sd=slicedKeys.map(k=>{
                 const [yy,mm,dd]=k.split('/').map(Number);
                 const o=new Date(yy,mm-1,dd);
                 return{d:`${mm}/${dd}`,w:['日','一','二','三','四','五','六'][o.getDay()],fullKey:k};
             });
+            
             setSchedule({roster,statuses,shows,notes});
             setDates(sd); setIsUnlocked(true);
-            const tK=formatK(new Date()), mi=keys.indexOf(tK);
+            const tK=formatK(new Date()), mi=slicedKeys.indexOf(tK);
             if(mi!==-1){setDateIdx(mi);setTimeout(()=>scrollTo(tK,"nav-scroll-container"),500);}
         });
     },[user,scrollTo]);
@@ -356,17 +362,10 @@ const App = () => {
             {/* ── Header ── */}
             <header className="mac-glass pt-12 pb-4 px-5 flex items-center justify-between shrink-0 z-50">
                 <div className="flex items-center gap-4">
-                    <button onClick={handleBackToday} className="btn-today flex-shrink-0">Today</button>
-                    <div className="flex flex-col justify-center">
-                        <h1 className="text-[22px] font-bold tracking-tight cursor-pointer opacity-90 hover:opacity-100 transition-opacity leading-none" onClick={()=>setShowMaster(true)}>視聽班表系統</h1>
-                        {lastUpdated && (
-                            <span className="text-[10px] text-[#FF375F] font-bold tracking-wider drop-shadow-[0_0_8px_rgba(255,55,95,0.4)] mt-1.5">
-                                LAST UPDATED: {lastUpdated}
-                            </span>
-                        )}
-                    </div>
+                    <button onClick={handleBackToday} className="btn-today">Today</button>
+                    <h1 className="text-[22px] font-bold tracking-tight cursor-pointer opacity-90 hover:opacity-100 transition-opacity" onClick={()=>setShowMaster(true)}>視聽班表系統 V10.3</h1>
                 </div>
-                <div className="flex items-center gap-2.5 flex-shrink-0">
+                <div className="flex items-center gap-2.5">
                     <CalBtn onClick={openCal}/>
                     <button onClick={()=>window.location.reload()} className="w-8 h-8 rounded-full bg-white/[0.06] border border-white/10 flex items-center justify-center text-white/60 hover:bg-white/15 transition-all">
                         <Icon name="refresh" className="w-4 h-4"/>
@@ -600,7 +599,7 @@ const App = () => {
                                         <div className="flex-1 mq-wrap text-[16px] font-medium text-white/60 italic">
                                             <span className={sn.length>10?"mq-run":""}>{sn}</span>
                                         </div>
-                                        {/* B班：外框白色實線 + 外部白光暈脈衝 */}
+                                        {/* B班：更換為不會搞垮 GPU 的動畫 */}
                                         <button
                                             onClick={()=>{ if(hasS){setQueryStaff(null);setQueryVenue(activeV);} }}
                                             className={`text-[15px] font-bold tracking-wide px-3.5 py-1.5 rounded-xl shrink-0 transition-all ${isBShift?'b-badge-glow':''} ${hasS?'hover:opacity-80 active:scale-95 cursor-pointer':'cursor-default'}`}
@@ -626,8 +625,13 @@ const App = () => {
                 />
             )}
 
-            <footer className="fixed bottom-0 left-0 right-0 py-2 text-center pointer-events-none text-[11px] font-bold tracking-[0.25em] text-white/50">
-                TPAC SCHEDULE SYSTEM | V10.2
+            <footer className="fixed bottom-0 left-0 right-0 py-2 flex flex-col items-center justify-center pointer-events-none text-[10px] font-bold tracking-[0.25em] text-white/20">
+                <span>TPAC SCHEDULE SYSTEM | V10.3</span>
+                {lastUpdated && 
+                    <span className="mt-1 text-[#FF375F] tracking-wider opacity-90 drop-shadow-[0_0_8px_rgba(255,55,95,0.4)]">
+                        LAST UPDATED: {lastUpdated}
+                    </span>
+                }
             </footer>
         </div>
     );
