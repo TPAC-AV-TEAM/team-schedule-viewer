@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>視聽班表系統 | V11</title>
+    <title>視聽班表系統 | V10.6</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -522,3 +522,183 @@ const App = () => {
                 // 綁定絕對索引，讓滑動視窗能正確定位
                 return{d:`${mm}/${dd}`,w:['日','一','二','三','四','五','六'][o.getDay()],fullKey:k, absIdx: idx};
             });
+            
+            setSchedule({roster,statuses,shows,notes});
+            setAllDates(sd); setIsUnlocked(true);
+            const tK=formatK(new Date()), mi=keys.indexOf(tK);
+            if(mi!==-1){setDateIdx(mi);setTimeout(()=>scrollTo(tK,"nav-scroll-container"),500);}
+        });
+    },[user,scrollTo]);
+
+    /* ── auto-scroll on modal open ── */
+    useEffect(()=>{ if(showMaster&&allDates[dateIdx])scrollTo(allDates[dateIdx].fullKey,"master-scroll-container"); },[showMaster, allDates, dateIdx, scrollTo]);
+    useEffect(()=>{ if(queryVenue&&allDates[dateIdx])scrollTo(allDates[dateIdx].fullKey,"venue-scroll-container"); },[queryVenue, allDates, dateIdx, scrollTo]);
+    useEffect(()=>{ if(queryStaff&&allDates[dateIdx])scrollTo(allDates[dateIdx].fullKey,"staff-scroll-container"); },[queryStaff, allDates, dateIdx, scrollTo]);
+
+    /* ── today data ── */
+    const dData = useMemo(()=>{
+        if(!allDates[dateIdx])return null;
+        const fk=allDates[dateIdx].fullKey, rawR=schedule.roster[fk]||{}, rawS=schedule.statuses[fk]||{};
+        const s={
+            ...Object.fromEntries(VENUE_IDS.map(vid=>[vid,Object.fromEntries(SHIFTS.map(sh=>[sh,[]]))])),
+            "辦公":[], "休假":[],
+        };
+        STAFF_ORDER.forEach(n=>{
+            let on=false;
+            VENUE_IDS.forEach(vid=>{
+                if(rawR[vid]?.[n]){
+                    const sh=(rawR[vid][n].shift||SHIFTS[0]).toUpperCase();
+                    if(s[vid][sh]){s[vid][sh].push(n);on=true;}
+                }
+            });
+            if(!on){ (rawS[n]||"").match(/辦公|其他/) ? s["辦公"].push(n) : s["休假"].push(n); }
+        });
+        return{s};
+    },[dateIdx,allDates,schedule]);
+
+    if(!isUnlocked) return (
+        <div className="h-screen bg-[#121213] flex items-center justify-center text-white/40 text-sm font-medium tracking-widest animate-pulse">CONNECTING...</div>
+    );
+
+    const todayK=formatK(new Date()), curFk=allDates[dateIdx]?.fullKey;
+    const todayNote=schedule.notes?.[curFk], hasNote=!!(todayNote?.trim());
+
+    return (
+        <div className="h-screen flex flex-col overflow-hidden relative text-white bg-[var(--mac-bg)]">
+            <div className="aura-bg"></div>
+
+            {/* ── Header ── */}
+            <header className="mac-glass pt-12 pb-4 px-5 flex items-center justify-between shrink-0 z-50">
+                <div className="flex items-center gap-4">
+                    <button onClick={handleBackToday} className="btn-today flex-shrink-0">Today</button>
+                    <div className="flex flex-col justify-center">
+                        <h1 className="text-[22px] font-bold tracking-tight cursor-pointer opacity-90 hover:opacity-100 transition-opacity leading-none" onClick={()=>setShowMaster(true)}>視聽班表系統 V10.6</h1>
+                        {lastUpdated && (
+                            <span className="text-[10px] text-[#FF375F] font-bold tracking-wider drop-shadow-[0_0_8px_rgba(255,55,95,0.4)] mt-1.5">
+                                LAST UPDATED: {lastUpdated}
+                            </span>
+                        )}
+                    </div>
+                </div>
+                <div className="flex items-center gap-2.5 flex-shrink-0">
+                    <CalBtn onClick={openCal}/>
+                    {/* 將原本的重新整理，改為開啟「載入範圍」選單 */}
+                    <button onClick={()=>setShowRangePicker(true)} className="w-8 h-8 rounded-full bg-white/[0.06] border border-white/10 flex items-center justify-center text-white/60 hover:bg-white/15 transition-all">
+                        <Icon name="filter" className="w-4 h-4"/>
+                    </button>
+                </div>
+            </header>
+
+            {/* ── Main ── */}
+            <main className="flex-1 overflow-y-auto px-3 py-4 no-scrollbar pb-24 z-10 text-left">
+                <div className="mac-glass sticky top-0 -mx-3 px-3 py-3 flex flex-col mb-5 z-20 shadow-xl rounded-b-2xl">
+                    <div className="flex items-center justify-between mb-2.5 px-2">
+                        <button onClick={()=>shiftWeek(-1)} className="text-white/40 hover:text-white text-[11px] font-semibold tracking-wider transition-colors">◀ 上週</button>
+                        <span className="text-[9px] font-bold text-white/30 tracking-[0.2em] uppercase">Timeline</span>
+                        <button onClick={()=>shiftWeek(1)}  className="text-white/40 hover:text-white text-[11px] font-semibold tracking-wider transition-colors">下週 ▶</button>
+                    </div>
+                    <div id="nav-scroll-container" className="flex gap-2.5 overflow-x-auto no-scrollbar pb-2 px-1">
+                        {visibleDates.map((d)=>{
+                            const active=dateIdx===d.absIdx, isW=d.w==='六'||d.w==='日';
+                            return (
+                                <button key={d.fullKey} id={`nav-${d.fullKey}`} onClick={()=>goDate(d.absIdx,d.fullKey)}
+                                    className={`flex-none w-[58px] py-2.5 rounded-2xl border flex flex-col items-center justify-center transition-all duration-300 ${active?'border-blue-500/50 bg-[var(--mac-blue)] shadow-[0_4px_12px_rgba(10,132,255,0.3)] scale-105':'border-white/5 bg-white/[0.03] hover:bg-white/[0.08]'}`}>
+                                    <span className={`font-bold text-[10px] mb-0.5 ${active?'text-white/80':isW?'text-[var(--weekend-pink)]':'text-white/40'}`}>週{d.w}</span>
+                                    <span className={`text-[17px] font-black leading-none ${active?'text-white':isW?'text-[var(--weekend-pink)]':'text-white/70'}`}>{d.d}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                    {hasNote && (
+                        <div className="mt-3 px-1">
+                            <div className="bg-[rgba(255,55,95,0.08)] border border-[rgba(255,55,95,0.2)] rounded-xl px-4 py-3.5 flex items-start gap-3 reminder-glow">
+                                <span className="text-[var(--reminder-pink)] mt-0.5 shrink-0"><Icon name="info"/></span>
+                                <div>
+                                    <p className="text-[10px] font-bold uppercase text-[var(--reminder-pink)] tracking-wider mb-1">重要提醒</p>
+                                    <p className="text-[14px] font-medium text-white/90 leading-snug">{todayNote}</p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <div className="grid gap-3 mb-6" style={{gridTemplateColumns:`repeat(${VENUES.length},1fr)`}}>
+                    {VENUES.map(venue=>{
+                        const sName=schedule.shows?.[curFk]?.[venue.id]||"";
+                        return (
+                            <div key={venue.id} className="bg-[var(--mac-card)] rounded-[1.6rem] overflow-hidden flex flex-col border border-white/5 relative group">
+                                <div className="absolute inset-0 opacity-10 pointer-events-none" style={{background:`radial-gradient(circle at 50% 0%, ${venue.color} 0%, transparent 70%)`}}></div>
+                                <button onClick={()=>setQueryVenue(venue.id)} className="py-2.5 font-bold text-[19px] tracking-tight bg-white/[0.02] border-b border-white/5 z-10 transition-colors hover:bg-white/[0.06]" style={{color:venue.color}}>{venue.id}</button>
+                                <div className="px-2 py-1.5 min-h-[32px] flex items-center justify-center border-b border-white/5 bg-black/20 text-center overflow-hidden text-[12px] font-medium text-white/60 z-10">
+                                    <div className="mq-wrap"><span className={sName.length>8?"mq-run":"truncate"}>{sName}</span></div>
+                                </div>
+                                <div className="p-1.5 space-y-1.5 z-10">
+                                    {SHIFTS.map(sh=>(
+                                        <div key={sh} className="bg-black/20 rounded-xl p-1.5 flex flex-col gap-1.5 min-h-[65px] border border-white/[0.03]">
+                                            {dData?.s[venue.id][sh]?.map(n=><StaffBtn key={n} name={n} aliasMap={aliasMap} mode="small" onClick={handleStaffClick}/>)}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+
+                <div className="space-y-4">
+                    <section className="bg-[var(--mac-card-light)] border border-white/5 rounded-[1.6rem] p-4">
+                        <h4 className="text-orange-400 text-[13px] font-bold uppercase tracking-wider mb-3.5 flex items-center gap-2"><Icon name="brief"/> 辦公人員</h4>
+                        <div className="grid grid-cols-4 gap-2.5">{dData?.s["辦公"]?.map(n=><StaffBtn key={n} name={n} aliasMap={aliasMap} mode="tiny" onClick={handleStaffClick}/>)}</div>
+                    </section>
+                    <section className="bg-[var(--mac-card-light)] border border-white/5 rounded-[1.6rem] p-4">
+                        <h4 className="text-white/40 text-[13px] font-bold uppercase tracking-wider mb-3.5 flex items-center gap-2"><Icon name="sun"/> 今日休假</h4>
+                        <div className="grid grid-cols-4 gap-2.5">{dData?.s["休假"]?.map(n=><StaffBtn key={n} name={n} aliasMap={aliasMap} mode="tiny" onClick={handleStaffClick}/>)}</div>
+                    </section>
+                </div>
+            </main>
+
+            {/* 載入範圍選擇 Modal */}
+            <RangePickerModal 
+                show={showRangePicker} 
+                onClose={()=>setShowRangePicker(false)} 
+                currentRange={rangeConfig} 
+                setRange={setRangeConfig} 
+            />
+
+            {/* 注入已拆解的元件，讓畫面切換不再互相拖累 */}
+            <MasterRosterModal 
+                show={showMaster} onClose={()=>setShowMaster(false)} 
+                visibleDates={visibleDates} schedule={schedule} aliasMap={aliasMap} 
+                todayK={todayK} handleStaffClick={handleStaffClick} 
+                handleBackToday={handleBackToday} openCal={openCal} 
+            />
+
+            <QueryModal 
+                queryStaff={queryStaff} queryVenue={queryVenue} 
+                onClose={()=>{setQueryStaff(null);setQueryVenue(null);}} setQueryVenue={setQueryVenue} 
+                visibleDates={visibleDates} schedule={schedule} aliasMap={aliasMap} 
+                curFk={curFk} todayK={todayK} handleStaffClick={handleStaffClick} 
+                handleBackToday={handleBackToday} openCal={openCal} 
+            />
+
+            {showCalendar&&(
+                <CalendarPicker
+                    allDates={allDates}
+                    onSelect={handleCalendarSelect}
+                    onClose={()=>setShowCalendar(false)}
+                    calMonth={calMonth}
+                    setCalMonth={setCalMonth}
+                />
+            )}
+
+            {/* V10.2 大字體底部 */}
+            <footer className="fixed bottom-0 left-0 right-0 py-2 flex flex-col items-center justify-center pointer-events-none text-[10px] font-bold tracking-[0.25em] text-white/20">
+                <span>TPAC SCHEDULE SYSTEM | V10.6</span>
+            </footer>
+        </div>
+    );
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
