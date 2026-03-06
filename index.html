@@ -179,7 +179,7 @@ const CalBtn = ({ onClick }) => (
 /* ── Modal: 載入範圍選擇器 ── */
 const RangePickerModal = memo(({ show, onClose, currentRange, setRange }) => {
     const [cP, setCP] = useState(currentRange.past);
-    const [cF, setCF] = useState(currentRange.future);
+    const [cF, setCF] = useState(60); // 讓自訂輸入框預設顯示 60
 
     useEffect(() => {
         setCP(currentRange.past);
