@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>視聽班表系統 | V10.7 (終極穩定版)</title>
+    <title>視聽班表系統 | V10.8 (究極架構版)</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -43,7 +43,7 @@
         .btn-today:active { transform:scale(0.92); }
         .weekend-bg { background:rgba(255,55,95,0.05) !important; }
 
-        /* ── B班動畫降載 ── */
+        /* ── B班動畫降載：確保低耗能 ── */
         @keyframes b-badge-pulse {
             0%,100% { border-color: rgba(255,255,255,0.2); background-color: rgba(255,255,255,0.05); }
             50%     { border-color: rgba(255,255,255,0.8); background-color: rgba(255,255,255,0.2); }
@@ -177,12 +177,11 @@ const CalBtn = ({ onClick }) => (
     </button>
 );
 
-/* ── Modal: 載入範圍選擇器 (加入自訂範圍輸入框) ── */
+/* ── Modal: 載入範圍選擇器 ── */
 const RangePickerModal = memo(({ show, onClose, currentRange, setRange }) => {
     const [cP, setCP] = useState(currentRange.past);
     const [cF, setCF] = useState(currentRange.future);
 
-    // 當 Modal 打開或外部狀態改變時同步輸入框的值
     useEffect(() => {
         setCP(currentRange.past);
         setCF(currentRange.future);
@@ -203,7 +202,7 @@ const RangePickerModal = memo(({ show, onClose, currentRange, setRange }) => {
                 <button onClick={() => { setRange({type:'all'}); onClose(); }} 
                     className={`w-full py-3.5 rounded-2xl border flex flex-col items-center justify-center transition-all ${currentRange.type==='all'?'bg-rose-600/80 border-rose-400':'bg-white/5 border-white/10 hover:bg-rose-500/20'}`}>
                     <span className="font-bold text-[15px]">載入全年度資料</span>
-                    <span className="text-[10px] opacity-80 mt-1 text-rose-200">⚠️ 效能警告：操作可能產生些微卡頓</span>
+                    <span className="text-[10px] opacity-80 mt-1 text-rose-200">⚠️ 效能警告：開啟週表可能產生些微卡頓</span>
                 </button>
 
                 <div className={`mt-2 p-4 rounded-2xl border flex flex-col items-center gap-3 transition-all ${currentRange.type==='custom'?'border-orange-400 bg-orange-500/10':'border-white/10 bg-white/5'}`}>
@@ -228,8 +227,8 @@ const RangePickerModal = memo(({ show, onClose, currentRange, setRange }) => {
     );
 });
 
+/* ── Calendar Picker (策略 B: 全開放，點擊自動平移) ── */
 const CalendarPicker = memo(({ allDates, onSelect, onClose, calMonth, setCalMonth }) => {
-    // 日曆永遠顯示所有的日期，全都可以點擊 (策略 B)
     const dateSet = useMemo(()=>new Set(allDates.map(d=>d.fullKey)),[allDates]);
     const {y,m} = calMonth;
     const firstDay = new Date(y,m,1).getDay();
@@ -276,7 +275,7 @@ const CalendarPicker = memo(({ allDates, onSelect, onClose, calMonth, setCalMont
 });
 
 /* ════════════════════════════════════════════════════════════
-   分離重構：MasterRosterModal (總表)
+   分離重構：MasterRosterModal (總表 - 受限於可視範圍)
    ════════════════════════════════════════════════════════════ */
 const MasterRosterModal = memo(({ show, onClose, visibleDates, schedule, aliasMap, todayK, handleStaffClick, handleBackToday, openCal }) => {
     if (!show) return null;
@@ -353,7 +352,7 @@ const MasterRosterModal = memo(({ show, onClose, visibleDates, schedule, aliasMa
 });
 
 /* ════════════════════════════════════════════════════════════
-   分離重構：QueryModal (人員/廳院週表) - 已修復 setQueryStaff 綁定
+   分離重構：QueryModal (週表 - 受限於可視範圍)
    ════════════════════════════════════════════════════════════ */
 const QueryModal = memo(({ queryStaff, queryVenue, onClose, setQueryStaff, setQueryVenue, visibleDates, schedule, aliasMap, curFk, todayK, handleStaffClick, handleBackToday, openCal }) => {
     if (!queryStaff && !queryVenue) return null;
@@ -465,26 +464,23 @@ const App = () => {
     const [calMonth,setCalMonth]=useState(()=>{const n=new Date();return{y:n.getFullYear(),m:n.getMonth()};});
     const [lastUpdated, setLastUpdated] = useState("");
     
-    // 預設範圍設定 (前7天~後60天)
     const [rangeConfig, setRangeConfig] = useState({ type: 'default', past: 7, future: 60 });
 
-    /* ── 動態計算可視範圍 (基於絕對索引切片，策略B的魔法核心) ── */
+    /* ── 動態計算可視範圍 (只限於表格使用) ── */
     const visibleDates = useMemo(()=>{
         if(!allDates.length) return [];
         if (rangeConfig.type === 'all') return allDates;
 
-        // 根據目前選中的 dateIdx，向前後擴展截斷陣列
         const start = Math.max(0, dateIdx - rangeConfig.past);
         const end = Math.min(allDates.length, dateIdx + rangeConfig.future + 1);
 
         return allDates.slice(start, end);
     }, [allDates, dateIdx, rangeConfig]);
 
-    /* ── 保留平滑滾動效果 ── */
+    /* ── 完美的平滑滾動 ── */
     const scrollTimers = useRef({});
     const scrollTo = useCallback((fk, cid) => {
         if (scrollTimers.current[cid]) clearTimeout(scrollTimers.current[cid]);
-        // 給一點點延遲，確保 visibleDates 變更後的 DOM 已經渲染上去
         scrollTimers.current[cid] = setTimeout(()=>{
             const c=document.getElementById(cid); if(!c)return;
             const idMap={"nav-scroll-container":`nav-${fk}`,"master-scroll-container":`mnav-${fk}`};
@@ -503,7 +499,6 @@ const App = () => {
     const handleBackToday = useCallback(()=>{ const tK=formatK(new Date()); const i=allDates.findIndex(d=>d.fullKey===tK); if(i!==-1)goDate(i,tK); },[allDates,goDate]);
     const shiftWeek = useCallback(dir=>{ const ni=Math.max(0,Math.min(allDates.length-1,dateIdx+dir*7)); goDate(ni,allDates[ni].fullKey); },[dateIdx,allDates,goDate]);
     const handleStaffClick = useCallback(name=>{ setQueryStaff(name); setQueryVenue(null); setShowMaster(false); },[]);
-    // 策略 B 魔法：點擊日曆上的任何一天，直接把那一天設為中心點 (dateIdx)
     const handleCalendarSelect = useCallback(fk=>{ const i=allDates.findIndex(d=>d.fullKey===fk); if(i!==-1)goDate(i,fk); setShowCalendar(false); },[allDates,goDate]);
     const openCal = useCallback(()=>{ setCalMonth({y:new Date().getFullYear(),m:new Date().getMonth()}); setShowCalendar(true); },[]);
 
@@ -543,7 +538,6 @@ const App = () => {
             const sd=keys.map((k, idx)=>{
                 const [yy,mm,dd]=k.split('/').map(Number);
                 const o=new Date(yy,mm-1,dd);
-                // 綁定絕對索引，讓滑動視窗能正確定位
                 return{d:`${mm}/${dd}`,w:['日','一','二','三','四','五','六'][o.getDay()],fullKey:k, absIdx: idx};
             });
             
@@ -555,14 +549,12 @@ const App = () => {
     },[user,scrollTo]);
 
     /* ── auto-scroll on modal open ── */
-    // 加上防呆機制：確保 allDates 不為空才執行，避免報錯
     useEffect(()=>{ if(showMaster&&allDates.length&&allDates[dateIdx])scrollTo(allDates[dateIdx].fullKey,"master-scroll-container"); },[showMaster, allDates, dateIdx, scrollTo]);
     useEffect(()=>{ if(queryVenue&&allDates.length&&allDates[dateIdx])scrollTo(allDates[dateIdx].fullKey,"venue-scroll-container"); },[queryVenue, allDates, dateIdx, scrollTo]);
     useEffect(()=>{ if(queryStaff&&allDates.length&&allDates[dateIdx])scrollTo(allDates[dateIdx].fullKey,"staff-scroll-container"); },[queryStaff, allDates, dateIdx, scrollTo]);
 
     /* ── today data ── */
     const dData = useMemo(()=>{
-        // 防呆：資料還沒準備好時直接回傳 null
         if(!allDates.length || !allDates[dateIdx]) return null;
         const fk=allDates[dateIdx].fullKey, rawR=schedule.roster[fk]||{}, rawS=schedule.statuses[fk]||{};
         const s={
@@ -593,12 +585,11 @@ const App = () => {
         <div className="h-screen flex flex-col overflow-hidden relative text-white bg-[var(--mac-bg)]">
             <div className="aura-bg"></div>
 
-            {/* ── Header ── */}
             <header className="mac-glass pt-12 pb-4 px-5 flex items-center justify-between shrink-0 z-50">
                 <div className="flex items-center gap-4">
                     <button onClick={handleBackToday} className="btn-today flex-shrink-0">Today</button>
                     <div className="flex flex-col justify-center">
-                        <h1 className="text-[22px] font-bold tracking-tight cursor-pointer opacity-90 hover:opacity-100 transition-opacity leading-none" onClick={()=>setShowMaster(true)}>視聽班表系統 V10.7</h1>
+                        <h1 className="text-[22px] font-bold tracking-tight cursor-pointer opacity-90 hover:opacity-100 transition-opacity leading-none" onClick={()=>setShowMaster(true)}>視聽班表系統 V10.8</h1>
                         {lastUpdated && (
                             <span className="text-[10px] text-[#FF375F] font-bold tracking-wider drop-shadow-[0_0_8px_rgba(255,55,95,0.4)] mt-1.5">
                                 LAST UPDATED: {lastUpdated}
@@ -608,14 +599,12 @@ const App = () => {
                 </div>
                 <div className="flex items-center gap-2.5 flex-shrink-0">
                     <CalBtn onClick={openCal}/>
-                    {/* 開啟「載入範圍」選單 */}
                     <button onClick={()=>setShowRangePicker(true)} className="w-8 h-8 rounded-full bg-white/[0.06] border border-white/10 flex items-center justify-center text-white/60 hover:bg-white/15 transition-all">
                         <Icon name="filter" className="w-4 h-4"/>
                     </button>
                 </div>
             </header>
 
-            {/* ── Main ── */}
             <main className="flex-1 overflow-y-auto px-3 py-4 no-scrollbar pb-24 z-10 text-left">
                 <div className="mac-glass sticky top-0 -mx-3 px-3 py-3 flex flex-col mb-5 z-20 shadow-xl rounded-b-2xl">
                     <div className="flex items-center justify-between mb-2.5 px-2">
@@ -624,7 +613,8 @@ const App = () => {
                         <button onClick={()=>shiftWeek(1)}  className="text-white/40 hover:text-white text-[11px] font-semibold tracking-wider transition-colors">下週 ▶</button>
                     </div>
                     <div id="nav-scroll-container" className="flex gap-2.5 overflow-x-auto no-scrollbar pb-2 px-1">
-                        {visibleDates.map((d)=>{
+                        {/* ⭐️ 混合渲染：首頁橫列全量載入 (allDates)，找回物理平滑滾動 ⭐️ */}
+                        {allDates.map((d)=>{
                             const active=dateIdx===d.absIdx, isW=d.w==='六'||d.w==='日';
                             return (
                                 <button key={d.fullKey} id={`nav-${d.fullKey}`} onClick={()=>goDate(d.absIdx,d.fullKey)}
@@ -682,7 +672,6 @@ const App = () => {
                 </div>
             </main>
 
-            {/* 載入範圍選擇 Modal */}
             <RangePickerModal 
                 show={showRangePicker} 
                 onClose={()=>setShowRangePicker(false)} 
@@ -690,7 +679,7 @@ const App = () => {
                 setRange={setRangeConfig} 
             />
 
-            {/* 注入已拆解的元件，讓畫面切換不再互相拖累 */}
+            {/* ⭐️ 混合渲染：彈窗表格局部載入 (visibleDates)，確保 GPU 不爆炸 ⭐️ */}
             <MasterRosterModal 
                 show={showMaster} onClose={()=>setShowMaster(false)} 
                 visibleDates={visibleDates} schedule={schedule} aliasMap={aliasMap} 
@@ -698,7 +687,6 @@ const App = () => {
                 handleBackToday={handleBackToday} openCal={openCal} 
             />
 
-            {/* 修正了 setQueryStaff 的接線，跳轉功能恢復 */}
             <QueryModal 
                 queryStaff={queryStaff} queryVenue={queryVenue} 
                 onClose={()=>{setQueryStaff(null);setQueryVenue(null);}} 
@@ -719,7 +707,7 @@ const App = () => {
             )}
 
             <footer className="fixed bottom-0 left-0 right-0 py-2 flex flex-col items-center justify-center pointer-events-none text-[10px] font-bold tracking-[0.25em] text-white/20">
-                <span>TPAC SCHEDULE SYSTEM | V10.7</span>
+                <span>TPAC SCHEDULE SYSTEM | V10.8</span>
             </footer>
         </div>
     );
