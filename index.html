@@ -244,6 +244,7 @@ const App = () => {
     const [showMaster,setShowMaster]=useState(false);
     const [showCalendar,setShowCalendar]=useState(false);
     const [calMonth,setCalMonth]=useState(()=>{const n=new Date();return{y:n.getFullYear(),m:n.getMonth()};});
+    const [lastUpdated, setLastUpdated] = useState("");
 
     /* ── scroll helpers ── */
     const scrollTimers = React.useRef({});
@@ -296,6 +297,12 @@ const App = () => {
             const data=snap.data();
             const roster=JSON.parse(data.roster||'{}'), statuses=JSON.parse(data.statuses||'{}');
             const shows=JSON.parse(data.shows||'{}'), notes=JSON.parse(data.notes||'{}');
+            
+            if(data.lastUpdated) {
+                const d = new Date(data.lastUpdated);
+                setLastUpdated(`${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`);
+            }
+
             const keys=Object.keys(roster).sort();
             const sd=keys.map(k=>{
                 const [yy,mm,dd]=k.split('/').map(Number);
@@ -612,8 +619,9 @@ const App = () => {
                 />
             )}
 
-            <footer className="fixed bottom-0 left-0 right-0 py-2 text-center pointer-events-none text-[9px] font-bold tracking-[0.25em] text-white/20">
-                TPAC SCHEDULE SYSTEM | V10
+            <footer className="fixed bottom-0 left-0 right-0 py-2 flex flex-col items-center justify-center pointer-events-none text-[9px] font-bold tracking-[0.25em] text-white/20">
+                <span>TPAC SCHEDULE SYSTEM | V10.2</span>
+                {lastUpdated && <span className="mt-0.5 text-white/40 tracking-wider">LAST UPDATED: {lastUpdated}</span>}
             </footer>
         </div>
     );
