@@ -43,7 +43,6 @@
         .btn-today:active { transform:scale(0.92); }
         .weekend-bg { background:rgba(255,55,95,0.05) !important; }
 
-        /* ── B班動畫降載：確保低耗能 ── */
         @keyframes b-badge-pulse {
             0%,100% { border-color: rgba(255,255,255,0.2); background-color: rgba(255,255,255,0.05); }
             50%     { border-color: rgba(255,255,255,0.8); background-color: rgba(255,255,255,0.2); }
@@ -193,7 +192,7 @@ const RangePickerModal = memo(({ show, onClose, currentRange, setRange }) => {
             <div className="animate-window bg-[rgba(30,30,32,0.95)] border border-white/10 w-full max-w-sm rounded-[2.5rem] p-6 shadow-2xl flex flex-col gap-3" onClick={e=>e.stopPropagation()}>
                 <h3 className="text-xl font-black italic uppercase tracking-widest mb-2 text-center">Data Range</h3>
                 
-                <button onClick={() => { setRange({type:'default', past:7, future:60}); onClose(); }} 
+                <button onClick={() => { setRange({type:'default', past:7, future:30}); onClose(); }} 
                     className={`w-full py-3.5 rounded-2xl border flex flex-col items-center justify-center transition-all ${currentRange.type==='default'?'bg-[var(--mac-blue)] border-blue-400':'bg-white/5 border-white/10 hover:bg-white/10'}`}>
                     <span className="font-bold text-[15px]">標準效能模式 (推薦)</span>
                     <span className="text-[11px] opacity-60 mt-1">載入 前 7 天 ➔ 後 30 天</span>
@@ -464,6 +463,7 @@ const App = () => {
     const [calMonth,setCalMonth]=useState(()=>{const n=new Date();return{y:n.getFullYear(),m:n.getMonth()};});
     const [lastUpdated, setLastUpdated] = useState("");
     
+    // ⭐️ 已修改預設值：前 7 後 30 ⭐️
     const [rangeConfig, setRangeConfig] = useState({ type: 'default', past: 7, future: 30 });
 
     /* ── 動態計算可視範圍 (只限於表格使用) ── */
@@ -613,7 +613,6 @@ const App = () => {
                         <button onClick={()=>shiftWeek(1)}  className="text-white/40 hover:text-white text-[11px] font-semibold tracking-wider transition-colors">下週 ▶</button>
                     </div>
                     <div id="nav-scroll-container" className="flex gap-2.5 overflow-x-auto no-scrollbar pb-2 px-1">
-                        {/* ⭐️ 混合渲染：首頁橫列全量載入 (allDates)，找回物理平滑滾動 ⭐️ */}
                         {allDates.map((d)=>{
                             const active=dateIdx===d.absIdx, isW=d.w==='六'||d.w==='日';
                             return (
