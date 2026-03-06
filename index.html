@@ -619,10 +619,14 @@ const App = () => {
                 />
             )}
 
-            <footer className="fixed bottom-0 left-0 right-0 py-2 flex flex-col items-center justify-center pointer-events-none text-[11px] font-bold tracking-[0.25em] text-white/20">
-                <span>TPAC SCHEDULE SYSTEM | V10.2</span>
-                {lastUpdated && <span className="mt-0.5 text-white/40 tracking-wider">LAST UPDATED: {lastUpdated}</span>}
-            </footer>
+            <footer className="fixed bottom-0 left-0 right-0 py-2 flex flex-col items-center justify-center pointer-events-none text-[10px] font-bold tracking-[0.25em] text-white/20">
+    <span>TPAC SCHEDULE SYSTEM | V10.2</span>
+    {lastUpdated && 
+        <span className="mt-1 text-[#FF375F] tracking-wider opacity-90 drop-shadow-[0_0_8px_rgba(255,55,95,0.4)]">
+            LAST UPDATED: {lastUpdated}
+        </span>
+    }
+</footer>
         </div>
     );
 };
