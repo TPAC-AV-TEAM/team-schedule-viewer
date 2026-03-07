@@ -351,7 +351,11 @@ const StaffBtn = memo(({ name, aliasMap={}, forceName=null, onClick, mode="norma
     const { text, dot } = staffColors(info);
     const disp = forceName || aliasMap[name] || name;
     const isLong = disp.length >= 3;
-    const sz = mode==="tiny" ? "text-[13px] h-9" : mode==="small" ? `${isLong?"text-[13px]":"text-[15px]"} h-8` : mode==="master" ? "text-[15px] h-8" : `${isLong?"text-[18px]":"text-[20px]"} h-10`;
+// 將各模式的 text-[xxpx] 數值調大 1~2px
+const sz = mode==="tiny" ? "text-[14px] h-9" : 
+           mode==="small" ? `${isLong?"text-[14px]":"text-[16px]"} h-9` : 
+           mode==="master" ? "text-[16px] h-8" : 
+           `${isLong?"text-[20px]":"text-[22px]"} h-12`;
     return ( <button onClick={e=>{e.stopPropagation();onClick&&onClick(name);}} className={`w-full ${sz} rounded-[var(--r-sm)] font-semibold border border-[var(--border-dim)] bg-[var(--glass-card)] flex items-center justify-center gap-1.5 ${text} truncate shrink-0 transition-all duration-150 hover:bg-[var(--glass-card-hover)] hover:border-[var(--border-mid)] active:scale-[0.97]`}> <span className={`w-1.5 h-1.5 rounded-full ${dot}`}></span>{disp} </button> );
 });
 
