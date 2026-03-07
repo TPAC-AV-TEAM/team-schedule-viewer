@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>視聽班表系統 | V11.0</title>
+    <title>視聽班表系統</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -47,19 +47,13 @@
             0%,100% { border-color: rgba(255,255,255,0.2); background-color: rgba(255,255,255,0.05); }
             50%     { border-color: rgba(255,255,255,0.8); background-color: rgba(255,255,255,0.2); }
         }
-        .b-badge-glow {
-            animation: b-badge-pulse 1.8s infinite ease-in-out;
-            border-width: 1.5px !important; border-style: solid !important;
-        }
+        .b-badge-glow { animation:b-badge-pulse 1.8s infinite ease-in-out; border-width:1.5px !important; border-style:solid !important; }
+
         @keyframes b-row-outline {
             0%,100% { outline-color: rgba(255,255,255,0.2); }
             50%      { outline-color: rgba(255,255,255,0.9); }
         }
-        .b-row-glow {
-            animation: b-row-outline 1.8s infinite ease-in-out;
-            outline: 1.5px solid rgba(255,255,255,0.2);
-            outline-offset: -1px;
-        }
+        .b-row-glow { animation:b-row-outline 1.8s infinite ease-in-out; outline:1.5px solid rgba(255,255,255,0.2); outline-offset:-1px; }
 
         @keyframes window-spring { 0%{opacity:0;transform:scale(0.97) translateY(10px);}100%{opacity:1;transform:scale(1) translateY(0);} }
         .animate-window { animation:window-spring 0.35s cubic-bezier(0.16,1,0.3,1) forwards; }
@@ -98,9 +92,11 @@
 <script type="text/babel">
 const { useState, useEffect, useMemo, memo, useCallback, useRef } = React;
 
-/* ⭐️ V11.0 究極重構版 ⭐️ */
 const APP_VERSION = 'V11.0';
 
+/* ══════════════════════════════════════════════════════════
+   CENTRAL CONFIG
+   ══════════════════════════════════════════════════════════ */
 const VENUES = [
     { id:'GT', color:'#FF3B30', masterBg:'255,59,48'   },
     { id:'BB', color:'#5AC8FA', masterBg:'90,200,250'  },
@@ -129,13 +125,9 @@ const FIREBASE_CONFIG = {
 };
 const APP_ID = "team-schedule-viewer";
 
+/* ── 防彈 Date 工具：手動拆解，100% 跨瀏覽器安全 ── */
 const formatK = d => `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
-
-/* ⭐️ 防彈日期解析：確保 Safari / iOS 100% 正確 ⭐️ */
-const parseSafeDate = fk => {
-    const [y, m, d] = fk.split('/').map(Number);
-    return new Date(y, m - 1, d);
-};
+const parseK = k => { const [y,m,d] = k.split('/').map(Number); return new Date(y, m-1, d); };
 
 const staffColors = info => {
     if (!info || info.type==="Special") return { text:"text-[var(--special-text)]", dot:"bg-[var(--special-dot)]" };
@@ -144,18 +136,20 @@ const staffColors = info => {
         : { text:"text-[var(--men-text)]",   dot:"bg-[var(--men-dot)]"   };
 };
 
+/* ── Icons ── */
 const Icon = memo(({ name, className="w-4 h-4" }) => {
-    const d = {
-        filter:  <><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></>,
-        info:    <><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></>,
-        sun:     <path d="M12 2v2m0 16v2m10-10h-2M4 12H2m15.364-7.364-1.414 1.414M7.05 16.95l-1.414 1.414M16.95 16.95l1.414 1.414M5.636 5.636l1.414 1.414M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/>,
-        brief:   <><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></>,
-        cal:     <><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></>,
-        bell:    <><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></>,
+    const icons = {
+        filter: <><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></>,
+        info:   <><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></>,
+        sun:    <path d="M12 2v2m0 16v2m10-10h-2M4 12H2m15.364-7.364-1.414 1.414M7.05 16.95l-1.414 1.414M16.95 16.95l1.414 1.414M5.636 5.636l1.414 1.414M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/>,
+        brief:  <><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></>,
+        cal:    <><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></>,
+        bell:   <><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></>,
     };
-    return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{d[name]}</svg>;
+    return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{icons[name]}</svg>;
 });
 
+/* ── StaffBtn ── */
 const StaffBtn = memo(({ name, aliasMap={}, forceName=null, onClick, mode="normal" }) => {
     const info = STAFF_INFO[name] || { gender:'M', type:'Normal' };
     const { text, dot } = staffColors(info);
@@ -179,38 +173,47 @@ const CalBtn = ({ onClick }) => (
     </button>
 );
 
-const RangePickerModal = memo(({ show, onClose, currentRange, setRange }) => {
+/* ════════════════════════════════════════════════════════════
+   RangePickerModal
+   ════════════════════════════════════════════════════════════ */
+const RangePickerModal = memo(({ onClose, currentRange, setRange }) => {
     const [cP, setCP] = useState(currentRange.past);
     const [cF, setCF] = useState(currentRange.future);
-    useEffect(() => { setCP(currentRange.past); setCF(currentRange.future); }, [currentRange, show]);
-    if (!show) return null;
+    useEffect(()=>{ setCP(currentRange.past); setCF(currentRange.future); },[currentRange]);
     return (
         <div className="fixed inset-0 z-[3000] flex items-center justify-center p-6 bg-black/70 backdrop-blur-sm" onClick={onClose}>
             <div className="animate-window bg-[rgba(30,30,32,0.95)] border border-white/10 w-full max-w-sm rounded-[2.5rem] p-6 shadow-2xl flex flex-col gap-3" onClick={e=>e.stopPropagation()}>
                 <h3 className="text-xl font-black tracking-widest mb-2 text-center">載入範圍設定</h3>
-                <button onClick={() => { setRange({type:'default', past:7, future:30}); onClose(); }} 
+                <button onClick={()=>{ setRange({type:'default',past:7,future:30}); onClose(); }}
                     className={`w-full py-3.5 rounded-2xl border flex flex-col items-center justify-center transition-all ${currentRange.type==='default'?'bg-[var(--mac-blue)] border-blue-400':'bg-white/5 border-white/10 hover:bg-white/10'}`}>
                     <span className="font-bold text-[15px]">標準效能模式 (推薦)</span>
                     <span className="text-[11px] opacity-60 mt-1">載入 前 7 天 ➔ 後 30 天</span>
                 </button>
-                <button onClick={() => { setRange({type:'all'}); onClose(); }} 
+                <button onClick={()=>{ setRange({type:'all'}); onClose(); }}
                     className={`w-full py-3.5 rounded-2xl border flex flex-col items-center justify-center transition-all ${currentRange.type==='all'?'bg-rose-600/80 border-rose-400':'bg-white/5 border-white/10 hover:bg-rose-500/20'}`}>
                     <span className="font-bold text-[15px]">載入全年度資料</span>
+                    <span className="text-[10px] opacity-80 mt-1 text-rose-200">⚠️ 效能警告：開啟週表可能產生些微卡頓</span>
                 </button>
                 <div className={`mt-2 p-4 rounded-2xl border flex flex-col items-center gap-3 transition-all ${currentRange.type==='custom'?'border-orange-400 bg-orange-500/10':'border-white/10 bg-white/5'}`}>
                     <span className={`font-bold text-[14px] ${currentRange.type==='custom'?'text-orange-400':'text-white'}`}>⚙️ 自訂滑動視窗範圍</span>
                     <div className="flex items-center gap-3 text-[13px] font-medium">
-                        <span>前 <input type="number" min="0" max="300" className="range-input" value={cP} onChange={e=>setCP(e.target.value)} /> 天</span>
-                        <span>後 <input type="number" min="0" max="300" className="range-input" value={cF} onChange={e=>setCF(e.target.value)} /> 天</span>
+                        <span>前 <input type="number" min="0" max="300" className="range-input" value={cP} onChange={e=>setCP(e.target.value)}/> 天</span>
+                        <span className="text-white/30">|</span>
+                        <span>後 <input type="number" min="0" max="300" className="range-input" value={cF} onChange={e=>setCF(e.target.value)}/> 天</span>
                     </div>
-                    <button onClick={() => { setRange({type:'custom', past: parseInt(cP)||0, future: parseInt(cF)||0}); onClose(); }}
-                        className="w-full mt-1 py-2 bg-white/10 hover:bg-white/20 rounded-xl font-bold text-[12px] transition-colors">套用自訂範圍</button>
+                    <button onClick={()=>{ setRange({type:'custom',past:parseInt(cP)||0,future:parseInt(cF)||0}); onClose(); }}
+                        className="w-full mt-1 py-2 bg-white/10 hover:bg-white/20 rounded-xl font-bold text-[12px] transition-colors">
+                        套用自訂範圍
+                    </button>
                 </div>
             </div>
         </div>
     );
 });
 
+/* ════════════════════════════════════════════════════════════
+   CalendarPicker
+   ════════════════════════════════════════════════════════════ */
 const CalendarPicker = memo(({ allDates, onSelect, onClose, calMonth, setCalMonth }) => {
     const dateSet = useMemo(()=>new Set(allDates.map(d=>d.fullKey)),[allDates]);
     const {y,m} = calMonth;
@@ -221,15 +224,13 @@ const CalendarPicker = memo(({ allDates, onSelect, onClose, calMonth, setCalMont
     for(let i=0;i<firstDay;i++) cells.push(null);
     for(let d=1;d<=daysInMonth;d++) cells.push(d);
     const toKey = d => `${y}/${String(m+1).padStart(2,'0')}/${String(d).padStart(2,'0')}`;
-    const prev = () => setCalMonth(p => p.m===0 ? {y:p.y-1,m:11} : {y:p.y,m:p.m-1});
-    const next = () => setCalMonth(p => p.m===11 ? {y:p.y+1,m:0} : {y:p.y,m:p.m+1});
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-md" onClick={onClose}>
-            <div className="animate-window bg-[rgba(30,30,32,0.92)] border border-white/10 rounded-[1.8rem] shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-3xl w-full max-w-[280px] p-5" onClick={e=>e.stopPropagation()}>
+            <div className="animate-window bg-[rgba(30,30,32,0.92)] border border-white/10 rounded-[1.8rem] shadow-[0_20px_50px_rgba(0,0,0,0.6)] w-full max-w-[280px] p-5" onClick={e=>e.stopPropagation()}>
                 <div className="flex items-center justify-between mb-4 px-1">
-                    <button onClick={prev} className="w-8 h-8 rounded-full flex items-center justify-center text-white/50 hover:bg-white/10 hover:text-white transition-all text-xl">&#8249;</button>
+                    <button onClick={()=>setCalMonth(p=>p.m===0?{y:p.y-1,m:11}:{y:p.y,m:p.m-1})} className="w-8 h-8 rounded-full flex items-center justify-center text-white/50 hover:bg-white/10 hover:text-white transition-all text-xl">&#8249;</button>
                     <span className="font-bold text-[15px]">{y} 年 {m+1} 月</span>
-                    <button onClick={next} className="w-8 h-8 rounded-full flex items-center justify-center text-white/50 hover:bg-white/10 hover:text-white transition-all text-xl">&#8250;</button>
+                    <button onClick={()=>setCalMonth(p=>p.m===11?{y:p.y+1,m:0}:{y:p.y,m:p.m+1})} className="w-8 h-8 rounded-full flex items-center justify-center text-white/50 hover:bg-white/10 hover:text-white transition-all text-xl">&#8250;</button>
                 </div>
                 <div className="grid grid-cols-7 mb-2">
                     {['日','一','二','三','四','五','六'].map((w,i)=>(
@@ -244,10 +245,9 @@ const CalendarPicker = memo(({ allDates, onSelect, onClose, calMonth, setCalMont
                         return (
                             <button key={fk} disabled={!has} onClick={()=>{onSelect(fk);onClose();}}
                                 className={`h-8 w-full rounded-full text-[13px] font-medium transition-all flex items-center justify-center ${
-                                    isToday ? 'bg-[var(--mac-blue)] text-white shadow-[0_2px_8px_rgba(10,132,255,0.4)]' :
-                                    has ? (isWk ? 'text-[var(--weekend-pink)] hover:bg-white/10' : 'text-white hover:bg-white/10') :
-                                    'text-white/12 cursor-default'
-                                }`}>{d}
+                                    isToday?'bg-[var(--mac-blue)] text-white shadow-[0_2px_8px_rgba(10,132,255,0.4)]':
+                                    has?(isWk?'text-[var(--weekend-pink)] hover:bg-white/10':'text-white hover:bg-white/10'):
+                                    'text-white/12 cursor-default'}`}>{d}
                             </button>
                         );
                     })}
@@ -257,14 +257,12 @@ const CalendarPicker = memo(({ allDates, onSelect, onClose, calMonth, setCalMont
     );
 });
 
-/* ⭐️ 提醒總覽彈窗 (Safari 防彈版) ⭐️ */
-const NotesModal = memo(({ show, onClose, visibleDates, schedule, goDate, handleBackToday }) => {
-    if (!show) return null;
-    const notesList = visibleDates.filter(d => {
-        const note = schedule.notes?.[d.fullKey];
-        return note && note.trim() !== "";
-    });
-
+/* ════════════════════════════════════════════════════════════
+   NotesModal — 提醒總覽
+   ════════════════════════════════════════════════════════════ */
+const NotesModal = memo(({ onClose, visibleDates, schedule, goDate, handleBackToday }) => {
+    const today = new Date(); today.setHours(0,0,0,0);
+    const notesList = visibleDates.filter(d => schedule.notes?.[d.fullKey]?.trim());
     return (
         <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={onClose}>
             <div className="animate-window bg-[rgba(30,30,32,0.98)] border border-white/10 w-full max-w-md rounded-[2.2rem] shadow-2xl flex flex-col max-h-[85vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
@@ -273,42 +271,44 @@ const NotesModal = memo(({ show, onClose, visibleDates, schedule, goDate, handle
                         <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:bg-white/20 transition-all text-xl">×</button>
                         <button onClick={handleBackToday} className="btn-today">Today</button>
                     </div>
-                    <div className="flex-1 flex justify-center overflow-hidden px-1 text-center">
+                    <div className="flex-1 flex justify-center">
                         <h3 className="text-[17px] font-bold tracking-tight text-[var(--reminder-pink)] flex items-center gap-2">
                             <Icon name="bell" className="w-5 h-5"/> 提醒總覽
                         </h3>
                     </div>
-                    <div className="w-[100px] shrink-0"></div>
+                    <div className="w-[100px]"/>
                 </div>
-                <div className="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar scroll-smooth">
-                    {notesList.length === 0 ? (
+                <div className="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar">
+                    {notesList.length===0 ? (
                         <div className="text-center text-white/40 py-10 font-medium text-[14px]">在此載入範圍內，無任何提醒事項</div>
-                    ) : (
-                        notesList.map(d => {
-                            const note = schedule.notes[d.fullKey];
-                            const today = new Date(); today.setHours(0,0,0,0);
-                            /* ⭐️ 使用防彈日期解析 ⭐️ */
-                            const isPast = parseSafeDate(d.fullKey) < today;
-                            return (
-                                <button key={d.fullKey} onClick={() => { goDate(d.absIdx, d.fullKey); onClose(); }}
-                                    className={`w-full text-left p-3.5 rounded-2xl border transition-all flex flex-col gap-1.5 active:scale-[0.98] ${
-                                        isPast ? 'bg-white/[0.02] border-white/5 opacity-60 hover:opacity-100 hover:bg-white/[0.06]' : 'bg-[rgba(255,55,95,0.08)] border-[rgba(255,55,95,0.2)] hover:bg-[rgba(255,55,95,0.15)]'
-                                    }`}>
-                                    <div className={`text-[12px] font-bold tracking-wider ${isPast ? 'text-white/40' : 'text-[var(--reminder-pink)]'}`}>{d.fullKey} (週{d.w})</div>
-                                    <div className="text-[14.5px] font-medium text-white/90 leading-snug">{note}</div>
-                                </button>
-                            );
-                        })
-                    )}
+                    ) : notesList.map(d=>{
+                        const note = schedule.notes[d.fullKey];
+                        /* ── parseK：防彈 Date 解析 ── */
+                        const isPast = parseK(d.fullKey) < today;
+                        return (
+                            <button key={d.fullKey}
+                                onClick={()=>{ goDate(d.absIdx,d.fullKey); onClose(); }}
+                                className={`w-full text-left p-3.5 rounded-2xl border transition-all flex flex-col gap-1.5 active:scale-[0.98] ${
+                                    isPast?'bg-white/[0.02] border-white/5 opacity-60 hover:opacity-100 hover:bg-white/[0.06]'
+                                         :'bg-[rgba(255,55,95,0.08)] border-[rgba(255,55,95,0.2)] hover:bg-[rgba(255,55,95,0.15)]'}`}>
+                                <div className={`text-[12px] font-bold tracking-wider ${isPast?'text-white/40':'text-[var(--reminder-pink)]'}`}>
+                                    {d.fullKey} (週{d.w})
+                                </div>
+                                <div className="text-[14.5px] font-medium text-white/90 leading-snug">{note}</div>
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
         </div>
     );
 });
 
-const MasterRosterModal = memo(({ show, onClose, visibleDates, schedule, aliasMap, todayK, handleStaffClick, handleBackToday, openCal }) => {
+/* ════════════════════════════════════════════════════════════
+   MasterRosterModal
+   ════════════════════════════════════════════════════════════ */
+const MasterRosterModal = memo(({ onClose, visibleDates, schedule, aliasMap, todayK, handleStaffClick, handleBackToday, openCal }) => {
     const [detail, setDetail] = useState(null);
-    if (!show) return null;
     return (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-3 bg-black/70" onClick={onClose}>
             <div className="animate-window bg-[rgba(28,28,30,0.98)] border border-white/10 w-full max-w-4xl rounded-[2.2rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col max-h-[90vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
@@ -345,21 +345,27 @@ const MasterRosterModal = memo(({ show, onClose, visibleDates, schedule, aliasMa
                                     {visibleDates.map(d=>{
                                         const dk=d.fullKey, isW=d.w==='六'||d.w==='日';
                                         let label="—", bgStyle={backgroundColor:'rgba(255,255,255,0.03)'};
-                                        let txtCls="text-white/10 text-[13px] font-medium", isB=false, hasS=false, activeV="";
+                                        let txtCls="text-white/10 text-[13px] font-medium";
+                                        let isB=false, hasS=false, activeV="";
                                         VENUE_IDS.forEach(vid=>{
                                             if(schedule.roster[dk]?.[vid]?.[staff]){
                                                 const sh=schedule.roster[dk][vid][staff].shift;
-                                                label=`${vid}-${sh}`; bgStyle={backgroundColor:`rgba(${VENUE_MAP[vid].masterBg},0.25)`};
+                                                label=`${vid}-${sh}`;
+                                                bgStyle={backgroundColor:`rgba(${VENUE_MAP[vid].masterBg},0.25)`};
                                                 txtCls="text-white text-[11px] font-bold tracking-wide";
                                                 hasS=true; activeV=vid; if(sh==='B')isB=true;
                                             }
                                         });
-                                       if(schedule.statuses[dk]?.[staff]?.match(/辦公|其他/)){ label="辦"; bgStyle={backgroundColor:'rgba(255,255,255,0.03)'}; txtCls="text-orange-400 text-[13px] font-bold"; }
-                                       else if(!hasS) { label="休"; bgStyle={backgroundColor:'rgba(255,255,255,0.03)'}; txtCls="text-white/25 text-[13px] font-medium"; }
+                                        if(schedule.statuses[dk]?.[staff]?.match(/辦公|其他/)){
+                                            label="辦"; bgStyle={backgroundColor:'rgba(255,255,255,0.03)'}; txtCls="text-orange-400 text-[13px] font-bold";
+                                        } else if(!hasS){
+                                            label="休"; bgStyle={backgroundColor:'rgba(255,255,255,0.03)'}; txtCls="text-white/25 text-[13px] font-medium";
+                                        }
                                         return (
                                             <div key={dk} className={`master-cell p-1 ${dk===todayK?'master-today':''} ${isW?'weekend-bg':''}`}>
                                                 <div className={`w-full h-8 flex items-center justify-center rounded-lg ${txtCls} ${isB?'b-row-glow':''} ${hasS?'cursor-pointer hover:brightness-125':''}`}
-                                                    style={bgStyle} onClick={()=>{ if(hasS) setDetail({ date: dk, venue: activeV, show: schedule.shows[dk]?.[activeV] || "無演出內容" }); }}>
+                                                    style={bgStyle}
+                                                    onClick={()=>{ if(hasS) setDetail({date:dk,venue:activeV,show:schedule.shows[dk]?.[activeV]||"無演出內容"}); }}>
                                                     {label}
                                                 </div>
                                             </div>
@@ -371,13 +377,15 @@ const MasterRosterModal = memo(({ show, onClose, visibleDates, schedule, aliasMa
                     </div>
                 </div>
             </div>
-            {detail && (
-                <div className="fixed inset-0 z-[5000] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setDetail(null)}>
+            {detail&&(
+                <div className="fixed inset-0 z-[5000] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={()=>setDetail(null)}>
                     <div className="animate-window bg-[rgba(40,40,42,0.95)] border border-white/10 p-6 rounded-[2rem] shadow-2xl max-w-xs w-full text-center" onClick={e=>e.stopPropagation()}>
                         <div className="text-[var(--mac-blue)] mb-3 flex justify-center"><Icon name="info" className="w-8 h-8 opacity-90"/></div>
-                        <h4 className="text-[18px] font-black text-white mb-2 tracking-wide flex items-baseline justify-center gap-2">{detail.venue}<span className="text-[13px] font-medium text-white/50">{detail.date}</span></h4>
+                        <h4 className="text-[18px] font-black text-white mb-2 tracking-wide flex items-baseline justify-center gap-2">
+                            {detail.venue}<span className="text-[13px] font-medium text-white/50">{detail.date}</span>
+                        </h4>
                         <p className="text-[15px] font-medium text-white/80 leading-snug break-words px-2">{detail.show}</p>
-                        <button onClick={() => setDetail(null)} className="mt-6 w-full py-2.5 bg-white/10 hover:bg-white/20 rounded-xl font-bold text-[14px] transition-colors active:scale-95">關閉</button>
+                        <button onClick={()=>setDetail(null)} className="mt-6 w-full py-2.5 bg-white/10 hover:bg-white/20 rounded-xl font-bold text-[14px] transition-colors active:scale-95">關閉</button>
                     </div>
                 </div>
             )}
@@ -385,31 +393,33 @@ const MasterRosterModal = memo(({ show, onClose, visibleDates, schedule, aliasMa
     );
 });
 
-const QueryModal = memo(({ queryStaff, queryVenue, onClose, setQueryStaff, setQueryVenue, visibleDates, schedule, aliasMap, curFk, todayK, handleStaffClick, handleBackToday, openCal }) => {
-    if (!queryStaff && !queryVenue) return null;
+/* ════════════════════════════════════════════════════════════
+   QueryModal
+   ════════════════════════════════════════════════════════════ */
+const QueryModal = memo(({ queryStaff, queryVenue, onClose, setQueryStaff, setQueryVenue, visibleDates, schedule, aliasMap, curFk, handleStaffClick, handleBackToday, openCal }) => {
+    if(!queryStaff&&!queryVenue) return null;
     return (
         <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/70" onClick={onClose}>
             <div className="animate-window bg-[rgba(28,28,30,0.98)] border border-white/10 w-full max-w-lg rounded-[2.2rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col max-h-[85vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
-                {/* ⭐️ Header 優化：移除 w-[100px] 鎖定，釋放中央切換器 ⭐️ */}
-                <div className="p-3.5 border-b border-white/10 bg-white/[0.04] flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2.5 shrink-0">
+                <div className="p-3.5 border-b border-white/10 bg-white/[0.04] flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 w-[100px] shrink-0">
                         <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:bg-white/20 transition-all text-xl">×</button>
                         <button onClick={handleBackToday} className="btn-today">Today</button>
                     </div>
                     <div className="flex-1 flex justify-center overflow-hidden px-1">
-                        {queryVenue ? (
+                        {queryVenue?(
                             <div className="flex bg-black/40 rounded-2xl p-1 border border-white/5 w-full max-w-sm">
                                 {VENUES.map(v=>(
                                     <button key={v.id} onClick={()=>setQueryVenue(v.id)}
-                                        className={`flex-1 py-1.5 rounded-xl text-[14px] sm:text-[15px] font-bold tracking-wider transition-all ${queryVenue===v.id?'bg-white/15 shadow-sm':'text-white/30 hover:text-white/70 hover:bg-white/5'}`}
+                                        className={`flex-1 py-1.5 rounded-xl text-[15px] font-bold tracking-wider transition-all ${queryVenue===v.id?'bg-white/15 shadow-sm':'text-white/30 hover:text-white/70 hover:bg-white/5'}`}
                                         style={{color:queryVenue===v.id?v.color:undefined}}>{v.id}</button>
                                 ))}
                             </div>
-                        ) : (
+                        ):(
                             <h3 className="text-[17px] font-bold tracking-tight truncate px-2">{aliasMap[queryStaff]||queryStaff}</h3>
                         )}
                     </div>
-                    <div className="shrink-0"><CalBtn onClick={openCal}/></div>
+                    <div className="w-[100px] flex justify-end shrink-0"><CalBtn onClick={openCal}/></div>
                 </div>
                 <div id={queryVenue?"venue-scroll-container":"staff-scroll-container"} className="flex-1 overflow-y-auto p-4 space-y-3.5 no-scrollbar scroll-smooth">
                     {visibleDates.map(d=>{
@@ -418,7 +428,9 @@ const QueryModal = memo(({ queryStaff, queryVenue, onClose, setQueryStaff, setQu
                             const vn=schedule.shows[d.fullKey]?.[queryVenue]||"—";
                             return (
                                 <div key={d.fullKey} id={`mrow-${d.fullKey}`} className={`day-block ${isS?'day-block-today':''}`}>
-                                    <div className="mb-2.5 pb-2.5 border-b border-white/5 text-[13px] font-medium text-white/50 text-right overflow-hidden"><div className="mq-wrap"><span className={vn.length>8?"mq-run":""}>{vn}</span></div></div>
+                                    <div className="mb-2.5 pb-2.5 border-b border-white/5 text-[13px] font-medium text-white/50 text-right overflow-hidden">
+                                        <div className="mq-wrap"><span className={vn.length>8?"mq-run":""}>{vn}</span></div>
+                                    </div>
                                     <div className="flex items-center gap-4">
                                         <div className="flex flex-col text-left pr-3 border-r border-white/10 w-[72px] justify-center">
                                             <span className={`font-bold mb-0.5 text-[11px] ${isW?'text-[var(--weekend-pink)]':'text-white/40'}`}>週{d.w}</span>
@@ -427,7 +439,9 @@ const QueryModal = memo(({ queryStaff, queryVenue, onClose, setQueryStaff, setQu
                                         <div className="flex-1 grid grid-cols-2 gap-2.5">
                                             {SHIFTS.map(sh=>(
                                                 <div key={sh} className="bg-black/20 rounded-[1rem] p-1.5 min-h-[44px] flex flex-col gap-1.5 border border-white/5">
-                                                    {Object.entries(schedule.roster[d.fullKey]?.[queryVenue]||{}).filter(([,v])=>v.shift===sh).map(([n])=><StaffBtn key={n} name={n} aliasMap={aliasMap} onClick={handleStaffClick} mode="small"/>)}
+                                                    {Object.entries(schedule.roster[d.fullKey]?.[queryVenue]||{})
+                                                        .filter(([,v])=>v.shift===sh)
+                                                        .map(([n])=><StaffBtn key={n} name={n} aliasMap={aliasMap} onClick={handleStaffClick} mode="small"/>)}
                                                 </div>
                                             ))}
                                         </div>
@@ -436,19 +450,31 @@ const QueryModal = memo(({ queryStaff, queryVenue, onClose, setQueryStaff, setQu
                             );
                         }
                         let st="辦公", co="#FF9500", hasS=false, activeV="", activeSh="";
-                        VENUE_IDS.forEach(vid=>{ if(schedule.roster[d.fullKey]?.[vid]?.[queryStaff]){ const sh=schedule.roster[d.fullKey][vid][queryStaff].shift; st=`${vid}-${sh}`; co=VENUE_MAP[vid]?.color||'#0A84FF'; hasS=true; activeV=vid; activeSh=sh; } });
+                        VENUE_IDS.forEach(vid=>{
+                            if(schedule.roster[d.fullKey]?.[vid]?.[queryStaff]){
+                                const sh=schedule.roster[d.fullKey][vid][queryStaff].shift;
+                                st=`${vid}-${sh}`; co=VENUE_MAP[vid]?.color||'#0A84FF';
+                                hasS=true; activeV=vid; activeSh=sh;
+                            }
+                        });
                         if(schedule.statuses[d.fullKey]?.[queryStaff]?.match(/休|例|假/)){st="休假";co="#636366";}
-                        const sn=hasS?(schedule.shows[d.fullKey]?.[activeV]||""):"", wkCls=isW?(hasS?`wk-${activeV}`:'wk-off'):'', isBShift=activeSh==='B';
+                        const sn=hasS?(schedule.shows[d.fullKey]?.[activeV]||""):"";
+                        const wkCls=isW?(hasS?`wk-${activeV}`:'wk-off'):'';
+                        const isBShift=activeSh==='B';
                         return (
                             <div key={d.fullKey} id={`mrow-${d.fullKey}`} className={`flex items-center gap-4 day-block ${isS?'day-block-today':''} ${wkCls}`}>
                                 <div className="flex flex-col text-left pr-3 border-r border-white/10 w-[72px] shrink-0 justify-center">
                                     <span className={`font-bold mb-0.5 text-[11px] ${isW?'text-[var(--weekend-pink)]':'text-white/40'}`}>週{d.w}</span>
                                     <span className={`text-[22px] font-black tracking-tight leading-none ${isW?'text-[var(--weekend-pink)]':'text-white/90'}`}>{d.d}</span>
                                 </div>
-                                <div className="flex-1 mq-wrap text-[16px] font-medium text-white/60 italic"><span className={sn.length>10?"mq-run":""}>{sn}</span></div>
+                                <div className="flex-1 mq-wrap text-[16px] font-medium text-white/60 italic">
+                                    <span className={sn.length>10?"mq-run":""}>{sn}</span>
+                                </div>
                                 <button onClick={()=>{ if(hasS){setQueryStaff(null);setQueryVenue(activeV);} }}
                                     className={`text-[15px] font-bold tracking-wide px-3.5 py-1.5 rounded-xl shrink-0 transition-all ${isBShift?'b-badge-glow':''} ${hasS?'hover:opacity-80 active:scale-95 cursor-pointer':'cursor-default'}`}
-                                    style={{color:co, backgroundColor:`${co}1A`, border: isBShift ? 'none' : `1px solid ${co}33`}}>{st}</button>
+                                    style={{color:co,backgroundColor:`${co}1A`,border:isBShift?'none':`1px solid ${co}33`}}>
+                                    {st}
+                                </button>
                             </div>
                         );
                     })}
@@ -462,72 +488,94 @@ const QueryModal = memo(({ queryStaff, queryVenue, onClose, setQueryStaff, setQu
    MAIN APP
    ════════════════════════════════════════════════════════════ */
 const App = () => {
-    const [allDates,setAllDates]=useState([]);
-    const [schedule,setSchedule]=useState({roster:{},statuses:{},shows:{},notes:{}});
-    const [dateIdx,setDateIdx]=useState(0);
-    const [isUnlocked,setIsUnlocked]=useState(false);
-    const [errorMsg, setErrorMsg]=useState(null);
-    const [user,setUser]=useState(null);
-    const [aliasMap,setAliasMap]=useState({});
-    const [queryStaff,setQueryStaff]=useState(null);
-    const [queryVenue,setQueryVenue]=useState(null);
-    
-    /* ⭐️ 狀態機優化：合併所有彈窗狀態 ⭐️ */
-    const [activeModal, setActiveModal] = useState(null); // null | 'master' | 'calendar' | 'range' | 'notes'
-    
-    const [calMonth,setCalMonth]=useState(()=>{const n=new Date();return{y:n.getFullYear(),m:n.getMonth()};});
-    const [lastUpdated, setLastUpdated] = useState("");
-    const [isRecentlyUpdated, setIsRecentlyUpdated] = useState(false);
-    
-    const [rangeConfig, setRangeConfig] = useState(() => {
-        const saved = localStorage.getItem('tpac_range_v11');
-        if (saved) { try { return JSON.parse(saved); } catch(e) {} }
-        return { type: 'default', past: 7, future: 30 };
-    });
-    useEffect(() => { localStorage.setItem('tpac_range_v11', JSON.stringify(rangeConfig)); }, [rangeConfig]);
+    /* ── Firebase / Data 狀態 ── */
+    const [allDates,setAllDates]   = useState([]);
+    const [schedule,setSchedule]   = useState({roster:{},statuses:{},shows:{},notes:{}});
+    const [aliasMap,setAliasMap]   = useState({});
+    const [lastUpdated,setLastUpdated]           = useState("");
+    const [isRecentlyUpdated,setIsRecentlyUpdated] = useState(false);
+    const [isUnlocked,setIsUnlocked] = useState(false);
+    const [errorMsg,setErrorMsg]     = useState(null);
+    const [user,setUser]             = useState(null);
 
+    /* ── UI / 導航狀態 ── */
+    const [dateIdx,setDateIdx] = useState(0);
+
+    /* ── ⭐️ activeModal 狀態機：防彈窗重疊 ── */
+    /* 可能值: null | 'master' | 'calendar' | 'range' | 'notes' | 'queryStaff' | 'queryVenue' */
+    const [activeModal,setActiveModal] = useState(null);
+    const [queryTarget,setQueryTarget] = useState(null); // staff name or venue id
+    const [calMonth,setCalMonth] = useState(()=>{const n=new Date();return{y:n.getFullYear(),m:n.getMonth()};});
+
+    /* ── LocalStorage 記憶載入範圍 ── */
+    const [rangeConfig,setRangeConfig] = useState(()=>{
+        try{ const s=localStorage.getItem('tpac_range'); if(s) return JSON.parse(s); }catch(e){}
+        return {type:'default',past:7,future:30};
+    });
+    useEffect(()=>{ localStorage.setItem('tpac_range',JSON.stringify(rangeConfig)); },[rangeConfig]);
+
+    /* ── 可視範圍 ── */
     const visibleDates = useMemo(()=>{
         if(!allDates.length) return [];
-        if (rangeConfig.type === 'all') return allDates;
-        const start = Math.max(0, dateIdx - rangeConfig.past);
-        const end = Math.min(allDates.length, dateIdx + rangeConfig.future + 1);
-        return allDates.slice(start, end);
-    }, [allDates, dateIdx, rangeConfig]);
+        if(rangeConfig.type==='all') return allDates;
+        const start=Math.max(0,dateIdx-rangeConfig.past);
+        const end=Math.min(allDates.length,dateIdx+rangeConfig.future+1);
+        return allDates.slice(start,end);
+    },[allDates,dateIdx,rangeConfig]);
 
+    /* ── 滾動工具 ── */
     const scrollTimers = useRef({});
-    const scrollTo = useCallback((fk, cid) => {
-        if (scrollTimers.current[cid]) clearTimeout(scrollTimers.current[cid]);
-        scrollTimers.current[cid] = setTimeout(()=>{
+    const scrollTo = useCallback((fk,cid)=>{
+        if(scrollTimers.current[cid]) clearTimeout(scrollTimers.current[cid]);
+        scrollTimers.current[cid]=setTimeout(()=>{
             const c=document.getElementById(cid); if(!c)return;
             const idMap={"nav-scroll-container":`nav-${fk}`,"master-scroll-container":`mnav-${fk}`};
             const el=document.getElementById(idMap[cid]||`mrow-${fk}`); if(!el)return;
             const horiz=cid==="nav-scroll-container"||cid==="master-scroll-container";
-            horiz ? c.scrollTo({left:el.offsetLeft-c.offsetWidth/2+el.offsetWidth/2,behavior:'smooth'})
-                  : c.scrollTo({top:el.offsetTop-c.offsetHeight/2+el.offsetHeight/2,behavior:'smooth'});
-        }, 50);
+            horiz?c.scrollTo({left:el.offsetLeft-c.offsetWidth/2+el.offsetWidth/2,behavior:'smooth'})
+                 :c.scrollTo({top:el.offsetTop-c.offsetHeight/2+el.offsetHeight/2,behavior:'smooth'});
+        },50);
     },[]);
 
-    const allScrollTo = useCallback(fk=>{ ["nav-scroll-container","master-scroll-container","venue-scroll-container","staff-scroll-container"].forEach(id=>scrollTo(fk,id)); },[scrollTo]);
+    const allScrollTo = useCallback(fk=>{
+        ["nav-scroll-container","master-scroll-container","venue-scroll-container","staff-scroll-container"].forEach(id=>scrollTo(fk,id));
+    },[scrollTo]);
+
     const goDate = useCallback((absIdx,fk)=>{ setDateIdx(absIdx); allScrollTo(fk); },[allScrollTo]);
-    const handleBackToday = useCallback(()=>{ const tK=formatK(new Date()); const i=allDates.findIndex(d=>d.fullKey===tK); if(i!==-1)goDate(i,tK); },[allDates,goDate]);
-
-    /* ⭐️ 左右滑動切換日期邏輯 ⭐️ */
-    const swipeRef = useRef({});
-    const handleTouchStart = useCallback(e=>{ swipeRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; },[]);
-    const handleTouchEnd = useCallback(e=>{
-        const dx = e.changedTouches[0].clientX - swipeRef.current.x;
-        const dy = Math.abs(e.changedTouches[0].clientY - swipeRef.current.y);
-        if(Math.abs(dx) > 60 && dy < 40) { // 確保是水平滑動
-            const dir = dx < 0 ? 1 : -1;
-            const ni = Math.max(0, Math.min(allDates.length-1, dateIdx + dir));
-            goDate(ni, allDates[ni].fullKey);
-        }
-    },[allDates, dateIdx, goDate]);
-
-    const handleStaffClick = useCallback(name=>{ setQueryStaff(name); setQueryVenue(null); setActiveModal(null); },[]);
-    const handleCalendarSelect = useCallback(fk=>{ const i=allDates.findIndex(d=>d.fullKey===fk); if(i!==-1)goDate(i,fk); setActiveModal(null); },[allDates,goDate]);
+    const handleBackToday = useCallback(()=>{
+        const tK=formatK(new Date()); const i=allDates.findIndex(d=>d.fullKey===tK);
+        if(i!==-1) goDate(i,tK);
+    },[allDates,goDate]);
     const openCal = useCallback(()=>{ setCalMonth({y:new Date().getFullYear(),m:new Date().getMonth()}); setActiveModal('calendar'); },[]);
 
+    /* ── ⭐️ Swipe 手勢：左右滑動主畫面切換日期 ── */
+    const swipeRef = useRef({});
+    const handleTouchStart = useCallback(e=>{
+        swipeRef.current = { x:e.touches[0].clientX, y:e.touches[0].clientY };
+    },[]);
+    const handleTouchEnd = useCallback(e=>{
+        if(activeModal) return; // 有彈窗時不觸發
+        const dx = e.changedTouches[0].clientX - swipeRef.current.x;
+        const dy = Math.abs(e.changedTouches[0].clientY - swipeRef.current.y);
+        if(Math.abs(dx)>60 && dy<40){
+            const dir = dx<0?1:-1;
+            const ni = Math.max(0,Math.min(allDates.length-1,dateIdx+dir));
+            goDate(ni,allDates[ni].fullKey);
+        }
+    },[allDates,dateIdx,goDate,activeModal]);
+
+    /* ── Staff / Venue 查詢 ── */
+    const handleStaffClick = useCallback(name=>{
+        setQueryTarget(name);
+        setActiveModal('queryStaff');
+    },[]);
+    const handleVenueClick = useCallback(id=>{
+        setQueryTarget(id);
+        setActiveModal('queryVenue');
+    },[]);
+    const closeModal = useCallback(()=>{ setActiveModal(null); },[]);
+
+    /* ── Firebase init ── */
     useEffect(()=>{
         const t=setInterval(()=>{
             if(!window.isFirebaseReady||!window.Firebase)return;
@@ -539,94 +587,129 @@ const App = () => {
                     const s=await Firebase.getDoc(Firebase.doc(Firebase.getFirestore(app),'artifacts',APP_ID,'public','data','configs','name_mapping'));
                     if(s.exists())setAliasMap(s.data().maps||{});
                 });
-            }).catch(() => setErrorMsg("登入系統失敗，請重新整理"));
+            }).catch(()=>setErrorMsg("登入系統失敗，請重新整理"));
         },200);
         return()=>clearInterval(t);
     },[]);
 
-    useEffect(() => {
-        if (isUnlocked) return;
-        const timer = setTimeout(() => { setErrorMsg("網路連線逾時，請檢查連線或重新整理頁面"); }, 8000);
-        return () => clearTimeout(timer);
-    }, [isUnlocked]);
+    /* ── 連線逾時保護 ── */
+    useEffect(()=>{
+        if(isUnlocked)return;
+        const t=setTimeout(()=>setErrorMsg("網路連線逾時，請檢查連線或重新整理頁面"),8000);
+        return()=>clearTimeout(t);
+    },[isUnlocked]);
 
+    /* ── Firestore live sync ── */
     useEffect(()=>{
         if(!user)return;
         const db=Firebase.getFirestore();
-        return Firebase.onSnapshot(Firebase.doc(db,'artifacts',APP_ID,'public','data','rosters','master'),snap=>{
-            if(!snap.exists()){ setErrorMsg("找不到班表資料庫，請聯絡管理員"); return; }
-            const data=snap.data();
-            const roster=JSON.parse(data.roster||'{}'), statuses=JSON.parse(data.statuses||'{}');
-            const shows=JSON.parse(data.shows||'{}'), notes=JSON.parse(data.notes||'{}');
-            if(data.lastUpdated) {
-                const d = new Date(data.lastUpdated);
-                setLastUpdated(`${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`);
-                setIsRecentlyUpdated((new Date() - d) / (1000 * 60 * 60) <= 24);
-            }
-            const keys=Object.keys(roster).sort();
-            const sd=keys.map((k, idx)=>{
-                const [yy,mm,dd]=k.split('/').map(Number);
-                const o=new Date(yy,mm-1,dd);
-                return{d:`${mm}/${dd}`,w:['日','一','二','三','四','五','六'][o.getDay()],fullKey:k, absIdx: idx};
-            });
-            setSchedule({roster,statuses,shows,notes}); setAllDates(sd); setIsUnlocked(true);
-            const tK=formatK(new Date()), mi=keys.indexOf(tK);
-            if(mi!==-1){setDateIdx(mi);setTimeout(()=>scrollTo(tK,"nav-scroll-container"),500);}
-        }, () => setErrorMsg("資料同步失敗，請重新整理"));
+        return Firebase.onSnapshot(
+            Firebase.doc(db,'artifacts',APP_ID,'public','data','rosters','master'),
+            snap=>{
+                if(!snap.exists()){ setErrorMsg("找不到班表資料庫，請聯絡管理員"); return; }
+                const data=snap.data();
+                const roster=JSON.parse(data.roster||'{}'), statuses=JSON.parse(data.statuses||'{}');
+                const shows=JSON.parse(data.shows||'{}'), notes=JSON.parse(data.notes||'{}');
+                if(data.lastUpdated){
+                    const d=new Date(data.lastUpdated);
+                    setLastUpdated(`${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`);
+                    setIsRecentlyUpdated((new Date()-d)/(1000*60*60)<=24);
+                }
+                const keys=Object.keys(roster).sort();
+                const sd=keys.map((k,idx)=>{
+                    /* ── parseK：防彈 Date 解析 ── */
+                    const [yy,mm,dd]=k.split('/').map(Number);
+                    const o=new Date(yy,mm-1,dd);
+                    return{d:`${mm}/${dd}`,w:['日','一','二','三','四','五','六'][o.getDay()],fullKey:k,absIdx:idx};
+                });
+                setSchedule({roster,statuses,shows,notes});
+                setAllDates(sd); setIsUnlocked(true);
+                const tK=formatK(new Date()), mi=keys.indexOf(tK);
+                if(mi!==-1){setDateIdx(mi);setTimeout(()=>scrollTo(tK,"nav-scroll-container"),500);}
+            },
+            ()=>setErrorMsg("資料同步失敗，請重新整理")
+        );
     },[user,scrollTo]);
 
-    useEffect(()=>{ if(activeModal==='master'&&allDates[dateIdx])scrollTo(allDates[dateIdx].fullKey,"master-scroll-container"); },[activeModal, allDates, dateIdx, scrollTo]);
-    useEffect(()=>{ if(queryVenue&&allDates[dateIdx])scrollTo(allDates[dateIdx].fullKey,"venue-scroll-container"); },[queryVenue, allDates, dateIdx, scrollTo]);
-    useEffect(()=>{ if(queryStaff&&allDates[dateIdx])scrollTo(allDates[dateIdx].fullKey,"staff-scroll-container"); },[queryStaff, allDates, dateIdx, scrollTo]);
+    /* ── Modal 開啟時自動滾動 ── */
+    useEffect(()=>{
+        if(!allDates.length||!allDates[dateIdx])return;
+        const fk=allDates[dateIdx].fullKey;
+        if(activeModal==='master') scrollTo(fk,"master-scroll-container");
+        if(activeModal==='queryVenue') scrollTo(fk,"venue-scroll-container");
+        if(activeModal==='queryStaff') scrollTo(fk,"staff-scroll-container");
+    },[activeModal,allDates,dateIdx,scrollTo]);
 
+    /* ── 當日資料 ── */
     const dData = useMemo(()=>{
-        if(!allDates.length || !allDates[dateIdx]) return null;
+        if(!allDates.length||!allDates[dateIdx]) return null;
         const fk=allDates[dateIdx].fullKey, rawR=schedule.roster[fk]||{}, rawS=schedule.statuses[fk]||{};
-        const s={ ...Object.fromEntries(VENUE_IDS.map(vid=>[vid,Object.fromEntries(SHIFTS.map(sh=>[sh,[]]))])), "辦公":[], "休假":[], };
+        const s={
+            ...Object.fromEntries(VENUE_IDS.map(vid=>[vid,Object.fromEntries(SHIFTS.map(sh=>[sh,[]]))])),
+            "辦公":[], "休假":[],
+        };
         STAFF_ORDER.forEach(n=>{
-            let on=false; VENUE_IDS.forEach(vid=>{ if(rawR[vid]?.[n]){ const sh=(rawR[vid][n].shift||SHIFTS[0]).toUpperCase(); if(s[vid][sh]){s[vid][sh].push(n);on=true;} } });
-            if(!on){ (rawS[n]||"").match(/辦公|其他/) ? s["辦公"].push(n) : s["休假"].push(n); }
+            let on=false;
+            VENUE_IDS.forEach(vid=>{
+                if(rawR[vid]?.[n]){ const sh=(rawR[vid][n].shift||SHIFTS[0]).toUpperCase(); if(s[vid][sh]){s[vid][sh].push(n);on=true;} }
+            });
+            if(!on){ (rawS[n]||"").match(/辦公|其他/)?s["辦公"].push(n):s["休假"].push(n); }
         });
         return{s};
     },[dateIdx,allDates,schedule]);
 
     if(!isUnlocked) return (
         <div className="h-screen bg-[#121213] flex flex-col items-center justify-center text-white/40 text-[13px] font-medium tracking-widest gap-4">
-            {errorMsg ? <span className="text-rose-500 font-bold px-6 text-center leading-relaxed animate-pulse">{errorMsg}</span> : <span className="animate-pulse">CONNECTING...</span>}
+            {errorMsg
+                ?<span className="text-rose-500 font-bold px-6 text-center leading-relaxed animate-pulse">{errorMsg}</span>
+                :<span className="animate-pulse">CONNECTING...</span>}
         </div>
     );
 
-    const todayK=formatK(new Date()), curFk = allDates.length ? allDates[dateIdx]?.fullKey : todayK;
+    const todayK=formatK(new Date()), curFk=allDates.length?allDates[dateIdx]?.fullKey:todayK;
     const todayNote=schedule.notes?.[curFk], hasNote=!!(todayNote?.trim());
 
+    /* ── QueryModal props 計算 ── */
+    const queryStaff = activeModal==='queryStaff' ? queryTarget : null;
+    const queryVenue = activeModal==='queryVenue' ? queryTarget : null;
+
     return (
-        /* ⭐️ 綁定滑動事件 ⭐️ */
-        <div className="h-screen flex flex-col overflow-hidden relative text-white bg-[var(--mac-bg)]" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-            <div className="aura-bg"></div>
+        <div className="h-screen flex flex-col overflow-hidden relative text-white bg-[var(--mac-bg)]"
+            onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+            <div className="aura-bg"/>
+
+            {/* ── Header ── */}
             <header className="mac-glass pt-12 pb-4 px-5 flex items-center justify-between shrink-0 z-50">
                 <div className="flex items-center gap-4">
-                    <button onClick={handleBackToday} className="btn-today">Today</button>
+                    <button onClick={handleBackToday} className="btn-today flex-shrink-0">Today</button>
                     <div className="flex flex-col justify-center">
-                        <h1 className="text-[22px] font-bold tracking-tight cursor-pointer opacity-90 hover:opacity-100 leading-none" onClick={()=>setActiveModal('master')}>視 聽 班 表 系 統</h1>
-                        {lastUpdated && (
+                        <h1 className="text-[22px] font-bold tracking-tight cursor-pointer opacity-90 hover:opacity-100 transition-opacity leading-none"
+                            onClick={()=>setActiveModal('master')}>視 聽 班 表 系 統</h1>
+                        {lastUpdated&&(
                             <div className="flex items-center mt-1.5">
-                                {isRecentlyUpdated && <span className="w-1.5 h-1.5 rounded-full bg-[var(--weekend-pink)] mr-1.5 animate-pulse"></span>}
+                                {isRecentlyUpdated&&<span className="w-1.5 h-1.5 rounded-full bg-[var(--weekend-pink)] mr-1.5 animate-pulse"/>}
                                 <span className="text-[10px] text-white/40 font-bold tracking-wider">LAST UPDATED: {lastUpdated}</span>
                             </div>
                         )}
                     </div>
                 </div>
                 <div className="flex items-center gap-2.5 flex-shrink-0">
-                    <button onClick={()=>setActiveModal('notes')} className="w-8 h-8 rounded-full bg-white/[0.06] border border-white/10 flex items-center justify-center text-white/60 hover:bg-white/15 transition-all"><Icon name="bell" className="w-4 h-4"/></button>
+                    <button onClick={()=>setActiveModal('notes')} className="w-8 h-8 rounded-full bg-white/[0.06] border border-white/10 flex items-center justify-center text-white/60 hover:bg-white/15 hover:text-white transition-all">
+                        <Icon name="bell" className="w-4 h-4"/>
+                    </button>
                     <CalBtn onClick={openCal}/>
-                    <button onClick={()=>setActiveModal('range')} className="w-8 h-8 rounded-full bg-white/[0.06] border border-white/10 flex items-center justify-center text-white/60 hover:bg-white/15 transition-all"><Icon name="filter" className="w-4 h-4"/></button>
+                    <button onClick={()=>setActiveModal('range')} className="w-8 h-8 rounded-full bg-white/[0.06] border border-white/10 flex items-center justify-center text-white/60 hover:bg-white/15 transition-all">
+                        <Icon name="filter" className="w-4 h-4"/>
+                    </button>
                 </div>
             </header>
 
             <main className="flex-1 overflow-y-auto px-3 py-4 no-scrollbar pb-24 z-10 text-left">
+
+                {/* ── Timeline Strip ── */}
                 <div className="mac-glass sticky top-0 -mx-3 px-3 py-3 flex flex-col mb-5 z-20 shadow-xl rounded-b-2xl">
                     <div id="nav-scroll-container" className="flex gap-2.5 overflow-x-auto no-scrollbar pb-2 px-1">
-                        {allDates.map((d)=>{
+                        {allDates.map(d=>{
                             const active=dateIdx===d.absIdx, isW=d.w==='六'||d.w==='日';
                             return (
                                 <button key={d.fullKey} id={`nav-${d.fullKey}`} onClick={()=>goDate(d.absIdx,d.fullKey)}
@@ -637,9 +720,9 @@ const App = () => {
                             );
                         })}
                     </div>
-                    {hasNote && (
-                        <div className="mt-3 px-1 cursor-pointer" onClick={() => setActiveModal('notes')}>
-                            <div className="bg-[rgba(255,55,95,0.08)] border border-[rgba(255,55,95,0.2)] rounded-xl px-4 py-3.5 flex items-start gap-3 reminder-glow">
+                    {hasNote&&(
+                        <div className="mt-3 px-1 cursor-pointer" onClick={()=>setActiveModal('notes')}>
+                            <div className="bg-[rgba(255,55,95,0.08)] border border-[rgba(255,55,95,0.2)] rounded-xl px-4 py-3.5 flex items-start gap-3 reminder-glow hover:bg-[rgba(255,55,95,0.12)] transition-colors">
                                 <span className="text-[var(--reminder-pink)] mt-0.5 shrink-0"><Icon name="info"/></span>
                                 <div>
                                     <p className="text-[10px] font-bold uppercase text-[var(--reminder-pink)] tracking-wider mb-1">重要提醒</p>
@@ -650,13 +733,14 @@ const App = () => {
                     )}
                 </div>
 
+                {/* ── Venue Cards ── */}
                 <div className="grid gap-3 mb-6" style={{gridTemplateColumns:`repeat(${VENUES.length},1fr)`}}>
                     {VENUES.map(venue=>{
                         const sName=schedule.shows?.[curFk]?.[venue.id]||"";
                         return (
-                            <div key={venue.id} className="bg-[var(--mac-card)] rounded-[1.6rem] overflow-hidden flex flex-col border border-white/5 relative group">
-                                <div className="absolute inset-0 opacity-10 pointer-events-none" style={{background:`radial-gradient(circle at 50% 0%, ${venue.color} 0%, transparent 70%)`}}></div>
-                                <button onClick={()=>setQueryVenue(venue.id)} className="py-2.5 font-bold text-[19px] tracking-tight bg-white/[0.02] border-b border-white/5 z-10 transition-colors hover:bg-white/[0.06]" style={{color:venue.color}}>{venue.id}</button>
+                            <div key={venue.id} className="bg-[var(--mac-card)] rounded-[1.6rem] overflow-hidden flex flex-col border border-white/5 relative">
+                                <div className="absolute inset-0 opacity-10 pointer-events-none" style={{background:`radial-gradient(circle at 50% 0%, ${venue.color} 0%, transparent 70%)`}}/>
+                                <button onClick={()=>handleVenueClick(venue.id)} className="py-2.5 font-bold text-[19px] tracking-tight bg-white/[0.02] border-b border-white/5 z-10 transition-colors hover:bg-white/[0.06]" style={{color:venue.color}}>{venue.id}</button>
                                 <div className="px-2 py-1.5 min-h-[32px] flex items-center justify-center border-b border-white/5 bg-black/20 text-center overflow-hidden text-[12px] font-medium text-white/60 z-10">
                                     <div className="mq-wrap"><span className={sName.length>8?"mq-run":"truncate"}>{sName}</span></div>
                                 </div>
@@ -672,6 +756,7 @@ const App = () => {
                     })}
                 </div>
 
+                {/* ── 辦公 / 休假 ── */}
                 <div className="space-y-4">
                     <section className="bg-[var(--mac-card-light)] border border-white/5 rounded-[1.6rem] p-4">
                         <h4 className="text-orange-400 text-[13px] font-bold uppercase tracking-wider mb-3.5 flex items-center gap-2"><Icon name="brief"/> 辦公人員</h4>
@@ -684,14 +769,36 @@ const App = () => {
                 </div>
             </main>
 
-            {/* ⭐️ 彈窗狀態機實作 ⭐️ */}
-            <RangePickerModal show={activeModal==='range'} onClose={()=>setActiveModal(null)} currentRange={rangeConfig} setRange={setRangeConfig}/>
-            <NotesModal show={activeModal==='notes'} onClose={()=>setActiveModal(null)} visibleDates={visibleDates} schedule={schedule} goDate={goDate} handleBackToday={handleBackToday}/>
-            <MasterRosterModal show={activeModal==='master'} onClose={()=>setActiveModal(null)} visibleDates={visibleDates} schedule={schedule} aliasMap={aliasMap} todayK={todayK} handleStaffClick={handleStaffClick} handleBackToday={handleBackToday} openCal={openCal}/>
-            <QueryModal queryStaff={queryStaff} queryVenue={queryVenue} onClose={()=>{setQueryStaff(null);setQueryVenue(null);}} setQueryStaff={setQueryStaff} setQueryVenue={setQueryVenue} visibleDates={visibleDates} schedule={schedule} aliasMap={aliasMap} curFk={curFk} todayK={todayK} handleStaffClick={handleStaffClick} handleBackToday={handleBackToday} openCal={openCal}/>
-            {activeModal==='calendar'&&( <CalendarPicker allDates={allDates} onSelect={handleCalendarSelect} onClose={()=>setActiveModal(null)} calMonth={calMonth} setCalMonth={setCalMonth}/> )}
+            {/* ════ Modals — 保證同時只有一個存在 ════ */}
+            {activeModal==='range'&&(
+                <RangePickerModal onClose={closeModal} currentRange={rangeConfig} setRange={setRangeConfig}/>
+            )}
+            {activeModal==='notes'&&(
+                <NotesModal onClose={closeModal} visibleDates={visibleDates} schedule={schedule} goDate={goDate} handleBackToday={handleBackToday}/>
+            )}
+            {activeModal==='master'&&(
+                <MasterRosterModal onClose={closeModal} visibleDates={visibleDates} schedule={schedule} aliasMap={aliasMap} todayK={todayK} handleStaffClick={handleStaffClick} handleBackToday={handleBackToday} openCal={openCal}/>
+            )}
+            {(activeModal==='queryStaff'||activeModal==='queryVenue')&&(
+                <QueryModal
+                    queryStaff={queryStaff} queryVenue={queryVenue}
+                    onClose={closeModal}
+                    setQueryStaff={name=>{ if(name){setQueryTarget(name);setActiveModal('queryStaff');} else closeModal(); }}
+                    setQueryVenue={id=>{ if(id){setQueryTarget(id);setActiveModal('queryVenue');} else closeModal(); }}
+                    visibleDates={visibleDates} schedule={schedule} aliasMap={aliasMap}
+                    curFk={curFk} handleStaffClick={handleStaffClick}
+                    handleBackToday={handleBackToday} openCal={openCal}
+                />
+            )}
+            {activeModal==='calendar'&&(
+                <CalendarPicker
+                    allDates={allDates}
+                    onSelect={fk=>{ const i=allDates.findIndex(d=>d.fullKey===fk); if(i!==-1)goDate(i,fk); closeModal(); }}
+                    onClose={closeModal} calMonth={calMonth} setCalMonth={setCalMonth}
+                />
+            )}
 
-            <footer className="fixed bottom-0 left-0 right-0 py-2 flex flex-col items-center justify-center pointer-events-none text-[12px] font-bold tracking-[0.25em] text-white/50">
+            <footer className="fixed bottom-0 left-0 right-0 py-2 flex items-center justify-center pointer-events-none text-[10px] font-bold tracking-[0.25em] text-white/20">
                 <span>TPAC SCHEDULE SYSTEM | {APP_VERSION}</span>
             </footer>
         </div>
