@@ -71,7 +71,16 @@
 <script type="text/babel">
 const { useState, useEffect, useMemo, memo, useCallback, useRef } = React;
 
-const APP_VERSION = 'V12.6';
+const APP_VERSION = 'V13.0';
+
+const safeParse = (v)=>{
+ try{
+  return JSON.parse(v || '{}');
+ }catch(e){
+  console.warn("JSON parse fallback", e);
+  return {};
+ }
+};
 
 /* ── 核心組件定義 (修復 Today 圖示) ── */
 const Icon = memo(({ name, className="w-4 h-4" }) => {
@@ -192,16 +201,47 @@ const App = () => {
     const visibleDates = useMemo(()=>{ if(!allDates.length) return []; if(rangeConfig.type==='all') return allDates; const start=Math.max(0,dateIdx-(rangeConfig.past||7)); const end=Math.min(allDates.length,dateIdx+(rangeConfig.future||60)+1); return allDates.slice(start,end); },[allDates,dateIdx,rangeConfig]);
     
     const scrollTimers = useRef({});
-    const scrollTo = useCallback((fk,cid)=>{
-        if(scrollTimers.current[cid]) clearTimeout(scrollTimers.current[cid]);
-        scrollTimers.current[cid]=setTimeout(()=>{
-            const c=document.getElementById(cid); if(!c)return;
-            const idMap={"nav-scroll-container":`nav-${fk}`,"master-scroll-container":`mnav-${fk}`,"notes-scroll-container":`note-${fk}`};
-            const el=document.getElementById(idMap[cid]||`mrow-${fk}`); if(!el)return;
-            const horiz=cid==="nav-scroll-container"||cid==="master-scroll-container";
-            horiz?c.scrollTo({left:el.offsetLeft-c.offsetWidth/2+el.offsetWidth/2,behavior:'smooth'}) :c.scrollTo({top:el.offsetTop-c.offsetHeight/2+el.offsetHeight/2,behavior:'smooth'});
-        },50);
-    },[]);
+    
+const scrollTo = useCallback((fk,cid)=>{
+
+ requestAnimationFrame(()=>{
+
+  const container = document.getElementById(cid);
+  if(!container) return;
+
+  const idMap={
+   "nav-scroll-container":`nav-${fk}`,
+   "master-scroll-container":`mnav-${fk}`,
+   "notes-scroll-container":`note-${fk}`
+  };
+
+  const el=document.getElementById(idMap[cid]||`mrow-${fk}`);
+  if(!el) return;
+
+  const horizontal =
+   cid==="nav-scroll-container" ||
+   cid==="master-scroll-container";
+
+  if(horizontal){
+
+   container.scrollTo({
+    left: el.offsetLeft - container.offsetWidth/2 + el.offsetWidth/2,
+    behavior:'smooth'
+   });
+
+  }else{
+
+   container.scrollTo({
+    top: el.offsetTop - container.offsetHeight/2 + el.offsetHeight/2,
+    behavior:'smooth'
+   });
+
+  }
+
+ });
+
+},[]);
+
     const allScrollTo = useCallback(fk=>{ ["nav-scroll-container","master-scroll-container","venue-scroll-container","staff-scroll-container","notes-scroll-container"].forEach(id=>scrollTo(fk,id)); },[scrollTo]);
     const goDate = useCallback((absIdx,fk)=>{ setDateIdx(absIdx); allScrollTo(fk); },[allScrollTo]);
     const handleBackToday = useCallback(()=>{ const tK=formatK(new Date()); const i=allDates.findIndex(d=>d.fullKey===tK); if(i!==-1) goDate(i,tK); },[allDates,goDate]);
@@ -222,17 +262,56 @@ const App = () => {
     const handleVenueClick = useCallback(id=>{ setQueryTarget(id); setActiveModal('queryVenue'); },[]);
     const closeModal = useCallback(()=>{ setActiveModal(null); setPrevModal(null); },[]);
 
-    useEffect(()=>{
-        const t=setInterval(()=>{
-            if(!window.isFirebaseReady||!window.Firebase)return; clearInterval(t);
-            const app=Firebase.getApps().length===0?Firebase.initializeApp(FIREBASE_CONFIG):Firebase.getApp();
-            Firebase.signInAnonymously(Firebase.getAuth(app)).then(()=>{ Firebase.onAuthStateChanged(Firebase.getAuth(app),async u=>{ if(!u)return; setUser(u); const s=await Firebase.getDoc(Firebase.doc(Firebase.getFirestore(app),'artifacts',APP_ID,'public','data','configs','name_mapping')); if(s.exists())setAliasMap(s.data().maps||{}); }); }).catch(()=>setErrorMsg("登入系統失敗，請重新整理"));
-        },200); return()=>clearInterval(t);
-    },[]);
+    
+useEffect(()=>{
+
+ const initFirebase = async ()=>{
+
+  try{
+
+   if(!window.Firebase) return;
+
+   const app = Firebase.getApps().length===0
+    ? Firebase.initializeApp(FIREBASE_CONFIG)
+    : Firebase.getApp();
+
+   const auth = Firebase.getAuth(app);
+
+   await Firebase.signInAnonymously(auth);
+
+   Firebase.onAuthStateChanged(auth, async (u)=>{
+
+    if(!u) return;
+
+    setUser(u);
+
+    const db = Firebase.getFirestore(app);
+
+    const snap = await Firebase.getDoc(
+      Firebase.doc(db,'artifacts',APP_ID,'public','data','configs','name_mapping')
+    );
+
+    if(snap.exists()){
+      setAliasMap(snap.data().maps || {});
+    }
+
+   });
+
+  }catch(e){
+   console.error(e);
+   setErrorMsg("Firebase 初始化失敗，請重新整理");
+  }
+
+ };
+
+ initFirebase();
+
+},[]);
+
 
     useEffect(()=>{
         if(!user)return; const db=Firebase.getFirestore();
-        return Firebase.onSnapshot( Firebase.doc(db,'artifacts',APP_ID,'public','data','rosters','master'), snap=>{ if(!snap.exists()){ setErrorMsg("找不到班表資料庫，請聯絡管理員"); return; } const data=snap.data(), roster=JSON.parse(data.roster||'{}'), statuses=JSON.parse(data.statuses||'{}'), shows=JSON.parse(data.shows||'{}'), notes=JSON.parse(data.notes||'{}'); if(data.lastUpdated){ const d=new Date(data.lastUpdated), fmtKey=`${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; setLastUpdated(fmtKey); seenUpdateRef.current = fmtKey; setIsRecentlyUpdated(fmtKey !== (localStorage.getItem('tpac_seen_update') || '')); } const keys=Object.keys(roster).sort(), sd=keys.map((k,idx)=>{ const [yy,mm,dd]=k.split('/').map(Number), o=new Date(yy,mm-1,dd); return{d:`${mm}/${dd}`,w:['日','一','二','三','四','五','六'][o.getDay()],fullKey:k,absIdx:idx}; }); setSchedule({roster,statuses,shows,notes}); setAllDates(sd); setIsUnlocked(true); const tK=formatK(new Date()), mi=keys.indexOf(tK); if(mi!==-1){setDateIdx(mi);setTimeout(()=>scrollTo(tK,"nav-scroll-container"),500);} }, ()=>setErrorMsg("資料同步失敗，請重新整理") );
+        return Firebase.onSnapshot( Firebase.doc(db,'artifacts',APP_ID,'public','data','rosters','master'), snap=>{ if(!snap.exists()){ setErrorMsg("找不到班表資料庫，請聯絡管理員"); return; } const data=snap.data(), roster=safeParse(data.roster), statuses=safeParse(data.statuses), shows=safeParse(data.shows), notes=safeParse(data.notes); if(data.lastUpdated){ const d=new Date(data.lastUpdated), fmtKey=`${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; setLastUpdated(fmtKey); seenUpdateRef.current = fmtKey; setIsRecentlyUpdated(fmtKey !== (localStorage.getItem('tpac_seen_update') || '')); } const keys=Object.keys(roster).sort(), sd=keys.map((k,idx)=>{ const [yy,mm,dd]=k.split('/').map(Number), o=new Date(yy,mm-1,dd); return{d:`${mm}/${dd}`,w:['日','一','二','三','四','五','六'][o.getDay()],fullKey:k,absIdx:idx}; }); setSchedule({roster,statuses,shows,notes}); setAllDates(sd); setIsUnlocked(true); const tK=formatK(new Date()), mi=keys.indexOf(tK); if(mi!==-1){setDateIdx(mi);setTimeout(()=>scrollTo(tK,"nav-scroll-container"),500);} }, ()=>setErrorMsg("資料同步失敗，請重新整理") );
     },[user,scrollTo]);
 
     /* ⭐️ 修正 3：加入 queryTarget 確保對位觸發 ⭐️ */
