@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>視聽班表系統</title>
+    <title>視聽班表系統 | V11.2</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -92,7 +92,7 @@
 <script type="text/babel">
 const { useState, useEffect, useMemo, memo, useCallback, useRef } = React;
 
-const APP_VERSION = 'V11.0';
+const APP_VERSION = 'V11.2';
 
 /* ══════════════════════════════════════════════════════════
    CENTRAL CONFIG
@@ -125,7 +125,7 @@ const FIREBASE_CONFIG = {
 };
 const APP_ID = "team-schedule-viewer";
 
-/* ── 防彈 Date 工具：手動拆解，100% 跨瀏覽器安全 ── */
+/* ── 防彈 Date 工具 ── */
 const formatK = d => `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
 const parseK = k => { const [y,m,d] = k.split('/').map(Number); return new Date(y, m-1, d); };
 
@@ -178,21 +178,26 @@ const CalBtn = ({ onClick }) => (
    ════════════════════════════════════════════════════════════ */
 const RangePickerModal = memo(({ onClose, currentRange, setRange }) => {
     const [cP, setCP] = useState(currentRange.past);
-    const [cF, setCF] = useState(currentRange.future);
-    useEffect(()=>{ setCP(currentRange.past); setCF(currentRange.future); },[currentRange]);
+    /* ⭐️ 修正：預設值強制為 60 ⭐️ */
+    const [cF, setCF] = useState(currentRange.future === 30 ? 60 : currentRange.future);
+
+    useEffect(()=>{ 
+        setCP(currentRange.past); 
+        setCF(currentRange.future); 
+    },[currentRange]);
+
     return (
         <div className="fixed inset-0 z-[3000] flex items-center justify-center p-6 bg-black/70 backdrop-blur-sm" onClick={onClose}>
             <div className="animate-window bg-[rgba(30,30,32,0.95)] border border-white/10 w-full max-w-sm rounded-[2.5rem] p-6 shadow-2xl flex flex-col gap-3" onClick={e=>e.stopPropagation()}>
                 <h3 className="text-xl font-black tracking-widest mb-2 text-center">載入範圍設定</h3>
-                <button onClick={()=>{ setRange({type:'default',past:7,future:30}); onClose(); }}
+                <button onClick={()=>{ setRange({type:'default',past:7,future:60}); onClose(); }}
                     className={`w-full py-3.5 rounded-2xl border flex flex-col items-center justify-center transition-all ${currentRange.type==='default'?'bg-[var(--mac-blue)] border-blue-400':'bg-white/5 border-white/10 hover:bg-white/10'}`}>
                     <span className="font-bold text-[15px]">標準效能模式 (推薦)</span>
-                    <span className="text-[11px] opacity-60 mt-1">載入 前 7 天 ➔ 後 30 天</span>
+                    <span className="text-[11px] opacity-60 mt-1">載入 前 7 天 ➔ 後 60 天</span>
                 </button>
                 <button onClick={()=>{ setRange({type:'all'}); onClose(); }}
                     className={`w-full py-3.5 rounded-2xl border flex flex-col items-center justify-center transition-all ${currentRange.type==='all'?'bg-rose-600/80 border-rose-400':'bg-white/5 border-white/10 hover:bg-rose-500/20'}`}>
                     <span className="font-bold text-[15px]">載入全年度資料</span>
-                    <span className="text-[10px] opacity-80 mt-1 text-rose-200">⚠️ 效能警告：開啟週表可能產生些微卡頓</span>
                 </button>
                 <div className={`mt-2 p-4 rounded-2xl border flex flex-col items-center gap-3 transition-all ${currentRange.type==='custom'?'border-orange-400 bg-orange-500/10':'border-white/10 bg-white/5'}`}>
                     <span className={`font-bold text-[14px] ${currentRange.type==='custom'?'text-orange-400':'text-white'}`}>⚙️ 自訂滑動視窗範圍</span>
@@ -266,8 +271,8 @@ const NotesModal = memo(({ onClose, visibleDates, schedule, goDate, handleBackTo
     return (
         <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={onClose}>
             <div className="animate-window bg-[rgba(30,30,32,0.98)] border border-white/10 w-full max-w-md rounded-[2.2rem] shadow-2xl flex flex-col max-h-[85vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
-                <div className="p-3.5 border-b border-white/10 bg-white/[0.04] flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 w-[100px] shrink-0">
+                <div className="p-3 border-b border-white/10 bg-white/[0.04] flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5 shrink-0">
                         <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:bg-white/20 transition-all text-xl">×</button>
                         <button onClick={handleBackToday} className="btn-today">Today</button>
                     </div>
@@ -276,14 +281,13 @@ const NotesModal = memo(({ onClose, visibleDates, schedule, goDate, handleBackTo
                             <Icon name="bell" className="w-5 h-5"/> 提醒總覽
                         </h3>
                     </div>
-                    <div className="w-[100px]"/>
+                    <div className="w-[80px] shrink-0" />
                 </div>
                 <div className="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar">
                     {notesList.length===0 ? (
                         <div className="text-center text-white/40 py-10 font-medium text-[14px]">在此載入範圍內，無任何提醒事項</div>
                     ) : notesList.map(d=>{
                         const note = schedule.notes[d.fullKey];
-                        /* ── parseK：防彈 Date 解析 ── */
                         const isPast = parseK(d.fullKey) < today;
                         return (
                             <button key={d.fullKey}
@@ -401,8 +405,10 @@ const QueryModal = memo(({ queryStaff, queryVenue, onClose, setQueryStaff, setQu
     return (
         <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/70" onClick={onClose}>
             <div className="animate-window bg-[rgba(28,28,30,0.98)] border border-white/10 w-full max-w-lg rounded-[2.2rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col max-h-[85vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
-                <div className="p-3.5 border-b border-white/10 bg-white/[0.04] flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 w-[100px] shrink-0">
+                
+                {/* ⭐️ 修正：移除 w-[100px] 鎖定，讓中間空間極大化 ⭐️ */}
+                <div className="p-3 border-b border-white/10 bg-white/[0.04] flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5 shrink-0">
                         <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:bg-white/20 transition-all text-xl">×</button>
                         <button onClick={handleBackToday} className="btn-today">Today</button>
                     </div>
@@ -411,7 +417,7 @@ const QueryModal = memo(({ queryStaff, queryVenue, onClose, setQueryStaff, setQu
                             <div className="flex bg-black/40 rounded-2xl p-1 border border-white/5 w-full max-w-sm">
                                 {VENUES.map(v=>(
                                     <button key={v.id} onClick={()=>setQueryVenue(v.id)}
-                                        className={`flex-1 py-1.5 rounded-xl text-[15px] font-bold tracking-wider transition-all ${queryVenue===v.id?'bg-white/15 shadow-sm':'text-white/30 hover:text-white/70 hover:bg-white/5'}`}
+                                        className={`flex-1 py-1.5 rounded-xl text-[14px] sm:text-[15px] font-bold tracking-wider transition-all ${queryVenue===v.id?'bg-white/15 shadow-sm':'text-white/30 hover:text-white/70 hover:bg-white/5'}`}
                                         style={{color:queryVenue===v.id?v.color:undefined}}>{v.id}</button>
                                 ))}
                             </div>
@@ -419,8 +425,9 @@ const QueryModal = memo(({ queryStaff, queryVenue, onClose, setQueryStaff, setQu
                             <h3 className="text-[17px] font-bold tracking-tight truncate px-2">{aliasMap[queryStaff]||queryStaff}</h3>
                         )}
                     </div>
-                    <div className="w-[100px] flex justify-end shrink-0"><CalBtn onClick={openCal}/></div>
+                    <div className="shrink-0 flex justify-end"><CalBtn onClick={openCal}/></div>
                 </div>
+
                 <div id={queryVenue?"venue-scroll-container":"staff-scroll-container"} className="flex-1 overflow-y-auto p-4 space-y-3.5 no-scrollbar scroll-smooth">
                     {visibleDates.map(d=>{
                         const isS=d.fullKey===curFk, isW=d.w==='六'||d.w==='日';
@@ -488,7 +495,6 @@ const QueryModal = memo(({ queryStaff, queryVenue, onClose, setQueryStaff, setQu
    MAIN APP
    ════════════════════════════════════════════════════════════ */
 const App = () => {
-    /* ── Firebase / Data 狀態 ── */
     const [allDates,setAllDates]   = useState([]);
     const [schedule,setSchedule]   = useState({roster:{},statuses:{},shows:{},notes:{}});
     const [aliasMap,setAliasMap]   = useState({});
@@ -498,32 +504,34 @@ const App = () => {
     const [errorMsg,setErrorMsg]     = useState(null);
     const [user,setUser]             = useState(null);
 
-    /* ── UI / 導航狀態 ── */
     const [dateIdx,setDateIdx] = useState(0);
-
-    /* ── ⭐️ activeModal 狀態機：防彈窗重疊 ── */
-    /* 可能值: null | 'master' | 'calendar' | 'range' | 'notes' | 'queryStaff' | 'queryVenue' */
     const [activeModal,setActiveModal] = useState(null);
-    const [queryTarget,setQueryTarget] = useState(null); // staff name or venue id
+    const [queryTarget,setQueryTarget] = useState(null);
     const [calMonth,setCalMonth] = useState(()=>{const n=new Date();return{y:n.getFullYear(),m:n.getMonth()};});
 
-    /* ── LocalStorage 記憶載入範圍 ── */
+    /* ── ⭐️ 強化後的 LocalStorage 讀取邏輯 (解決黑畫面風險) ⭐️ ── */
     const [rangeConfig,setRangeConfig] = useState(()=>{
-        try{ const s=localStorage.getItem('tpac_range'); if(s) return JSON.parse(s); }catch(e){}
-        return {type:'default',past:7,future:30};
+        const fallback = {type:'default',past:7,future:60};
+        try{ 
+            const s=localStorage.getItem('tpac_range_v11'); 
+            if(s){
+                const parsed = JSON.parse(s);
+                // 驗證屬性是否存在
+                if (parsed && typeof parsed.future === 'number') return parsed;
+            }
+        }catch(e){}
+        return fallback;
     });
-    useEffect(()=>{ localStorage.setItem('tpac_range',JSON.stringify(rangeConfig)); },[rangeConfig]);
+    useEffect(()=>{ localStorage.setItem('tpac_range_v11',JSON.stringify(rangeConfig)); },[rangeConfig]);
 
-    /* ── 可視範圍 ── */
     const visibleDates = useMemo(()=>{
         if(!allDates.length) return [];
         if(rangeConfig.type==='all') return allDates;
-        const start=Math.max(0,dateIdx-rangeConfig.past);
-        const end=Math.min(allDates.length,dateIdx+rangeConfig.future+1);
+        const start=Math.max(0,dateIdx-(rangeConfig.past||7));
+        const end=Math.min(allDates.length,dateIdx+(rangeConfig.future||60)+1);
         return allDates.slice(start,end);
     },[allDates,dateIdx,rangeConfig]);
 
-    /* ── 滾動工具 ── */
     const scrollTimers = useRef({});
     const scrollTo = useCallback((fk,cid)=>{
         if(scrollTimers.current[cid]) clearTimeout(scrollTimers.current[cid]);
@@ -548,13 +556,11 @@ const App = () => {
     },[allDates,goDate]);
     const openCal = useCallback(()=>{ setCalMonth({y:new Date().getFullYear(),m:new Date().getMonth()}); setActiveModal('calendar'); },[]);
 
-    /* ── ⭐️ Swipe 手勢：左右滑動主畫面切換日期 ── */
+    /* ── Swipe 手勢 ── */
     const swipeRef = useRef({});
-    const handleTouchStart = useCallback(e=>{
-        swipeRef.current = { x:e.touches[0].clientX, y:e.touches[0].clientY };
-    },[]);
+    const handleTouchStart = useCallback(e=>{ swipeRef.current = { x:e.touches[0].clientX, y:e.touches[0].clientY }; },[]);
     const handleTouchEnd = useCallback(e=>{
-        if(activeModal) return; // 有彈窗時不觸發
+        if(activeModal) return;
         const dx = e.changedTouches[0].clientX - swipeRef.current.x;
         const dy = Math.abs(e.changedTouches[0].clientY - swipeRef.current.y);
         if(Math.abs(dx)>60 && dy<40){
@@ -564,18 +570,10 @@ const App = () => {
         }
     },[allDates,dateIdx,goDate,activeModal]);
 
-    /* ── Staff / Venue 查詢 ── */
-    const handleStaffClick = useCallback(name=>{
-        setQueryTarget(name);
-        setActiveModal('queryStaff');
-    },[]);
-    const handleVenueClick = useCallback(id=>{
-        setQueryTarget(id);
-        setActiveModal('queryVenue');
-    },[]);
+    const handleStaffClick = useCallback(name=>{ setQueryTarget(name); setActiveModal('queryStaff'); },[]);
+    const handleVenueClick = useCallback(id=>{ setQueryTarget(id); setActiveModal('queryVenue'); },[]);
     const closeModal = useCallback(()=>{ setActiveModal(null); },[]);
 
-    /* ── Firebase init ── */
     useEffect(()=>{
         const t=setInterval(()=>{
             if(!window.isFirebaseReady||!window.Firebase)return;
@@ -592,14 +590,12 @@ const App = () => {
         return()=>clearInterval(t);
     },[]);
 
-    /* ── 連線逾時保護 ── */
     useEffect(()=>{
         if(isUnlocked)return;
         const t=setTimeout(()=>setErrorMsg("網路連線逾時，請檢查連線或重新整理頁面"),8000);
         return()=>clearTimeout(t);
     },[isUnlocked]);
 
-    /* ── Firestore live sync ── */
     useEffect(()=>{
         if(!user)return;
         const db=Firebase.getFirestore();
@@ -617,7 +613,6 @@ const App = () => {
                 }
                 const keys=Object.keys(roster).sort();
                 const sd=keys.map((k,idx)=>{
-                    /* ── parseK：防彈 Date 解析 ── */
                     const [yy,mm,dd]=k.split('/').map(Number);
                     const o=new Date(yy,mm-1,dd);
                     return{d:`${mm}/${dd}`,w:['日','一','二','三','四','五','六'][o.getDay()],fullKey:k,absIdx:idx};
@@ -631,7 +626,6 @@ const App = () => {
         );
     },[user,scrollTo]);
 
-    /* ── Modal 開啟時自動滾動 ── */
     useEffect(()=>{
         if(!allDates.length||!allDates[dateIdx])return;
         const fk=allDates[dateIdx].fullKey;
@@ -640,19 +634,13 @@ const App = () => {
         if(activeModal==='queryStaff') scrollTo(fk,"staff-scroll-container");
     },[activeModal,allDates,dateIdx,scrollTo]);
 
-    /* ── 當日資料 ── */
     const dData = useMemo(()=>{
         if(!allDates.length||!allDates[dateIdx]) return null;
         const fk=allDates[dateIdx].fullKey, rawR=schedule.roster[fk]||{}, rawS=schedule.statuses[fk]||{};
-        const s={
-            ...Object.fromEntries(VENUE_IDS.map(vid=>[vid,Object.fromEntries(SHIFTS.map(sh=>[sh,[]]))])),
-            "辦公":[], "休假":[],
-        };
+        const s={ ...Object.fromEntries(VENUE_IDS.map(vid=>[vid,Object.fromEntries(SHIFTS.map(sh=>[sh,[]]))])), "辦公":[], "休假":[], };
         STAFF_ORDER.forEach(n=>{
             let on=false;
-            VENUE_IDS.forEach(vid=>{
-                if(rawR[vid]?.[n]){ const sh=(rawR[vid][n].shift||SHIFTS[0]).toUpperCase(); if(s[vid][sh]){s[vid][sh].push(n);on=true;} }
-            });
+            VENUE_IDS.forEach(vid=>{ if(rawR[vid]?.[n]){ const sh=(rawR[vid][n].shift||SHIFTS[0]).toUpperCase(); if(s[vid][sh]){s[vid][sh].push(n);on=true;} } });
             if(!on){ (rawS[n]||"").match(/辦公|其他/)?s["辦公"].push(n):s["休假"].push(n); }
         });
         return{s};
@@ -660,16 +648,13 @@ const App = () => {
 
     if(!isUnlocked) return (
         <div className="h-screen bg-[#121213] flex flex-col items-center justify-center text-white/40 text-[13px] font-medium tracking-widest gap-4">
-            {errorMsg
-                ?<span className="text-rose-500 font-bold px-6 text-center leading-relaxed animate-pulse">{errorMsg}</span>
-                :<span className="animate-pulse">CONNECTING...</span>}
+            {errorMsg?<span className="text-rose-500 font-bold px-6 text-center leading-relaxed animate-pulse">{errorMsg}</span>:<span className="animate-pulse">CONNECTING...</span>}
         </div>
     );
 
     const todayK=formatK(new Date()), curFk=allDates.length?allDates[dateIdx]?.fullKey:todayK;
     const todayNote=schedule.notes?.[curFk], hasNote=!!(todayNote?.trim());
 
-    /* ── QueryModal props 計算 ── */
     const queryStaff = activeModal==='queryStaff' ? queryTarget : null;
     const queryVenue = activeModal==='queryVenue' ? queryTarget : null;
 
@@ -678,7 +663,6 @@ const App = () => {
             onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
             <div className="aura-bg"/>
 
-            {/* ── Header ── */}
             <header className="mac-glass pt-12 pb-4 px-5 flex items-center justify-between shrink-0 z-50">
                 <div className="flex items-center gap-4">
                     <button onClick={handleBackToday} className="btn-today flex-shrink-0">Today</button>
@@ -694,7 +678,7 @@ const App = () => {
                     </div>
                 </div>
                 <div className="flex items-center gap-2.5 flex-shrink-0">
-                    <button onClick={()=>setActiveModal('notes')} className="w-8 h-8 rounded-full bg-white/[0.06] border border-white/10 flex items-center justify-center text-white/60 hover:bg-white/15 hover:text-white transition-all">
+                    <button onClick={()=>setActiveModal('notes')} className="w-8 h-8 rounded-full bg-white/[0.06] border border-white/10 flex items-center justify-center text-white/60 hover:bg-white/15 transition-all">
                         <Icon name="bell" className="w-4 h-4"/>
                     </button>
                     <CalBtn onClick={openCal}/>
@@ -705,8 +689,6 @@ const App = () => {
             </header>
 
             <main className="flex-1 overflow-y-auto px-3 py-4 no-scrollbar pb-24 z-10 text-left">
-
-                {/* ── Timeline Strip ── */}
                 <div className="mac-glass sticky top-0 -mx-3 px-3 py-3 flex flex-col mb-5 z-20 shadow-xl rounded-b-2xl">
                     <div id="nav-scroll-container" className="flex gap-2.5 overflow-x-auto no-scrollbar pb-2 px-1">
                         {allDates.map(d=>{
@@ -733,7 +715,6 @@ const App = () => {
                     )}
                 </div>
 
-                {/* ── Venue Cards ── */}
                 <div className="grid gap-3 mb-6" style={{gridTemplateColumns:`repeat(${VENUES.length},1fr)`}}>
                     {VENUES.map(venue=>{
                         const sName=schedule.shows?.[curFk]?.[venue.id]||"";
@@ -756,7 +737,6 @@ const App = () => {
                     })}
                 </div>
 
-                {/* ── 辦公 / 休假 ── */}
                 <div className="space-y-4">
                     <section className="bg-[var(--mac-card-light)] border border-white/5 rounded-[1.6rem] p-4">
                         <h4 className="text-orange-400 text-[13px] font-bold uppercase tracking-wider mb-3.5 flex items-center gap-2"><Icon name="brief"/> 辦公人員</h4>
@@ -769,36 +749,18 @@ const App = () => {
                 </div>
             </main>
 
-            {/* ════ Modals — 保證同時只有一個存在 ════ */}
-            {activeModal==='range'&&(
-                <RangePickerModal onClose={closeModal} currentRange={rangeConfig} setRange={setRangeConfig}/>
-            )}
-            {activeModal==='notes'&&(
-                <NotesModal onClose={closeModal} visibleDates={visibleDates} schedule={schedule} goDate={goDate} handleBackToday={handleBackToday}/>
-            )}
-            {activeModal==='master'&&(
-                <MasterRosterModal onClose={closeModal} visibleDates={visibleDates} schedule={schedule} aliasMap={aliasMap} todayK={todayK} handleStaffClick={handleStaffClick} handleBackToday={handleBackToday} openCal={openCal}/>
-            )}
+            {activeModal==='range'&&( <RangePickerModal onClose={closeModal} currentRange={rangeConfig} setRange={setRangeConfig}/> )}
+            {activeModal==='notes'&&( <NotesModal onClose={closeModal} visibleDates={visibleDates} schedule={schedule} goDate={goDate} handleBackToday={handleBackToday}/> )}
+            {activeModal==='master'&&( <MasterRosterModal onClose={closeModal} visibleDates={visibleDates} schedule={schedule} aliasMap={aliasMap} todayK={todayK} handleStaffClick={handleStaffClick} handleBackToday={handleBackToday} openCal={openCal}/> )}
             {(activeModal==='queryStaff'||activeModal==='queryVenue')&&(
-                <QueryModal
-                    queryStaff={queryStaff} queryVenue={queryVenue}
-                    onClose={closeModal}
+                <QueryModal queryStaff={queryStaff} queryVenue={queryVenue} onClose={closeModal}
                     setQueryStaff={name=>{ if(name){setQueryTarget(name);setActiveModal('queryStaff');} else closeModal(); }}
                     setQueryVenue={id=>{ if(id){setQueryTarget(id);setActiveModal('queryVenue');} else closeModal(); }}
-                    visibleDates={visibleDates} schedule={schedule} aliasMap={aliasMap}
-                    curFk={curFk} handleStaffClick={handleStaffClick}
-                    handleBackToday={handleBackToday} openCal={openCal}
-                />
+                    visibleDates={visibleDates} schedule={schedule} aliasMap={aliasMap} curFk={curFk} handleStaffClick={handleStaffClick} handleBackToday={handleBackToday} openCal={openCal} />
             )}
-            {activeModal==='calendar'&&(
-                <CalendarPicker
-                    allDates={allDates}
-                    onSelect={fk=>{ const i=allDates.findIndex(d=>d.fullKey===fk); if(i!==-1)goDate(i,fk); closeModal(); }}
-                    onClose={closeModal} calMonth={calMonth} setCalMonth={setCalMonth}
-                />
-            )}
+            {activeModal==='calendar'&&( <CalendarPicker allDates={allDates} onSelect={fk=>{ const i=allDates.findIndex(d=>d.fullKey===fk); if(i!==-1)goDate(i,fk); closeModal(); }} onClose={closeModal} calMonth={calMonth} setCalMonth={setCalMonth} /> )}
 
-            <footer className="fixed bottom-0 left-0 right-0 py-2 flex items-center justify-center pointer-events-none text-[10px] font-bold tracking-[0.25em] text-white/20">
+            <footer className="fixed bottom-0 left-0 right-0 py-2 flex items-center justify-center pointer-events-none text-[10px] font-bold tracking-[0.25em] text-white/50">
                 <span>TPAC SCHEDULE SYSTEM | {APP_VERSION}</span>
             </footer>
         </div>
