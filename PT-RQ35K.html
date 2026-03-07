@@ -3,332 +3,619 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PT-RQ35K 選單導覽 V6.1 (全內容實機同步版)</title>
+    <title>PT-RQ35K 選單導覽 V6</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
     <style>
-        :root { 
-            --navy-dark: #050505; --card-bg: #1a1a1a; --gold: #d4af37; 
-            --text-main: #ffffff; --text-sub: #d1d1d1; --active-blue: #007aff; --sop-green: #28cd41; --danger: #ff3b30;
+        :root {
+            --bg:       #0e0e0f;
+            --glass:    rgba(28,28,30,0.75);
+            --glass-2:  rgba(38,38,40,0.6);
+            --border:   rgba(255,255,255,0.07);
+            --gold:     #d4af37;
+            --gold-dim: rgba(212,175,55,0.15);
+            --blue:     #0A84FF;
+            --green:    #30D158;
+            --red:      #FF453A;
+            --text:     #ffffff;
+            --text-sub: rgba(255,255,255,0.45);
+            --text-dim: rgba(255,255,255,0.18);
         }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        html, body { 
-            background: var(--navy-dark); margin: 0; padding: 0; 
-            color: var(--text-main); font-family: "Inter", "PingFang TC", "Microsoft JhengHei", sans-serif; 
-            height: 100vh; height: 100svh; overflow: hidden; 
+        * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+        html,body {
+            background:var(--bg); margin:0; padding:0;
+            color:var(--text); font-family:'Inter','Noto Sans TC',sans-serif;
+            height:100vh; height:100svh; overflow:hidden;
+            -webkit-font-smoothing:antialiased; letter-spacing:-0.01em;
         }
-        .main-wrapper { width: 100%; height: 100%; display: flex; flex-direction: column; }
-        header { 
-            background: #000; color: var(--gold); padding: 12px 15px; border-bottom: 2px solid var(--gold); 
-            flex-shrink: 0; display: flex; justify-content: space-between; align-items: center;
+
+        /* ── Aura background ── */
+        .aura {
+            position:fixed; inset:0; pointer-events:none; z-index:0;
+            background:
+                radial-gradient(ellipse at 10% 0%, rgba(212,175,55,0.07) 0%, transparent 45%),
+                radial-gradient(ellipse at 90% 100%, rgba(10,132,255,0.06) 0%, transparent 50%);
         }
-        .header-title { font-weight: 900; letter-spacing: 2px; font-size: 14px; }
-        .header-team { font-weight: 400; font-size: 10px; opacity: 0.8; letter-spacing: 1px; }
-        .top-fixed-area { background: #111; border-bottom: 1px solid #222; flex-shrink: 0; z-index: 1000; }
-        .search-container { padding: 12px 15px 8px 15px; position: relative; display: flex; align-items: center; }
-        #searchInput { width: 100%; padding: 14px 45px 14px 14px; border-radius: 10px; border: 1px solid #444; background: #222; color: white; font-size: 16px; outline: none; transition: 0.3s; }
-        .clear-btn { position: absolute; right: 25px; width: 24px; height: 24px; background: #444; color: #fff; border-radius: 50%; border: none; cursor: pointer; display: none; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; }
-        .clear-btn.active { display: flex; }
-        .tab-group { display: flex; gap: 5px; padding: 0 15px 12px 15px; }
-        .tab-btn { flex: 1; padding: 10px 5px; border-radius: 8px; border: 1px solid #333; background: #1a1a1a; color: #888; cursor: pointer; font-weight: bold; font-size: 14px; }
-        .tab-btn.active { background: var(--active-blue); color: white; border-color: var(--active-blue); }
-        .tab-btn.gold.active { background: var(--gold); color: black; border-color: var(--gold); }
-        .tab-btn.red.active { background: var(--danger); color: white; border-color: var(--danger); }
-        .content-container { flex: 1; overflow-y: auto; padding: 12px 12px 100px 12px; scroll-behavior: smooth; }
-        .view-section { display: none; width: 100%; }
-        .view-section.active { display: block; }
-        .node { margin-bottom: 8px; width: 100%; }
-        .node.hidden { display: none; }
-        .label { cursor: pointer; padding: 15px 12px 15px 42px; border-radius: 12px; background: var(--card-bg); border: 1px solid #2a2a2a; display: flex; align-items: center; position: relative; }
-        .label::before { content: '▶'; font-size: 9px; position: absolute; left: 18px; color: var(--gold); transition: 0.2s; }
-        .node.expanded > .label::before { transform: rotate(90deg); }
-        .node.leaf > .label::before { content: '○'; color: #666; }
-        .cn-text { font-weight: 900; font-size: 15px; color: #fff; margin-right: 8px; }
-        .en-text { font-weight: 300; font-size: 12px; color: var(--gold); opacity: 0.8; } 
-        .options-box { margin: 8px 0 8px 30px; background: #000; border: 1px dashed #444; border-radius: 10px; padding: 12px; display: none; }
-        .node.expanded > .options-box { display: block; }
-        .option-item { color: #aaa; font-size: 13px; margin-bottom: 4px; display: flex; align-items: center; }
-        .option-item::before { content: '•'; color: var(--gold); margin-right: 8px; }
-        .children { margin-left: 18px; display: none; border-left: 2px solid #333; padding-left: 12px; margin-top: 8px; }
-        .node.expanded > .children { display: block; }
-        .highlight { background: #3d3400 !important; border: 1.5px solid var(--gold) !important; box-shadow: 0 0 15px rgba(212,175,55,0.3); }
-        .card { background: #1a1a1a; padding: 18px; border-radius: 15px; margin-bottom: 12px; border-left: 6px solid var(--sop-green); line-height: 1.6; font-size: 15px; border-top: 1px solid #333; }
-        .fault-card { border-left-color: var(--danger); background: #201516; }
-        .step-tag { background: var(--sop-green); color: black; padding: 2px 8px; border-radius: 5px; margin-right: 10px; font-weight: 900; font-size: 11px; }
-        .path-hint { color: var(--gold); font-size: 13px; display: block; margin-top: 8px; font-family: monospace; font-weight: bold; }
-        h3 { color: var(--gold); border-bottom: 1px solid #333; padding-bottom: 10px; margin-top: 0; font-size: 19px; font-style: italic; }
-        .fault-q { color: var(--danger); font-weight: 900; display: block; margin-bottom: 8px; font-size: 16px; }
-        .badge { font-size: 11px; color: var(--gold); background: rgba(212,175,55,0.1); padding: 1px 6px; border-radius: 4px; margin-left: 8px; border: 1px solid rgba(212,175,55,0.2); }
+
+        .shell { position:relative; z-index:1; width:100%; height:100%; display:flex; flex-direction:column; }
+
+        /* ── Header ── */
+        header {
+            background:rgba(18,18,20,0.85); backdrop-filter:blur(40px) saturate(160%);
+            border-bottom:0.5px solid var(--border);
+            padding:48px 18px 14px; flex-shrink:0;
+            display:flex; justify-content:space-between; align-items:flex-end;
+        }
+        .hd-left { display:flex; flex-direction:column; gap:3px; }
+        .hd-model {
+            font-size:20px; font-weight:900; letter-spacing:0.05em;
+            background:linear-gradient(90deg, var(--gold) 0%, #f0d070 60%, var(--gold) 100%);
+            -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+        }
+        .hd-sub { font-size:10px; font-weight:700; letter-spacing:0.2em; color:var(--text-sub); text-transform:uppercase; }
+        .hd-badge {
+            font-size:10px; font-weight:700; letter-spacing:0.1em; color:var(--gold);
+            background:var(--gold-dim); border:1px solid rgba(212,175,55,0.25);
+            padding:3px 8px; border-radius:20px;
+        }
+
+        /* ── Top fixed ── */
+        .top-fixed {
+            background:rgba(14,14,15,0.8); backdrop-filter:blur(30px);
+            border-bottom:0.5px solid var(--border); flex-shrink:0; z-index:100;
+        }
+        .search-wrap { padding:12px 15px 8px; position:relative; display:flex; align-items:center; }
+        #searchInput {
+            width:100%; padding:13px 44px 13px 14px;
+            border-radius:14px; border:1px solid rgba(255,255,255,0.08);
+            background:rgba(255,255,255,0.05); color:white; font-size:16px;
+            outline:none; font-family:inherit; transition:border 0.2s, background 0.2s;
+        }
+        #searchInput:focus { border-color:rgba(212,175,55,0.4); background:rgba(255,255,255,0.07); }
+        #searchInput::placeholder { color:var(--text-sub); font-size:14px; }
+        .clear-btn {
+            position:absolute; right:24px; width:26px; height:26px;
+            background:rgba(255,255,255,0.1); color:#fff; border-radius:50%;
+            border:none; cursor:pointer; display:none; align-items:center; justify-content:center;
+            font-size:13px; font-weight:bold; transition:background 0.15s;
+        }
+        .clear-btn.active { display:flex; }
+        .clear-btn:active { background:rgba(255,255,255,0.2); }
+
+        /* ── Tabs ── */
+        .tab-row { display:flex; gap:6px; padding:0 15px 13px; }
+        .tab-btn {
+            flex:1; padding:10px 5px; border-radius:12px;
+            border:1px solid rgba(255,255,255,0.07); background:rgba(255,255,255,0.03);
+            color:rgba(255,255,255,0.35); cursor:pointer; font-weight:700; font-size:13px;
+            transition:all 0.2s; font-family:inherit; letter-spacing:0.01em;
+        }
+        .tab-btn:active { transform:scale(0.95); }
+        .tab-btn.active.tree-tab { background:var(--gold-dim); color:var(--gold); border-color:rgba(212,175,55,0.3); }
+        .tab-btn.active.sop-tab  { background:rgba(48,209,88,0.15); color:var(--green); border-color:rgba(48,209,88,0.3); }
+        .tab-btn.active.fault-tab{ background:rgba(255,69,58,0.15); color:var(--red); border-color:rgba(255,69,58,0.3); }
+
+        /* ── Count bar ── */
+        .count-bar {
+            padding:5px 15px 8px; font-size:11px; font-weight:700;
+            color:var(--text-sub); letter-spacing:0.05em;
+            display:none; align-items:center; gap:8px;
+        }
+        .count-bar.visible { display:flex; }
+        .count-num { color:var(--gold); font-size:13px; }
+
+        /* ── Scroll area ── */
+        .content { flex:1; overflow-y:auto; padding:12px 12px 90px; scroll-behavior:smooth; }
+        .content::-webkit-scrollbar { display:none; }
+        .view { display:none; }
+        .view.active { display:block; }
+
+        /* ── Tree nodes ── */
+        .node { margin-bottom:7px; }
+        .node.hidden { display:none; }
+
+        .label {
+            cursor:pointer; padding:14px 14px 14px 42px;
+            border-radius:14px; background:var(--glass-2); border:0.5px solid var(--border);
+            display:flex; align-items:center; flex-wrap:wrap; gap:6px; position:relative;
+            transition:background 0.15s, border 0.15s;
+            box-shadow:0 2px 8px rgba(0,0,0,0.15);
+        }
+        .label:active { background:rgba(255,255,255,0.08); }
+        .label::before {
+            content:'▶'; font-size:8px; position:absolute; left:16px;
+            color:var(--gold); opacity:0.7; transition:transform 0.2s ease;
+        }
+        .node.expanded > .label::before { transform:rotate(90deg); opacity:1; }
+        .node.leaf > .label::before { content:'◦'; color:var(--text-dim); font-size:11px; }
+
+        .cn-text { font-weight:700; font-size:15px; color:var(--text); }
+        .en-text { font-size:11px; font-weight:500; color:var(--gold); opacity:0.65; font-family:'JetBrains Mono',monospace; }
+        .badge {
+            font-size:10px; color:var(--gold); background:var(--gold-dim);
+            padding:2px 7px; border-radius:5px; border:1px solid rgba(212,175,55,0.2);
+            font-weight:600; letter-spacing:0.02em; white-space:nowrap;
+        }
+
+        /* expand glow */
+        .node.expanded > .label {
+            background:rgba(212,175,55,0.06);
+            border-color:rgba(212,175,55,0.2);
+        }
+
+        /* highlight (search) */
+        .highlight {
+            background:rgba(212,175,55,0.12) !important;
+            border-color:rgba(212,175,55,0.5) !important;
+            box-shadow:0 0 12px rgba(212,175,55,0.2) !important;
+        }
+
+        /* ── Options box ── */
+        .options-box {
+            margin:6px 0 6px 28px; background:rgba(0,0,0,0.3);
+            border:0.5px dashed rgba(212,175,55,0.2); border-radius:12px;
+            padding:10px 14px; display:none;
+        }
+        .node.expanded > .options-box { display:block; }
+        .option-item {
+            color:rgba(255,255,255,0.55); font-size:13px; margin-bottom:5px;
+            display:flex; align-items:center; gap:8px;
+        }
+        .option-item::before { content:'·'; color:var(--gold); font-size:18px; line-height:1; }
+        .option-item:last-child { margin-bottom:0; }
+
+        /* ── Children ── */
+        .children {
+            margin-left:16px; display:none;
+            border-left:1.5px solid rgba(212,175,55,0.12); padding-left:12px; margin-top:7px;
+        }
+        .node.expanded > .children { display:block; }
+
+        /* ── Action bar (expand all) ── */
+        .action-bar {
+            display:flex; gap:8px; padding:0 2px 10px; align-items:center;
+        }
+        .action-btn {
+            font-size:11px; font-weight:700; color:var(--text-sub);
+            background:rgba(255,255,255,0.04); border:1px solid var(--border);
+            padding:5px 12px; border-radius:8px; cursor:pointer;
+            transition:all 0.15s; letter-spacing:0.05em;
+        }
+        .action-btn:hover { background:rgba(255,255,255,0.08); color:var(--gold); border-color:rgba(212,175,55,0.3); }
+        .action-btn:active { transform:scale(0.94); }
+
+        /* ── Empty state ── */
+        .empty-state {
+            text-align:center; padding:60px 20px; display:none; flex-direction:column; align-items:center; gap:12px;
+        }
+        .empty-state.visible { display:flex; }
+        .empty-icon { font-size:40px; opacity:0.3; }
+        .empty-msg { font-size:14px; color:var(--text-sub); font-weight:500; }
+
+        /* ── SOP / Fault cards ── */
+        .section-title {
+            font-size:16px; font-weight:900; letter-spacing:0.08em;
+            margin:0 0 14px; padding-bottom:12px;
+            border-bottom:0.5px solid var(--border);
+            display:flex; align-items:center; gap:10px;
+        }
+        .section-title .t-icon { font-size:20px; }
+
+        .card {
+            background:var(--glass); border:0.5px solid var(--border);
+            border-radius:18px; padding:16px 18px; margin-bottom:10px;
+            line-height:1.7; font-size:14px;
+            border-left:3px solid var(--green);
+            box-shadow:0 2px 12px rgba(0,0,0,0.2);
+            transition:background 0.15s;
+        }
+        .card:active { background:rgba(40,40,42,0.8); }
+        .card.fault { border-left-color:var(--red); }
+        .card.hidden { display:none; }
+
+        .step-tag {
+            display:inline-flex; align-items:center; justify-content:center;
+            width:22px; height:22px; border-radius:7px;
+            background:var(--green); color:#000; font-weight:900; font-size:11px;
+            margin-right:8px; flex-shrink:0; vertical-align:middle;
+        }
+        .card.fault .step-tag { background:var(--red); color:#fff; }
+        .step-tag.adv { background:rgba(10,132,255,0.25); color:var(--blue); font-size:10px; }
+        .warn { color:var(--red); font-weight:900; }
+        .card-dashed { border-style:dashed !important; border-width:1.5px !important; border-color:rgba(255,69,58,0.35) !important; background:rgba(255,69,58,0.04) !important; }
+
+        .path-hint {
+            display:block; margin-top:10px; font-size:12px; font-weight:600;
+            color:var(--gold); font-family:'JetBrains Mono',monospace;
+            background:rgba(212,175,55,0.06); border:0.5px solid rgba(212,175,55,0.15);
+            padding:7px 10px; border-radius:9px; letter-spacing:0.02em;
+        }
+        .fault-q {
+            display:block; font-weight:900; font-size:15px;
+            color:var(--red); margin-bottom:10px; letter-spacing:0.01em;
+        }
+
+        /* ── Footer ── */
+        footer {
+            position:fixed; bottom:0; left:0; right:0;
+            text-align:center; padding:8px;
+            font-size:10px; font-weight:700; letter-spacing:0.2em;
+            color:var(--text-dim); pointer-events:none;
+        }
     </style>
 </head>
 <body>
+<div class="aura"></div>
+<div class="shell">
 
-<div class="main-wrapper">
     <header>
-        <span class="header-title">PT-RQ35K 選單導覽 V6.1 (全內容實機同步版)</span>
-        <span class="header-team">TPAC AV TEAM</span>
+        <div class="hd-left">
+            <div class="hd-model">PT-RQ35K</div>
+            <div class="hd-sub">選單導覽 · TPAC AV TEAM</div>
+        </div>
+        <div class="hd-badge">V6.0</div>
     </header>
 
-    <div class="top-fixed-area">
-        <div class="search-container">
-            <input type="text" id="searchInput" placeholder="搜尋：U12、備份、黑平衡、4K、RS232..." oninput="globalSearch()">
+    <div class="top-fixed">
+        <div class="search-wrap">
+            <input type="text" id="searchInput" placeholder="搜尋：U12、備份、黑平衡、4K、RS232…" oninput="onSearch()" onkeydown="if(event.key==='Escape')clearInput()">
             <button id="clearSearch" class="clear-btn" onclick="clearInput()">✕</button>
         </div>
-        <div class="tab-group">
-            <button id="btn-tree" class="tab-btn active" onclick="handleTreeTabClick()">選單主頁</button>
-            <button id="btn-sop" class="tab-btn gold" onclick="switchView('sop')">安裝 SOP</button>
-            <button id="btn-fault" class="tab-btn red" onclick="switchView('fault')">故障排除</button>
+        <div class="tab-row">
+            <button id="btn-tree"  class="tab-btn tree-tab  active" onclick="switchView('tree')">選單主頁</button>
+            <button id="btn-sop"   class="tab-btn sop-tab"          onclick="switchView('sop')">安裝 SOP</button>
+            <button id="btn-fault" class="tab-btn fault-tab"         onclick="switchView('fault')">故障排除</button>
+        </div>
+        <div class="count-bar" id="countBar">
+            搜尋結果：<span class="count-num" id="countNum">0</span> 筆
         </div>
     </div>
 
-    <div class="content-container" id="scrollTarget">
-        <section id="treeSection" class="view-section active">
+    <div class="content" id="scrollTarget">
+
+        <!-- ── Tree ── -->
+        <section id="treeSection" class="view active">
+            <div class="action-bar">
+                <button class="action-btn" onclick="setAllExpanded(true)">全部展開</button>
+                <button class="action-btn" onclick="setAllExpanded(false)">全部收合</button>
+            </div>
+            <div id="emptyState" class="empty-state">
+                <div class="empty-icon">🔍</div>
+                <div class="empty-msg">找不到符合的選單項目</div>
+            </div>
             <div id="menuTree"></div>
         </section>
 
-        <section id="sopSection" class="view-section">
-            <h3>🚀 專業安裝與維護整合 SOP (全量補完)</h3>
-            <div class="card"><span class="step-tag">1</span><b>鏡頭安裝與斷電保護</b><br>更換鏡頭前<b>必須關閉主電源</b>。插入鏡頭順時針旋至「喀嚓」聲後，務必鎖緊側邊安全螺絲。開機後執行 [鏡頭校正] 讓馬達感應極限位置，否則無法進行幾何調整。</div>
-            <div class="card"><span class="step-tag">2</span><b>電源與亮度 (AC 200V 關鍵)</b><br>若使用 AC 100-120V 電源，亮度會自動降至約 12,000 lm (1/3)。全亮度 30,500 lm 必須接 <b>AC 200-240V</b>。
-                <span class="path-hint">核對指標：[6. 投影機設置] -> [狀態] -> [AC 電壓]</span>
+        <!-- ── SOP ── -->
+        <section id="sopSection" class="view">
+            <div class="section-title"><span class="t-icon">🚀</span>初次快速上手 SOP</div>
+
+            <div class="card">
+                <span class="step-tag">1</span><b>鏡頭安裝安全守則</b><br>
+                更換鏡頭前<b>必須關閉主電源</b>。移除孔蓋後插入並順時針旋至「喀嚓」聲，務必鎖緊螺絲防止掉落。
             </div>
-            <div class="card"><span class="step-tag">3</span><b>光學中心與對焦平衡</b><br>除了選單內的 Focus 調整，若畫面邊緣模糊，請手動旋轉鏡頭上的「外圍焦點調整環」進行對焦平衡。建議在熱機 30 分鐘後執行。</div>
-            <div class="card"><span class="step-tag">4</span><b>黑平衡校準 (Black Balance)</b><br>環境光源改變或黑色發紫/發綠時，請務必<b>蓋上鏡頭蓋</b>後執行。此操作會校準投影機在無訊號下的暗部基礎色彩。
-                <span class="path-hint">路徑：[1. 圖像] -> [進階影像調節] -> [黑平衡]</span>
+            <div class="card">
+                <span class="step-tag">2</span><b>電源電壓與亮度限制</b><br>
+                全亮度輸出<b class="warn">必須接 AC 200–240V</b>。若接 AC 100–120V，亮度將自動受限於約 12,000 lm（AC 200V 為關鍵因素）。
             </div>
-            <div class="card"><span class="step-tag">5</span><b>4K 訊號與 EDID 手動握手</b><br>若電腦無法抓到 4K 訊號，請至選單手動設定 EDID 模式。
-                <span class="path-hint">路徑：[5. 顯示方式選項] -> [輸入端子設定] -> [EDID 選項] -> 切換為 [4K/60p] 或 [USER]</span>
+            <div class="card">
+                <span class="step-tag">3</span><b>鏡頭校正（更換後必做）</b><br>
+                為確保馬達精準感應物理極限，更換鏡頭後<b class="warn">務必執行校正流程</b>。
+                <span class="path-hint">路徑：[6. 投影機設置] → [鏡頭] → [鏡頭校正]</span>
             </div>
-            <div class="card"><span class="step-tag">6</span><b>幾何矯正與 4K 驅動關係</b><br>當開啟 [自由網格] 或特定幾何修正時，[QUAD PIXEL DRIVE] 可能會被強制固定為 [ON]。</div>
-            <div class="card"><span class="step-tag">7</span><b>數據備份 (Data Cloning)</b><br>完成校正後，建議使用 USB 隨身碟備份所有用戶數據。此備份可用於快速換機還原幾何與色彩設定。
-                <span class="path-hint">路徑：[6. 投影機設置] -> [數據克隆] -> [寫入 USB]</span>
-            </div>
-            <div class="card"><span class="step-tag">8</span><b>濾網維護與計時重置</b><br>清潔濾網後，必須在選單中重置濾網計時器，否則系統會持續報警 (U12/U13) 並可能限制亮度以防過熱。
-                <span class="path-hint">路徑：[6. 投影機設置] -> [狀態] -> [濾網計時器]</span>
+            <div class="card card-dashed">
+                <span class="step-tag">4</span><b>系統出廠初始化（強烈建議）</b><br>
+                建議初次使用<b class="warn">執行「出廠重置」</b>，清空殘留設定，確保影像正常。
+                <span class="path-hint">路徑：[6. 投影機設置] → [初始化] → [出廠重置]</span>
             </div>
         </section>
 
-        <section id="faultSection" class="view-section">
-            <h3>⚠️ 深度故障排除與警報應對 (全量補完)</h3>
-            <div class="card fault-card"><span class="fault-q">Q: 出現 U 開頭警報代碼？ (自我診斷)</span>
+        <!-- ── Fault ── -->
+        <section id="faultSection" class="view">
+            <div class="section-title"><span class="t-icon">⚠️</span>深度故障排除與警報應對</div>
+
+            <div class="card fault">
+                <span class="fault-q">Q：出現 U 開頭警報代碼？（自我診斷）</span>
                 • <b>U12 / U13</b>：進/排氣溫度過高。請立即清潔濾網並確認進氣孔無遮擋。<br>
-                • <b>U15</b>：排氣溫度過高。請檢查投影機後方散熱空間 (至少留 50cm)。<br>
-                • <b>U081</b>：AC 輸入電壓過低 (低於 90V)。請檢查供電系統負載。
+                • <b>U15</b>：排氣溫度過高。請確認機器後方散熱空間（至少留 50cm）。<br>
+                • <b>U081</b>：AC 輸入電壓過低（低於 90V）。請檢查供電系統負載。
             </div>
-            <div class="card fault-card"><span class="fault-q">Q: 出現 F 開頭代碼？ (硬體故障)</span>
-                屬於內部零件異常 (如 F1：風扇故障、F2：光源驅動異常)。請記錄代碼後，拔掉電源插頭等候 5 分鐘再重試。若持續出現，請聯絡技術人員。
+            <div class="card fault">
+                <span class="fault-q">Q：出現 F 開頭代碼？（硬體故障）</span>
+                屬於內部零件異常（如 F1：風扇故障、F2：光源驅動異常）。請記錄代碼後，拔掉電源等候 5 分鐘再重試。若持續出現，請聯絡技術人員。
             </div>
-            <div class="card fault-card"><span class="fault-q">Q: 畫面亮度明顯不足？</span>
+            <div class="card fault">
+                <span class="fault-q">Q：畫面亮度明顯不足？</span>
                 1. <b>確認電壓</b>：是否誤接 110V？<br>
-                2. <b>操作模式</b>：是否誤設為 [ECO] 或 [QUIET]？<br>
+                2. <b>操作模式</b>：是否誤設為 [ECO] 或 [靜音]？<br>
                 3. <b>亮度控制</b>：檢查是否開啟 [恆定模式]，這會導致初始亮度受限。<br>
-                4. <b>快門</b>：確認機械快門 (Shutter) 是否處於半開狀態或誤設淡入時間。
+                4. <b>快門</b>：確認機械快門（Shutter）是否處於半開狀態或誤設淡入時間。
             </div>
-            <div class="card fault-card"><span class="fault-q">Q: 鏡頭無法位移 (Lens Shift)？</span>
-                1. 檢查 [6. 投影機設置] -> [鏡頭] -> [鏡頭鎖] 是否設為 ON。<br>
+            <div class="card fault">
+                <span class="fault-q">Q：鏡頭無法位移（Lens Shift）？</span>
+                1. 檢查 [6. 投影機設置] → [鏡頭] → [鏡頭鎖] 是否設為「開」。<br>
                 2. 執行 [鏡頭校正]，讓機器重新感應馬達極限點。
+            </div>
+
+            <div class="section-title" style="margin-top:22px;"><span class="t-icon">🔧</span>進階維護參考</div>
+
+            <div class="card">
+                <span class="step-tag adv">A</span><b>黑平衡色彩校準（偏色修正）</b><br>
+                若暗場顯示不純時執行。執行時必須蓋上鏡頭蓋並確保無任何漏光。
+                <span class="path-hint">路徑：[1. 圖像] → [進階影像調節] → [黑平衡]</span>
+            </div>
+            <div class="card">
+                <span class="step-tag adv">B</span><b>鏡頭安裝與斷電保護（詳細版）</b><br>
+                更換鏡頭前必須關閉主電源。插入鏡頭順時針旋至「喀嚓」聲後，務必鎖緊側邊安全螺絲。開機後執行 [鏡頭校正] 讓馬達感應極限位置，否則無法進行幾何調整。
+            </div>
+            <div class="card">
+                <span class="step-tag adv">B</span><b>電源與亮度核對</b><br>
+                若使用 AC 100–120V 電源，亮度會自動降至約 12,000 lm（約 1/3）。全亮度 30,500 lm 必須接 <b>AC 200–240V</b>。
+                <span class="path-hint">核對指標：[6. 投影機設置] → [狀態] → [AC 電壓]</span>
+            </div>
+            <div class="card">
+                <span class="step-tag adv">C</span><b>光學中心與對焦平衡</b><br>
+                除了選單內的 Focus 調整，若畫面邊緣模糊，請手動旋轉鏡頭上的「外圍焦點調整環」進行對焦平衡。建議在熱機 30 分鐘後執行。
+            </div>
+            <div class="card">
+                <span class="step-tag adv">D</span><b>黑平衡校準（Black Balance）</b><br>
+                環境光源改變或黑色發紫/發綠時，請務必蓋上鏡頭蓋後執行。此操作會校準投影機在無訊號下的暗部基礎色彩。
+                <span class="path-hint">路徑：[1. 圖像] → [進階影像調節] → [黑平衡]</span>
+            </div>
+            <div class="card">
+                <span class="step-tag adv">E</span><b>4K 訊號與 EDID 手動握手</b><br>
+                若電腦無法抓到 4K 訊號，請至選單手動設定 EDID 模式。
+                <span class="path-hint">路徑：[5. 顯示方式選項] → [輸入端子設定] → [EDID 選項] → 切換為 [4K/60p] 或 [USER]</span>
+            </div>
+            <div class="card">
+                <span class="step-tag adv">F</span><b>幾何矯正與 4K 驅動關係</b><br>
+                當開啟 [自由網格] 或特定幾何修正時，[QUAD PIXEL DRIVE] 可能會被強制固定為 [開]。
+            </div>
+            <div class="card">
+                <span class="step-tag adv">G</span><b>數據備份（Data Cloning）</b><br>
+                完成校正後，建議使用 USB 隨身碟備份所有用戶數據。此備份可用於快速換機還原幾何與色彩設定。
+                <span class="path-hint">路徑：[6. 投影機設置] → [數據克隆] → [寫入 USB]</span>
+            </div>
+            <div class="card">
+                <span class="step-tag adv">H</span><b>濾網維護與計時重置</b><br>
+                清潔濾網後，必須在選單中重置濾網計時器，否則系統會持續報警（U12/U13）並可能限制亮度以防過熱。
+                <span class="path-hint">路徑：[6. 投影機設置] → [狀態] → [濾網計時器]</span>
             </div>
         </section>
     </div>
 </div>
 
-<script>
-    const ALIAS_MAP = {
-        "初始化": ["重置", "reset", "還原", "factory", "清空"],
-        "鏡頭": ["lens", "zoom", "focus", "校正", "馬達", "位移", "原點"],
-        "操作模式": ["節能", "低噪音", "quiet", "eco", "亮度降低"],
-        "數據克隆": ["備份", "usb", "clone", "同步"],
-        "網絡": ["ip", "art-net", "pjlink", "控制", "乙太網路"],
-        "4K": ["quad pixel", "解析度", "edid", "3840", "4096", "hdr"],
-        "狀態": ["溫度", "電壓", "計時器", "代碼", "u12", "u13", "u15", "u081"]
-    };
+<footer>TPAC AV TEAM · PT-RQ35K V6.0</footer>
 
-    const menuData = [
-        { cn: "1. 圖像", en: "Picture", children: [
-            { cn: "圖像模式", en: "Picture Mode", badge: "標準/影院/動態/自然/直通/黑板" },
-            { cn: "基礎調整", en: "Basic", options: ["對比度", "亮度", "彩色", "色度", "銳度"] },
-            { cn: "色溫", en: "Color Temperature", badge: "3200K - 9300K / User 1-2" },
-            { cn: "伽瑪模式", en: "Gamma", badge: "標準 / DICOM / HDR / BT.2100" },
-            { cn: "系統日光模式", en: "System Daylight View", badge: "自動 / 手動 / 關" },
-            { cn: "進階影像調節", en: "Advanced", children: [
-                { cn: "黑平衡", en: "Black Balance", badge: "校正暗部色彩 (需蓋蓋子)" },
-                { cn: "動態對比度", en: "Dynamic Contrast", badge: "關 / 1 / 2 / 3 (強)" },
-                { cn: "色彩空間", en: "Color Space", badge: "Rec.709 / Rec.2020 / Native" },
-                { cn: "雜訊抑制", en: "Noise Reduction", badge: "關/弱/中/強" }
+<script>
+/* ── Alias map for search ── */
+const ALIAS = {
+    "初始化": ["重置","reset","還原","factory","清空"],
+    "鏡頭":   ["lens","zoom","focus","校正","馬達","位移","原點"],
+    "操作模式":["節能","低噪音","quiet","eco","亮度降低"],
+    "數據克隆":["備份","usb","clone","同步"],
+    "網絡":   ["ip","art-net","pjlink","控制","乙太網路"],
+    "4K":    ["quad pixel","解析度","edid","3840","4096","hdr"],
+    "狀態":  ["溫度","電壓","計時器","代碼","u12","u13","u15","u081"]
+};
+
+/* ── Menu data (繁體統一) ── */
+const DATA = [
+    { cn:"1. 圖像", en:"Picture", children:[
+        { cn:"圖像模式", en:"Picture Mode", badge:"標準/影院/動態/自然/直通/黑板" },
+        { cn:"基礎調整", en:"Basic", options:["對比度","亮度","彩色","色度","銳度"] },
+        { cn:"色溫", en:"Color Temperature", badge:"3200K – 9300K / User 1-2" },
+        { cn:"伽瑪模式", en:"Gamma", badge:"標準 / DICOM / HDR / BT.2100" },
+        { cn:"系統日光模式", en:"System Daylight View", badge:"自動 / 手動 / 關" },
+        { cn:"進階影像調節", en:"Advanced", children:[
+            { cn:"黑平衡", en:"Black Balance", badge:"校正暗部色彩（需蓋鏡頭蓋）" },
+            { cn:"動態對比度", en:"Dynamic Contrast", badge:"關 / 1 / 2 / 3（強）" },
+            { cn:"色彩空間", en:"Color Space", badge:"Rec.709 / Rec.2020 / Native" },
+            { cn:"雜訊抑制", en:"Noise Reduction", badge:"關 / 弱 / 中 / 強" }
+        ]}
+    ]},
+    { cn:"2. 位置", en:"Position", children:[
+        { cn:"移位", en:"Shift", badge:"V: ±50% / H: ±18%" },
+        { cn:"寬高比", en:"Aspect", badge:"16:10 / 16:9 / 4:3 / 自訂" },
+        { cn:"數字變焦", en:"Digital Zoom", badge:"畫面局部放大、縮小、位移" },
+        { cn:"幾何矯正", en:"Geometry", children:[
+            { cn:"梯形矯正", en:"Keystone", options:["垂直梯形","水平梯形"] },
+            { cn:"四角矯正", en:"Corner Correction", options:["四角獨立微調"] },
+            { cn:"自由網格", en:"Free Grid", options:["2×2 至 17×17 網格數設定","點位微調"] },
+            { cn:"曲面矯正", en:"Curved Correction", options:["筒形/枕形","線性/非線性"] }
+        ]},
+        { cn:"色彩收斂", en:"Convergence", badge:"R/G/B 會聚微調（中央與周邊）" }
+    ]},
+    { cn:"3. 進階選單", en:"Advanced", children:[
+        { cn:"DIGITAL CINEMA REALITY", en:"Cinema Reality" },
+        { cn:"灰度平滑器", en:"Grayscale Smoother" },
+        { cn:"裁切", en:"Cropping" },
+        { cn:"邊緣混合", en:"Edge Blending", badge:"關", options:["混合開關","黑色電平補償","混合寬度","混合標記"] },
+        { cn:"幀響應", en:"Frame Response" },
+        { cn:"幀延遲", en:"Frame Delay" },
+        { cn:"QUAD PIXEL DRIVE", en:"4K Drive", badge:"開" },
+        { cn:"光柵位置選擇", en:"Raster Position Selection" }
+    ]},
+    { cn:"4. 顯示語種", en:"Language", badge:"支援 10 國語系" },
+    { cn:"5. 顯示方式選項", en:"Display Option", children:[
+        { cn:"色彩匹配", en:"Color Matching", badge:"關", options:["色彩匹配開關","目標白點","三色匹配","七色匹配"] },
+        { cn:"螢幕設定", en:"Screen Setting", children:[
+            { cn:"螢幕格式", en:"Screen Format", badge:"16:10" },
+            { cn:"螢幕位置", en:"Screen Position" },
+            { cn:"螢幕標識", en:"Screen Branding", badge:"關" }
+        ]},
+        { cn:"輸入自動設定", en:"Auto Input Selection", badge:"關" },
+        { cn:"自動設置", en:"Auto Setup" },
+        { cn:"備援輸入設置", en:"Backup Input Setting" },
+        { cn:"同步輸入設定", en:"Synchronized Input Setting" },
+        { cn:"HDMI IN", children:[
+            { cn:"EDID 選項", badge:"4K/HDR / 2K / USER" },
+            { cn:"解析度設定" }
+        ]},
+        { cn:"DIGITAL LINK IN", badge:"接收參數" },
+        { cn:"SLOT IN", badge:"擴充槽" },
+        { cn:"顯示選單設定", en:"Display Menu", children:[
+            { cn:"OSD 位置", badge:"2" },
+            { cn:"OSD 旋轉", badge:"關" },
+            { cn:"OSD 色彩", badge:"1" },
+            { cn:"OSD 記憶", badge:"關" },
+            { cn:"輸入向導", badge:"開" },
+            { cn:"警報訊息", badge:"關" }
+        ]},
+        { cn:"選單模式", en:"Menu Mode", badge:"普通 / 簡易" },
+        { cn:"背景色", en:"Background Color", badge:"黑" },
+        { cn:"開機 LOGO", en:"Startup Logo", badge:"預設 LOGO" }
+    ]},
+    { cn:"6. 投影機設置", en:"Projector Setup", children:[
+        { cn:"投影機 ID", en:"Projector ID" },
+        { cn:"投影方式", en:"Projection Method" },
+        { cn:"鏡頭", en:"Lens", children:[
+            { cn:"鏡頭型式", en:"Lens Type", badge:"ET-D3LEW10" },
+            { cn:"鏡頭資訊設置", en:"Lens Info" },
+            { cn:"鏡頭記錄", en:"Lens Memory", options:["載入","儲存","名稱編輯","刪除"] },
+            { cn:"鏡頭原始設置位置", en:"Lens Home Position", options:["執行","取消"] },
+            { cn:"主動式聚焦最佳化器", en:"Active Focus Optimizer" },
+            { cn:"鏡頭校正", en:"Lens Calibration", children:[
+                { cn:"移位 / 聚焦 / 變焦", en:"Shift / Focus / Zoom" },
+                { cn:"移位 / 聚焦", en:"Shift / Focus" },
+                { cn:"變焦", en:"Zoom" }
             ]}
         ]},
-        { cn: "2. 位置", en: "Position", children: [
-            { cn: "移位", en: "Shift", badge: "V: ±50% / H: ±18%" },
-            { cn: "寬高比", en: "Aspect", badge: "16:10 / 16:9 / 4:3 / 自訂" },
-            { cn: "數字變焦", en: "Digital Zoom", badge: "畫面局部放大、縮小、位移" },
-            { cn: "幾何矯正", en: "Geometry", children: [
-                { cn: "梯形矯正", en: "Keystone", options: ["垂直梯形", "水平梯形"] },
-                { cn: "四角矯正", en: "Corner Correction", options: ["四角獨立微調"] },
-                { cn: "自由網格", en: "Free Grid", options: ["2x2 至 17x17 網格數設定", "點位微調"] },
-                { cn: "曲面矯正", en: "Curved Correction", options: ["筒形/枕形", "線性/非線性"] }
-            ]},
-            { cn: "色彩收斂", en: "Convergence", badge: "R/G/B 會聚微調 (中央與周邊)" }
+        { cn:"操作設置", en:"Operation" },
+        { cn:"狀態", en:"Status", children:[
+            { cn:"運行時間", en:"Runtime" },
+            { cn:"內部溫度", en:"Temperature", options:["進氣（U12）","光源","排氣（U13/U15）"] },
+            { cn:"AC 電壓", en:"AC Voltage", badge:"核對 200–240V" }
         ]},
-        { cn: "3. 進階選單", en: "ADVANCED", children: [
-            { cn: "DIGITAL CINEMA REALITY", en: "Cinema Reality" },
-            { cn: "灰度平滑器", en: "Grayscale Smoother" },
-            { cn: "裁切", en: "Cropping" },
-            { cn: "边缘混合", en: "Edge Blending", badge: "关", options: ["混合开关", "黑色电平补偿", "混合宽度", "混合标记"] },
-            { cn: "帧响应", en: "Frame Response" },
-            { cn: "帧延迟", en: "Frame Delay" },
-            { cn: "QUAD PIXEL DRIVE", en: "4K Drive", badge: "开" },
-            { cn: "光栅位置选择", en: "Raster Position Selection" }
-        ]},
-        { cn: "4. 顯示語種", en: "Language", badge: "支持 10 國語系" },
-        { cn: "5. 顯示方式選項", en: "Display Option", children: [
-            { cn: "色彩匹配", en: "Color Matching", badge: "关", options: ["色彩匹配开关", "目标白點", "三色匹配", "七色匹配"] },
-            { cn: "屏幕設定", en: "Screen Setting", children: [
-                { cn: "屏幕格式", en: "Screen Format", badge: "16:10" },
-                { cn: "屏幕位置", en: "Screen Position" },
-                { cn: "屏幕標識", en: "Screen Branding", badge: "关" }
-            ]},
-            { cn: "輸入自動設定", en: "Auto Input Selection", badge: "关" },
-            { cn: "自動設置", en: "Auto Setup" },
-            { cn: "備用輸入設置", en: "Backup Input Setting" },
-            { cn: "同步輸入設定", en: "Synchronized Input Setting" },
-            { cn: "HDMI IN", children: [
-                { cn: "EDID 選項", badge: "4K/HDR / 2K / USER" },
-                { cn: "解析度設定" }
-            ]},
-            { cn: "DIGITAL LINK IN", badge: "接收參數" },
-            { cn: "SLOT IN", badge: "擴充槽" },
-            { cn: "顯示菜單", en: "Display Menu", children: [
-                { cn: "OSD位置", badge: "2" },
-                { cn: "OSD旋转", badge: "关" },
-                { cn: "OSD颜色", badge: "1" },
-                { cn: "OSD记忆", badge: "关" },
-                { cn: "輸入向導", badge: "开" },
-                { cn: "報警信息", badge: "关" }
-            ]},
-            { cn: "菜單模式", en: "Menu Mode", badge: "普通 / 简易" },
-            { cn: "背景色", en: "Background Color", badge: "黑" },
-            { cn: "開機 LOGO", en: "Startup LOGO", badge: "默认LOGO" }
-        ]},
-        { cn: "6. 投影機設置", en: "Projector Setup", children: [
-            { cn: "投影機 ID", en: "Projector ID" },
-            { cn: "投影方式", en: "Projection Method" },
-            { cn: "鏡頭", en: "Lens", children: [
-                { cn: "鏡頭型式", en: "Lens Type", badge: "ET-D3LEW10" },
-                { cn: "鏡頭信息設置", en: "Lens Info" },
-                { cn: "鏡頭記錄", en: "Lens Memory", options: ["载入", "存储", "名称编辑", "删除"] },
-                { cn: "鏡頭原始設置位置", en: "Lens Home Position", options: ["执行", "取消"] },
-                { cn: "主動式聚焦優化器", en: "Active Focus Optimizer" },
-                { cn: "鏡頭校正", en: "Lens Calibration", children: [
-                    { cn: "移位 / 聚焦 / 變焦", en: "Shift/Focus/Zoom" },
-                    { cn: "移位 / 聚焦", en: "Shift/Focus" },
-                    { cn: "變焦", en: "Zoom" }
-                ]}
-            ]},
-            { cn: "操作設置", en: "Operation" },
-            { cn: "狀態", en: "Status", children: [
-                { cn: "運行時間", en: "Runtime" },
-                { cn: "內部溫度", en: "Temperature", options: ["進氣 (U12)", "光源", "排氣 (U13/U15)"] },
-                { cn: "AC 電壓", en: "AC Voltage", badge: "核對 200-240V" }
-            ]},
-            { cn: "數據克隆", en: "Data Cloning", options: ["USB 備份", "USB 讀取"] },
-            { cn: "初始化", en: "Initialize" }
-        ]},
-        { cn: "7. 測試模式", en: "Test Pattern" },
-        { cn: "8. 登錄信號一覽", en: "Signal List" },
-        { cn: "9. 安全", en: "Security" },
-        { cn: "10. 網絡", en: "Network" }
-    ];
+        { cn:"數據克隆", en:"Data Cloning", options:["USB 備份","USB 讀取"] },
+        { cn:"初始化", en:"Initialize" }
+    ]},
+    { cn:"7. 測試模式", en:"Test Pattern" },
+    { cn:"8. 登錄訊號一覽", en:"Signal List" },
+    { cn:"9. 安全", en:"Security" },
+    { cn:"10. 網絡", en:"Network" }
+];
 
-    // --- 渲染與搜尋邏輯 (維持 V5.8 以降穩定版) ---
-    function handleTreeTabClick() {
-        if (!document.getElementById('treeSection').classList.contains('active')) {
-            switchView('tree');
+/* ── Render tree ── */
+function draw(data, parent, level=0) {
+    data.forEach(item => {
+        const node = document.createElement('div');
+        node.className = `node level-${level}${item.children?'':' leaf'}`;
+        const label = document.createElement('div');
+        label.className = 'label';
+        let h = `<span class="cn-text">${item.cn}</span>`;
+        if (item.en)    h += `<span class="en-text">${item.en}</span>`;
+        if (item.badge) h += `<span class="badge">${item.badge}</span>`;
+        label.innerHTML = h;
+        label.onclick = e => { e.stopPropagation(); node.classList.toggle('expanded'); };
+        node.appendChild(label);
+        if (item.options) {
+            const box = document.createElement('div');
+            box.className = 'options-box';
+            item.options.forEach(o => {
+                const d = document.createElement('div');
+                d.className = 'option-item';
+                d.textContent = o;
+                box.appendChild(d);
+            });
+            node.appendChild(box);
+        }
+        if (item.children) {
+            const wrap = document.createElement('div');
+            wrap.className = 'children';
+            draw(item.children, wrap, level+1);
+            node.appendChild(wrap);
+        }
+        parent.appendChild(node);
+    });
+}
+draw(DATA, document.getElementById('menuTree'));
+
+/* ── View switch ── */
+function switchView(view) {
+    document.querySelectorAll('.view').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(view+'Section').classList.add('active');
+    document.getElementById('btn-'+view).classList.add('active');
+    document.getElementById('scrollTarget').scrollTop = 0;
+}
+
+/* ── Expand / collapse all ── */
+function setAllExpanded(expand) {
+    document.querySelectorAll('.node').forEach(n =>
+        expand ? n.classList.add('expanded') : n.classList.remove('expanded')
+    );
+}
+
+/* ── Search ── */
+function onSearch() {
+    const raw = document.getElementById('searchInput').value.toLowerCase().trim();
+    const clearBtn = document.getElementById('clearSearch');
+    const countBar = document.getElementById('countBar');
+    const countNum = document.getElementById('countNum');
+    const emptyState = document.getElementById('emptyState');
+    clearBtn.classList.toggle('active', raw !== '');
+
+    const nodes  = document.querySelectorAll('.node');
+    const labels = document.querySelectorAll('.label');
+    const cards  = document.querySelectorAll('.card');
+
+    if (!raw) {
+        nodes.forEach(n  => { n.classList.remove('hidden','expanded'); });
+        labels.forEach(l => l.classList.remove('highlight'));
+        cards.forEach(c  => c.classList.remove('hidden'));
+        countBar.classList.remove('visible');
+        emptyState.classList.remove('visible');
+        return;
+    }
+
+    // Build search pool with aliases
+    let pool = [raw];
+    for (const [key, vals] of Object.entries(ALIAS)) {
+        if (vals.some(a => a.includes(raw)) || key.includes(raw))
+            pool.push(key.toLowerCase());
+    }
+
+    let treeHits = 0;
+    nodes.forEach(n => n.classList.add('hidden'));
+    labels.forEach(l => {
+        const text = l.textContent.toLowerCase();
+        const hit  = pool.some(k => text.includes(k));
+        if (hit) {
+            treeHits++;
+            l.classList.add('highlight');
+            let cur = l.parentElement;
+            while (cur && cur.classList.contains('node')) {
+                cur.classList.remove('hidden');
+                cur.classList.add('expanded');
+                const parent = cur.parentElement;
+                cur = (parent && parent.classList.contains('children')) ? parent.parentElement : null;
+            }
         } else {
-            const nodes = document.querySelectorAll('.node');
-            const isAnyExpanded = Array.from(nodes).some(n => n.classList.contains('expanded'));
-            handleMasterToggle(!isAnyExpanded);
+            l.classList.remove('highlight');
         }
-    }
-    function switchView(view) {
-        document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(view + 'Section').classList.add('active');
-        document.getElementById('btn-' + view).classList.add('active');
-        document.getElementById('scrollTarget').scrollTop = 0;
-    }
-    function globalSearch() {
-        const rawInput = document.getElementById('searchInput').value.toLowerCase().trim();
-        const nodes = document.querySelectorAll('.node');
-        const labels = document.querySelectorAll('.label');
-        const cards = document.querySelectorAll('.card');
-        const clearBtn = document.getElementById('clearSearch');
-        clearBtn.classList.toggle('active', rawInput !== "");
-        if (!rawInput) {
-            nodes.forEach(n => { n.classList.remove('hidden', 'expanded'); n.querySelector('.label').classList.remove('highlight'); });
-            cards.forEach(c => c.classList.remove('hidden'));
-            return;
-        }
-        let searchPool = [rawInput];
-        for (let key in ALIAS_MAP) {
-            if (ALIAS_MAP[key].some(a => a.includes(rawInput)) || key.includes(rawInput)) searchPool.push(key.toLowerCase());
-        }
-        let treeMatchCount = 0;
-        nodes.forEach(n => n.classList.add('hidden'));
-        labels.forEach(l => {
-            const text = l.innerText.toLowerCase();
-            const isHit = searchPool.some(k => text.includes(k));
-            if (isHit) {
-                treeMatchCount++;
-                l.classList.add('highlight');
-                let currNode = l.parentElement; 
-                while (currNode && currNode.classList.contains('node')) {
-                    currNode.classList.remove('hidden');
-                    currNode.classList.add('expanded');
-                    let parentContent = currNode.parentElement;
-                    currNode = (parentContent && parentContent.classList.contains('children')) ? parentContent.parentElement : null;
-                }
-            } else { l.classList.remove('highlight'); }
-        });
-        cards.forEach(c => {
-            const content = c.innerText.toLowerCase();
-            const isHit = searchPool.some(k => content.includes(k));
-            c.classList.toggle('hidden', !isHit);
-        });
-        if (treeMatchCount > 0 && !document.getElementById('treeSection').classList.contains('active')) switchView('tree');
-    }
-    function clearInput() { document.getElementById('searchInput').value = ""; globalSearch(); }
-    function handleMasterToggle(expand) { document.querySelectorAll('.node').forEach(n => expand ? n.classList.add('expanded') : n.classList.remove('expanded')); }
-    function draw(data, parent, level = 0) {
-        data.forEach(item => {
-            const node = document.createElement('div');
-            node.className = `node level-${level} ${item.children ? '' : 'leaf'}`;
-            const label = document.createElement('div');
-            label.className = 'label';
-            let html = `<span class="cn-text">${item.cn}</span>`;
-            if (item.en) html += `<span class="en-text">(${item.en})</span>`;
-            if (item.badge) html += `<span class="badge">${item.badge}</span>`;
-            label.innerHTML = html;
-            label.onclick = (e) => { e.stopPropagation(); node.classList.toggle('expanded'); };
-            node.appendChild(label);
-            if (item.options) {
-                const optBox = document.createElement('div');
-                optBox.className = 'options-box';
-                item.options.forEach(opt => {
-                    const d = document.createElement('div');
-                    d.className = 'option-item';
-                    d.innerText = opt;
-                    optBox.appendChild(d);
-                });
-                node.appendChild(optBox);
-            }
-            if (item.children) {
-                const childWrap = document.createElement('div');
-                childWrap.className = 'children';
-                draw(item.children, childWrap, level + 1);
-                node.appendChild(childWrap);
-            }
-            parent.appendChild(node);
-        });
-    }
-    draw(menuData, document.getElementById('menuTree'));
+    });
+
+    let cardHits = 0;
+    cards.forEach(c => {
+        const hit = pool.some(k => c.textContent.toLowerCase().includes(k));
+        c.classList.toggle('hidden', !hit);
+        if (hit) cardHits++;
+    });
+
+    const total = treeHits + cardHits;
+    countNum.textContent = total;
+    countBar.classList.toggle('visible', true);
+    emptyState.classList.toggle('visible', treeHits === 0 && document.getElementById('treeSection').classList.contains('active'));
+
+    if (treeHits > 0 && !document.getElementById('treeSection').classList.contains('active'))
+        switchView('tree');
+}
+
+function clearInput() {
+    document.getElementById('searchInput').value = '';
+    onSearch();
+}
 </script>
 </body>
 </html>
