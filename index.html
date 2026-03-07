@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>視聽班表系統 | V14.3 Pro (終極版)</title>
+    <title>視聽班表系統 | V15</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -73,56 +73,216 @@
         
     </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+
+        /* ─── 設計語言：macOS Sequoia Dark ─── */
         :root {
-            --mac-bg: #121213;
-            --mac-card: rgba(44,44,46,0.6);
-            --mac-card-light: rgba(58,58,60,0.5);
-            --mac-blue: #0A84FF;
-            --weekend-pink: #FF375F;
-            --women-text: #FFD6E0; --men-text: #D6EFFF; --special-text: #FFF8D6;
-            --women-dot: #FF375F;  --men-dot: #5AC8FA;  --special-dot: #FFCC00;
-            --reminder-pink: #FF375F;
+            /* 背景層 */
+            --bg-base:   #0c0c0e;
+            --bg-mid:    #111113;
+            --bg-raise:  #1a1a1c;
+            --bg-float:  #222224;
+
+            /* 玻璃/表面 */
+            --glass-nav: rgba(14,14,16,0.88);
+            --glass-modal: rgba(20,20,23,0.97);
+            --glass-card: rgba(255,255,255,0.038);
+            --glass-card-hover: rgba(255,255,255,0.065);
+            --glass-inset: rgba(0,0,0,0.28);
+
+            /* 邊框 */
+            --border-dim:    rgba(255,255,255,0.07);
+            --border-mid:    rgba(255,255,255,0.11);
+            --border-strong: rgba(255,255,255,0.18);
+
+            /* 品牌色 */
+            --blue:    #0A84FF;
+            --blue-hi: #3DA0FF;
+            --blue-bg: rgba(10,132,255,0.12);
+
+            /* 廳院色 */
+            --gt:     #FF453A; --gt-rgb: 255,69,58;
+            --bb:     #1D9EFF; --bb-rgb: 29,158,255;
+            --gp:     #32D74B; --gp-rgb: 50,215,75;
+
+            /* 語意色 */
+            --pink:   #FF375F;
+            --orange: #FF9F0A;
+            --yellow: #FFD60A;
+
+            /* 人員色 */
+            --women-text: #FFD6E0;
+            --men-text:   #D0ECFF;
+            --special-text: #FFF2CC;
+            --women-dot:  #FF375F;
+            --men-dot:    #5AC8FA;
+            --special-dot:#FFD60A;
+
+            /* 排版 */
+            --font: 'Plus Jakarta Sans','Noto Sans TC',system-ui,sans-serif;
+            --r-xs: 8px; --r-sm: 12px; --r-md: 18px;
+            --r-lg: 24px; --r-xl: 30px; --r-2xl: 36px;
         }
-        body { font-family:'Inter','Noto Sans TC',sans-serif; height:100vh; overflow:hidden; background:var(--mac-bg); color:#fff; -webkit-font-smoothing:antialiased; letter-spacing:-0.01em; }
-        .aura-bg { position:fixed; inset:0; z-index:0; pointer-events:none; background: radial-gradient(circle at 15% 0%, rgba(10,132,255,0.12) 0%, transparent 40%), radial-gradient(circle at 85% 100%, rgba(255,55,95,0.08) 0%, transparent 50%), radial-gradient(circle at 50% 50%, #1e1e1f 0%, #121213 100%); }
-        .mac-glass { background:rgba(30,30,32,0.65); backdrop-filter:blur(50px) saturate(180%); border-bottom:0.5px solid rgba(255,255,255,0.08); box-shadow:0 4px 30px rgba(0,0,0,0.1); }
-        .no-scrollbar::-webkit-scrollbar { display:none; }
-        .weekend-bg { background:rgba(255,55,95,0.05) !important; }
-        @keyframes b-badge-pulse { 0%,100% { border-color: rgba(255,255,255,0.2); } 50% { border-color: rgba(255,255,255,0.9); } }
-        .b-badge-glow { animation:b-badge-pulse 1.8s infinite ease-in-out; border-width:1.5px !important; border-style:solid !important; }
-        @keyframes b-row-outline { 0%,100% { outline-color: rgba(255,255,255,0.2); } 50% { outline-color: rgba(255,255,255,0.9); } }
-        .b-row-glow { animation:b-row-outline 1.8s infinite ease-in-out; outline:1.5px solid rgba(255,255,255,0.2); outline-offset:-1px; }
-        @keyframes window-spring { 0%{opacity:0;transform:scale(0.97) translateY(10px);}100%{opacity:1;transform:scale(1) translateY(0);} }
-        .animate-window { animation:window-spring 0.35s cubic-bezier(0.16,1,0.3,1) forwards; will-change: transform, opacity; transform: translateZ(0); }
-        .master-left-col { position:absolute; left:0; top:0; bottom:0; width:85px; z-index:50; background:rgba(25,25,27,0.98); border-right:1px solid rgba(255,255,255,0.12); display:flex; flex-direction:column; }
-        .master-right { margin-left:85px; overflow-x:auto; overflow-y:hidden; display:block; }
-        .master-cell { min-width:80px; flex-shrink:0; text-align:center; border-left:1px solid rgba(255,255,255,0.03); }
-        .master-hdr { height:50px; }
-        .master-row { height:48px; display:flex; align-items:center; border-bottom:0.5px solid rgba(255,255,255,0.04); }
-        .day-block { background:var(--mac-card-light); border:0.5px solid rgba(255,255,255,0.1); border-radius:1.25rem; padding:14px; margin-bottom:12px; box-shadow:inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 15px rgba(0,0,0,0.2); }
-        .mq-wrap { overflow:hidden; white-space:nowrap; position:relative; width:100%; }
-        .mq-wrap:hover .mq-run { animation-play-state:paused; }
-        .mq-wrap:hover .mq-run { animation-play-state:paused; }
-        .mq-run { display:inline-block; padding-left:100%; animation:mq 25s linear infinite; }
+
+        *, *::before, *::after { box-sizing: border-box; }
+
+        body {
+            font-family: var(--font);
+            height: 100vh; overflow: hidden;
+            background: var(--bg-base);
+            color: rgba(255,255,255,0.92);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            letter-spacing: -0.018em;
+        }
+
+        /* ─── 背景光場 ─── */
+        .aura-bg {
+            position: fixed; inset: 0; z-index: 0; pointer-events: none;
+            background:
+                radial-gradient(ellipse 55% 40% at 8%  -5%,  rgba(10,132,255,0.11) 0%, transparent 100%),
+                radial-gradient(ellipse 45% 35% at 92% 105%, rgba(255,55,95,0.07)  0%, transparent 100%),
+                radial-gradient(ellipse 80% 70% at 50%  50%, rgba(16,16,20,0.6)    0%, transparent 100%);
+        }
+
+        /* ─── 頂部玻璃導航列 ─── */
+        .mac-glass {
+            background: var(--glass-nav);
+            backdrop-filter: blur(48px) saturate(180%);
+            -webkit-backdrop-filter: blur(48px) saturate(180%);
+            border-bottom: 1px solid var(--border-dim);
+            box-shadow: 0 1px 0 rgba(255,255,255,0.04);
+        }
+
+        /* ─── 捲軸隱藏 ─── */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* ─── 週末底色 ─── */
+        .weekend-bg { background: rgba(255,55,95,0.04) !important; }
+
+        /* ─── B 班外框脈動（只閃邊框）─── */
+        @keyframes b-badge-pulse {
+            0%, 100% { border-color: rgba(255,255,255,0.22); box-shadow: none; }
+            50%       { border-color: rgba(255,255,255,0.80); box-shadow: 0 0 8px rgba(255,255,255,0.15); }
+        }
+        .b-badge-glow {
+            animation: b-badge-pulse 2s infinite ease-in-out;
+            border-width: 1.5px !important;
+            border-style: solid !important;
+        }
+        @keyframes b-row-outline {
+            0%, 100% { outline-color: rgba(255,255,255,0.18); }
+            50%       { outline-color: rgba(255,255,255,0.82); }
+        }
+        .b-row-glow {
+            animation: b-row-outline 2s infinite ease-in-out;
+            outline: 1.5px solid rgba(255,255,255,0.18);
+            outline-offset: -1px;
+        }
+
+        /* ─── Modal 彈出彈簧動畫 ─── */
+        @keyframes window-spring {
+            0%   { opacity: 0; transform: scale(0.96) translateY(14px); }
+            100% { opacity: 1; transform: scale(1)    translateY(0); }
+        }
+        .animate-window {
+            animation: window-spring 0.28s cubic-bezier(0.16,1,0.3,1) forwards;
+            will-change: transform, opacity;
+        }
+
+        /* ─── Master Roster ─── */
+        .master-left-col {
+            position: absolute; left: 0; top: 0; bottom: 0; width: 88px;
+            z-index: 50;
+            background: rgba(12,12,14,0.99);
+            border-right: 1px solid var(--border-mid);
+            display: flex; flex-direction: column;
+        }
+        .master-right { margin-left: 88px; overflow-x: auto; overflow-y: hidden; display: block; }
+        .master-cell  { min-width: 82px; flex-shrink: 0; text-align: center; border-left: 1px solid rgba(255,255,255,0.04); }
+        .master-hdr   { height: 52px; }
+        .master-row   { height: 50px; display: flex; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.045); }
+
+        /* ─── 主畫面日期卡片 ─── */
+        .day-block {
+            background: var(--glass-card);
+            border: 1px solid var(--border-dim);
+            border-radius: var(--r-lg);
+            padding: 14px 15px;
+            margin-bottom: 10px;
+            box-shadow:
+                0 1px 0 rgba(255,255,255,0.05) inset,
+                0 3px 14px rgba(0,0,0,0.22);
+            transition: border-color 0.2s;
+        }
+
+        /* ─── 跑馬燈 ─── */
+        .mq-wrap { overflow: hidden; white-space: nowrap; position: relative; width: 100%; }
+        .mq-wrap:hover .mq-run { animation-play-state: paused; }
+        .mq-run { display: inline-block; padding-left: 100%; animation: mq 25s linear infinite; }
         @keyframes mq { 0%{transform:translateX(0);}100%{transform:translateX(-100%);} }
-        @keyframes reminder-pulse { 0%,100% { border-color: rgba(255,55,95,0.2); } 50% { border-color: rgba(255,55,95,0.9); } }
-        .reminder-glow { animation:reminder-pulse 3s infinite ease-in-out; border-width:1px!important; }
-        .wk-GT  { background:rgba(255,59,48,0.08)  !important; border-color:rgba(255,59,48,0.2)  !important; }
-        .wk-BB  { background:rgba(30,144,255,0.08) !important; border-color:rgba(30,144,255,0.2) !important; }
-        .wk-GP  { background:rgba(52,199,89,0.08)  !important; border-color:rgba(52,199,89,0.2)  !important; }
-        .wk-off { background:rgba(255,55,95,0.04)  !important; border-color:rgba(255,55,95,0.1)  !important; }
 
-        /* ⭐️ 提高 Today 權重，確保高亮外框穩定顯示 ⭐️ */
-        .day-block-today { background:rgba(72,72,74,0.6)!important; border:1.5px solid var(--mac-blue)!important; box-shadow:inset 0 1px 0 rgba(255,255,255,0.1), 0 0 20px rgba(10,132,255,0.25)!important; }
-        .master-today { background:rgba(10,132,255,0.15)!important; border-left:1px solid var(--mac-blue)!important; border-right:1px solid var(--mac-blue)!important; z-index: 10; position: relative; }
+        /* ─── 提醒脈動 ─── */
+        @keyframes reminder-pulse {
+            0%,100% { border-color: rgba(255,55,95,0.22); }
+            50%      { border-color: rgba(255,55,95,0.75); }
+        }
+        .reminder-glow { animation: reminder-pulse 3s infinite ease-in-out; }
 
-        .range-input { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:white; width:60px; text-align:center; padding:4px; border-radius:8px; font-weight:bold; outline:none; transition:border 0.2s; }
-        .range-input:focus { border-color:var(--mac-blue); }
+        /* ─── 廳院週末著色 ─── */
+        .wk-GT  { background: rgba(255,69,58,0.07)  !important; border-color: rgba(255,69,58,0.20)  !important; }
+        .wk-BB  { background: rgba(29,158,255,0.07) !important; border-color: rgba(29,158,255,0.20) !important; }
+        .wk-GP  { background: rgba(50,215,75,0.07)  !important; border-color: rgba(50,215,75,0.20)  !important; }
+        .wk-off { background: rgba(255,55,95,0.04)  !important; border-color: rgba(255,55,95,0.12)  !important; }
 
+        /* ─── 今日高亮 ─── */
+        .day-block-today {
+            background: rgba(10,132,255,0.09) !important;
+            border: 1.5px solid rgba(10,132,255,0.45) !important;
+            box-shadow:
+                0 0 0 1px rgba(10,132,255,0.10),
+                0 4px 20px rgba(10,132,255,0.14),
+                0 1px 0 rgba(255,255,255,0.08) inset !important;
+        }
+        .master-today {
+            background: rgba(10,132,255,0.13) !important;
+            border-left:  1.5px solid rgba(10,132,255,0.55) !important;
+            border-right: 1.5px solid rgba(10,132,255,0.55) !important;
+            z-index: 10; position: relative;
+        }
+
+        /* ─── 自訂範圍輸入 ─── */
+        .range-input {
+            background: rgba(255,255,255,0.07);
+            border: 1px solid var(--border-mid);
+            color: white; width: 60px; text-align: center;
+            padding: 5px 4px; border-radius: var(--r-xs);
+            font-weight: 700; font-family: var(--font);
+            outline: none; transition: border-color 0.18s;
+        }
+        .range-input:focus { border-color: var(--blue); }
+
+        /* ─── Tooltip ─── */
         [data-tip] { position: relative; }
-        [data-tip]:hover::after { content: attr(data-tip); position: absolute; top: 115%; left: 50%; transform: translateX(-50%); background: rgba(45,45,48,0.98); color: #fff; border: 0.5px solid rgba(255,255,255,0.15); padding: 5px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; white-space: nowrap; z-index: 10000; pointer-events: none; backdrop-filter: blur(8px); box-shadow: 0 5px 15px rgba(0,0,0,0.4); animation: tip-fade 0.1s ease-out forwards; }
-        @keyframes tip-fade { from{opacity:0;transform:translateX(-50%) translateY(-3px);}to{opacity:1;transform:translateX(-50%) translateY(0);} }
+        [data-tip]:hover::after {
+            content: attr(data-tip);
+            position: absolute; top: 120%; left: 50%;
+            transform: translateX(-50%);
+            background: rgba(28,28,32,0.97);
+            color: rgba(255,255,255,0.88);
+            border: 1px solid var(--border-mid);
+            padding: 5px 11px; border-radius: var(--r-xs);
+            font-size: 11px; font-weight: 600;
+            white-space: nowrap; z-index: 10000; pointer-events: none;
+            backdrop-filter: blur(16px);
+            box-shadow: 0 6px 22px rgba(0,0,0,0.55);
+            animation: tip-fade 0.12s ease-out forwards;
+        }
+        @keyframes tip-fade {
+            from { opacity:0; transform:translateX(-50%) translateY(-4px); }
+            to   { opacity:1; transform:translateX(-50%) translateY(0); }
+        }
     </style>
 </head>
 <body>
@@ -130,7 +290,7 @@
 <script type="text/babel">
 const { useState, useEffect, useMemo, memo, useCallback, useRef } = React;
 
-const APP_VERSION = 'V14.3 Pro';
+const APP_VERSION = 'V15';
 
 const safeParse = (v)=>{
  try{
@@ -157,13 +317,13 @@ const Icon = memo(({ name, className="w-4 h-4" }) => {
 
 const TodayBtn = ({ onClick, tip="回到今天" }) => (
     <button onClick={onClick} data-tip={tip}
-        className="w-8 h-8 rounded-full bg-white/[0.06] border border-white/10 flex items-center justify-center text-[var(--mac-blue)] hover:bg-white/15 transition-all active:scale-90 shrink-0">
+        className="w-8 h-8 rounded-full bg-white/[0.05] border border-[var(--border-dim)] flex items-center justify-center text-[var(--blue)] hover:bg-white/12 hover:border-[var(--border-mid)] transition-all active:scale-90 shrink-0">
         <Icon name="today" className="w-4 h-4"/>
     </button>
 );
 
 const CalBtn = ({ onClick }) => (
-    <button onClick={onClick} data-tip="跳轉日期" className="w-8 h-8 rounded-full bg-white/[0.06] border border-white/10 flex items-center justify-center text-white/60 hover:bg-white/15 transition-all shrink-0">
+    <button onClick={onClick} data-tip="跳轉日期" className="w-8 h-8 rounded-full bg-white/[0.05] border border-[var(--border-dim)] flex items-center justify-center text-white/50 hover:bg-white/10 hover:text-white/80 transition-all shrink-0">
         <Icon name="cal" className="w-4 h-4"/>
     </button>
 );
@@ -171,7 +331,7 @@ const CalBtn = ({ onClick }) => (
 /* ══════════════════════════════════════════════════════════
    CENTRAL CONFIG & HELPERS
    ══════════════════════════════════════════════════════════ */
-const VENUES = [ { id:'GT', color:'#FF3B30', masterBg:'255,59,48' }, { id:'BB', color:'#1E90FF', masterBg:'30,144,255' }, { id:'GP', color:'#34C759', masterBg:'52,199,89' } ];
+const VENUES = [ { id:'GT', color:'#FF453A', masterBg:'255,69,58' }, { id:'BB', color:'#1D9EFF', masterBg:'29,158,255' }, { id:'GP', color:'#32D74B', masterBg:'50,215,75' } ];
 const VENUE_IDS = VENUES.map(v => v.id);
 const VENUE_MAP = Object.fromEntries(VENUES.map(v => [v.id, v]));
 const SHIFTS = ['A', 'B'];
@@ -190,7 +350,7 @@ const StaffBtn = memo(({ name, aliasMap={}, forceName=null, onClick, mode="norma
     const disp = forceName || aliasMap[name] || name;
     const isLong = name==="廖俊龍";
     const sz = mode==="tiny" ? "text-[13px] h-9" : mode==="small" ? `${isLong?"text-[13px]":"text-[15px]"} h-8` : mode==="master" ? "text-[15px] h-8" : `${isLong?"text-[18px]":"text-[20px]"} h-10`;
-    return ( <button onClick={e=>{e.stopPropagation();onClick&&onClick(name);}} className={`w-full ${sz} rounded-xl font-medium border border-white/5 bg-white/[0.04] flex items-center justify-center gap-1.5 ${text} truncate shrink-0 transition-all hover:bg-white/10 hover:scale-[1.02] active:scale-95`}> <span className={`w-1.5 h-1.5 rounded-full ${dot}`}></span>{disp} </button> );
+    return ( <button onClick={e=>{e.stopPropagation();onClick&&onClick(name);}} className={`w-full ${sz} rounded-[var(--r-sm)] font-semibold border border-[var(--border-dim)] bg-[var(--glass-card)] flex items-center justify-center gap-1.5 ${text} truncate shrink-0 transition-all duration-150 hover:bg-[var(--glass-card-hover)] hover:border-[var(--border-mid)] active:scale-[0.97]`}> <span className={`w-1.5 h-1.5 rounded-full ${dot}`}></span>{disp} </button> );
 });
 
 /* ════════════════════════════════════════════════════════════
@@ -200,7 +360,7 @@ const RangePickerModal = memo(({ onClose, currentRange, setRange }) => {
     const [cP, setCP] = useState(currentRange.past);
     const [cF, setCF] = useState(currentRange.future);
     useEffect(()=>{ setCP(currentRange.past); setCF(currentRange.future); },[currentRange]);
-    return ( <div className="fixed inset-0 z-[3000] flex items-center justify-center p-6 bg-black/70 backdrop-blur-sm" onClick={onClose}> <div className="animate-window bg-[rgba(30,30,32,0.95)] border border-white/10 w-full max-w-sm rounded-[2.5rem] p-6 shadow-2xl flex flex-col gap-3" onClick={e=>e.stopPropagation()}> <h3 className="text-xl font-black tracking-widest mb-2 text-center">載入範圍設定</h3> <button onClick={()=>{ setRange({type:'default',past:7,future:60}); onClose(); }} className={`w-full py-3.5 rounded-2xl border flex flex-col items-center justify-center transition-all ${currentRange.type==='default'?'bg-[var(--mac-blue)] border-blue-400':'bg-white/5 border-white/10 hover:bg-white/10'}`}> <span className="font-bold text-[15px]">標準效能模式 (推薦)</span> </button> <button onClick={()=>{ setRange({type:'all'}); onClose(); }} className={`w-full py-3.5 rounded-2xl border flex flex-col items-center justify-center transition-all ${currentRange.type==='all'?'bg-rose-600/80 border-rose-400':'bg-white/5 border-white/10 hover:bg-rose-500/20'}`}> <span className="font-bold text-[15px]">載入全年度資料</span> </button> <div className={`mt-2 p-4 rounded-2xl border flex flex-col items-center gap-3 transition-all ${currentRange.type==='custom'?'border-orange-400 bg-orange-500/10':'border-white/10 bg-white/5'}`}> <span className="font-bold text-[14px]">⚙️ 自訂滑動視窗範圍</span> <div className="flex items-center gap-3"> <span>前 <input type="number" min="0" className="range-input" value={cP} onChange={e=>setCP(e.target.value)}/> 天</span> <span>後 <input type="number" min="0" className="range-input" value={cF} onChange={e=>setCF(e.target.value)}/> 天</span> </div> <button onClick={()=>{ setRange({type:'custom',past:parseInt(cP)||0,future:parseInt(cF)||0}); onClose(); }} className="w-full py-2 bg-white/10 hover:bg-white/20 rounded-xl font-bold text-[12px]">套用</button> </div> </div> </div> );
+    return ( <div className="fixed inset-0 z-[3000] flex items-center justify-center p-6 bg-black/70 backdrop-blur-sm" onClick={onClose}> <div className="animate-window bg-[var(--glass-modal)] border border-[var(--border-mid)] w-full max-w-sm rounded-[var(--r-2xl)] p-6 shadow-2xl flex flex-col gap-3" onClick={e=>e.stopPropagation()}> <h3 className="text-[18px] font-extrabold tracking-[-0.01em] mb-2 text-center">載入範圍設定</h3> <button onClick={()=>{ setRange({type:'default',past:7,future:60}); onClose(); }} className={`w-full py-3.5 rounded-2xl border flex flex-col items-center justify-center transition-all ${currentRange.type==='default'?'bg-[var(--blue)] border-blue-400':'bg-white/5 border-white/10 hover:bg-white/10'}`}> <span className="font-bold text-[15px]">標準效能模式 (推薦)</span> </button> <button onClick={()=>{ setRange({type:'all'}); onClose(); }} className={`w-full py-3.5 rounded-2xl border flex flex-col items-center justify-center transition-all ${currentRange.type==='all'?'bg-rose-600/80 border-rose-400':'bg-white/5 border-white/10 hover:bg-rose-500/20'}`}> <span className="font-bold text-[15px]">載入全年度資料</span> </button> <div className={`mt-2 p-4 rounded-[var(--r-md)] border flex flex-col items-center gap-3 transition-all ${currentRange.type==='custom'?'border-orange-400 bg-orange-500/10':'border-white/10 bg-white/5'}`}> <span className="font-bold text-[14px]">⚙️ 自訂滑動視窗範圍</span> <div className="flex items-center gap-3"> <span>前 <input type="number" min="0" className="range-input" value={cP} onChange={e=>setCP(e.target.value)}/> 天</span> <span>後 <input type="number" min="0" className="range-input" value={cF} onChange={e=>setCF(e.target.value)}/> 天</span> </div> <button onClick={()=>{ setRange({type:'custom',past:parseInt(cP)||0,future:parseInt(cF)||0}); onClose(); }} className="w-full py-2 bg-white/10 hover:bg-white/18 rounded-[var(--r-sm)] font-bold text-[12px] transition-all">套用</button> </div> </div> </div> );
 });
 
 const CalendarPicker = memo(({ allDates, onSelect, onClose, calMonth, setCalMonth }) => {
@@ -211,23 +371,23 @@ const CalendarPicker = memo(({ allDates, onSelect, onClose, calMonth, setCalMont
     const todayK = formatK(new Date());
     const cells = []; for(let i=0;i<firstDay;i++) cells.push(null); for(let d=1;d<=daysInMonth;d++) cells.push(d);
     const toKey = d => `${y}/${String(m+1).padStart(2,'0')}/${String(d).padStart(2,'0')}`;
-    return ( <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-md" onClick={onClose}> <div className="animate-window bg-[rgba(30,30,32,0.92)] border border-white/10 rounded-[1.8rem] shadow-2xl w-full max-w-[280px] p-5" onClick={e=>e.stopPropagation()}> <div className="flex items-center justify-between mb-4"> <button onClick={()=>setCalMonth(p=>p.m===0?{y:p.y-1,m:11}:{y:p.y,m:p.m-1})} className="text-xl">‹</button> <span className="font-bold">{y} 年 {m+1} 月</span> <button onClick={()=>setCalMonth(p=>p.m===11?{y:p.y+1,m:0}:{y:p.y,m:p.m+1})} className="text-xl">›</button> </div> <div className="grid grid-cols-7 gap-y-1.5 gap-x-1"> {['日','一','二','三','四','五','六'].map(w=>(<div key={w} className="text-center text-[11px] font-semibold text-white/40">{w}</div>))} {cells.map((d,i)=>{ if(!d) return <div key={"e"+i}/>; const fk=toKey(d), has=dateSet.has(fk), isToday=fk===todayK, isWk=(firstDay+d-1)%7===0||(firstDay+d-1)%7===6; return ( <button key={fk} disabled={!has} onClick={()=>{onSelect(fk);}} className={`h-8 w-full rounded-full text-[13px] flex items-center justify-center transition-all ${isToday?'bg-[var(--mac-blue)] text-white':has?(isWk?'text-rose-400 hover:bg-white/10':'text-white hover:bg-white/10'):'text-white/12 cursor-default'}`}>{d}</button> ); })} </div> </div> </div> );
+    return ( <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-md" onClick={onClose}> <div className="animate-window bg-[rgba(18,18,22,0.96)] border border-[var(--border-mid)] rounded-[var(--r-xl)] shadow-2xl w-full max-w-[280px] p-5" onClick={e=>e.stopPropagation()}> <div className="flex items-center justify-between mb-4"> <button onClick={()=>setCalMonth(p=>p.m===0?{y:p.y-1,m:11}:{y:p.y,m:p.m-1})} className="text-xl">‹</button> <span className="text-[15px] font-bold">{y} 年 {m+1} 月</span> <button onClick={()=>setCalMonth(p=>p.m===11?{y:p.y+1,m:0}:{y:p.y,m:p.m+1})} className="text-xl">›</button> </div> <div className="grid grid-cols-7 gap-y-1.5 gap-x-1"> {['日','一','二','三','四','五','六'].map(w=>(<div key={w} className="text-center text-[10.5px] font-semibold text-white/28 tracking-wide">{w}</div>))} {cells.map((d,i)=>{ if(!d) return <div key={"e"+i}/>; const fk=toKey(d), has=dateSet.has(fk), isToday=fk===todayK, isWk=(firstDay+d-1)%7===0||(firstDay+d-1)%7===6; return ( <button key={fk} disabled={!has} onClick={()=>{onSelect(fk);}} className={`h-8 w-full rounded-full text-[13px] flex items-center justify-center transition-all ${isToday?'bg-[var(--blue)] text-white':has?(isWk?'text-rose-400 hover:bg-white/10':'text-white hover:bg-white/10'):'text-white/12 cursor-default'}`}>{d}</button> ); })} </div> </div> </div> );
 });
 
 const NotesModal = memo(({ onClose, visibleDates, schedule, goDate, handleBackToday }) => {
     const today = new Date(); today.setHours(0,0,0,0);
     const notesList = visibleDates.filter(d => schedule.notes?.[d.fullKey]?.trim());
-    return ( <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={onClose}> <div className="animate-window bg-[rgba(30,30,32,0.98)] border border-white/10 w-full max-w-md rounded-[2.2rem] flex flex-col max-h-[85vh] overflow-hidden" onClick={e=>e.stopPropagation()}> <div className="p-3 border-b border-white/10 bg-white/[0.04] flex items-center justify-between"> <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 text-xl">×</button> <h3 className="text-[17px] font-bold text-[var(--reminder-pink)]">重要提醒</h3> <TodayBtn onClick={handleBackToday}/> </div> <div id="notes-scroll-container" className="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar scroll-smooth"> {notesList.length===0 ? ( <div className="text-center text-white/40 py-10">無任何提醒事項</div> ) : notesList.map(d=>( <button key={d.fullKey} id={`note-${d.fullKey}`} onClick={()=>{ goDate(d.absIdx,d.fullKey); onClose(); }} className={`w-full text-left p-3.5 rounded-2xl border transition-all ${parseK(d.fullKey)<today?'bg-white/[0.02] border-white/5 opacity-60':'bg-[rgba(255,55,95,0.08)] border-[rgba(255,55,95,0.2)]'}`}> <div className="text-[12px] font-bold">{d.fullKey} (週{d.w})</div> <div className="text-[14.5px] font-medium leading-snug">{schedule.notes[d.fullKey]}</div> </button> ))} </div> </div> </div> );
+    return ( <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={onClose}> <div className="animate-window bg-[var(--glass-modal)] border border-[var(--border-mid)] w-full max-w-md rounded-[var(--r-2xl)] flex flex-col max-h-[85vh] overflow-hidden" onClick={e=>e.stopPropagation()}> <div className="p-3 border-b border-[var(--border-dim)] bg-white/[0.03] flex items-center justify-between"> <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/[0.07] border border-[var(--border-mid)] text-white/55 hover:bg-white/15 hover:text-white/90 transition-all flex items-center justify-center text-[18px] leading-none">×</button> <h3 className="text-[16px] font-bold text-[var(--pink)]">重要提醒</h3> <TodayBtn onClick={handleBackToday}/> </div> <div id="notes-scroll-container" className="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar scroll-smooth"> {notesList.length===0 ? ( <div className="text-center text-white/40 py-10">無任何提醒事項</div> ) : notesList.map(d=>( <button key={d.fullKey} id={`note-${d.fullKey}`} onClick={()=>{ goDate(d.absIdx,d.fullKey); onClose(); }} className={`w-full text-left p-3.5 rounded-2xl border transition-all ${parseK(d.fullKey)<today?'bg-white/[0.02] border-white/5 opacity-60':'bg-[rgba(255,55,95,0.08)] border-[rgba(255,55,95,0.2)]'}`}> <div className="text-[12px] font-bold">{d.fullKey} (週{d.w})</div> <div className="text-[14.5px] font-medium leading-snug">{schedule.notes[d.fullKey]}</div> </button> ))} </div> </div> </div> );
 });
 
 const MasterRosterModal = memo(({ onClose, visibleDates, schedule, aliasMap, todayK, handleStaffClick, handleBackToday, openCal }) => {
     const [detail, setDetail] = useState(null);
-    return ( <div className="fixed inset-0 z-[1000] flex items-center justify-center p-3 bg-black/70" onClick={onClose}> <div className="animate-window bg-[rgba(28,28,30,0.98)] border border-white/10 w-full max-w-4xl rounded-[2.2rem] flex flex-col max-h-[90vh] overflow-hidden" onClick={e=>e.stopPropagation()}> <div className="p-3.5 border-b border-white/10 flex items-center justify-between"> <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 text-xl">×</button> <h3 className="text-[17px] font-bold">Master Roster</h3> <div className="flex gap-2"> <TodayBtn onClick={handleBackToday}/> <CalBtn onClick={openCal}/> </div> </div> <div className="flex-1 overflow-hidden relative"> <div className="master-left-col"> <div className="master-hdr flex items-center justify-center border-b border-white/10 text-[10px] font-bold text-white/30">STAFF</div> {STAFF_ORDER.map(s=>( <div key={s} className="master-row px-2"> <StaffBtn name={s} aliasMap={aliasMap} mode="master" forceName={s==="廖俊龍"?"阿龍":null} onClick={handleStaffClick}/> </div> ))} </div> <div id="master-scroll-container" className="master-right h-full overflow-y-auto no-scrollbar scroll-smooth"> <div style={{width:'fit-content'}}> <div className="flex bg-black/20 border-b border-white/10 sticky top-0 z-40 master-hdr"> {visibleDates.map(d=>( <div key={d.fullKey} id={`mnav-${d.fullKey}`} className={`master-cell p-1.5 flex flex-col justify-center ${d.fullKey===todayK?'master-today':''} ${d.w==='六'||d.w==='日'?'weekend-bg':''}`}> <div className="text-[10px] opacity-40">週{d.w}</div> <div className="text-[14px] font-black">{d.d}</div> </div> ))} </div> {STAFF_ORDER.map(staff=>( <div key={staff} className="master-row"> {visibleDates.map(d=>{ let labels=[], bgStyle={backgroundColor:'rgba(255,255,255,0.03)'}, hasS=false, activeV="", isB=false; VENUE_IDS.forEach(vid=>{ if(schedule.roster[d.fullKey]?.[vid]?.[staff]){ const sh=schedule.roster[d.fullKey][vid][staff].shift; labels.push(`${vid}-${sh}`); if(!hasS){ bgStyle={backgroundColor:`rgba(${VENUE_MAP[vid].masterBg},0.35)`}; activeV=vid; } else { bgStyle={background:`linear-gradient(90deg, rgba(${VENUE_MAP[labels[0].split('-')[0]].masterBg},0.5) 0%, rgba(${VENUE_MAP[vid].masterBg},0.5) 100%)`}; } if(sh==='B') isB=true; hasS=true; } }); const label = labels.length ? labels.join('/') : "—"; return ( <div key={d.fullKey} className={`master-cell p-1 ${d.fullKey===todayK?'master-today':''} ${d.w==='六'||d.w==='日'?'weekend-bg':''}`}> <div className={`w-full h-8 flex items-center justify-center rounded-lg text-[11px] font-bold ${isB?'b-row-glow':''} ${hasS?'cursor-pointer hover:brightness-125':''}`} style={bgStyle} onClick={()=>{ if(hasS){ const showParts=labels.map(l=>{ const v=l.split("-")[0]; const sh=schedule.shows[d.fullKey]?.[v]; return sh?`${v}:${sh}`:null; }).filter(Boolean); setDetail({date:d.fullKey,venue:labels.join("/"),show:showParts.join(" | ")||"無演出"}); } }}> {labels.length>1 ? labels.map((lbl,i)=>{ const vid=lbl.split('-')[0]; return (<span key={i} style={{color:'#FFFFFF'}}>{i>0&&<span style={{color:'rgba(255,255,255,0.25)'}}>/</span>}{lbl}</span>); }) : label} </div> </div> ); })} </div> ))} </div> </div> </div> </div> {detail&&( <div className="fixed inset-0 z-[5000] flex items-center justify-center p-4 bg-black/40" onClick={e=>{e.stopPropagation();setDetail(null);}}> <div className="animate-window bg-[rgba(40,40,42,0.95)] border border-white/10 p-6 rounded-[2rem] w-full max-w-xs text-center" onClick={e=>e.stopPropagation()}> <h4 className="text-[18px] font-black">{detail.venue} <span className="text-[13px] opacity-50">{detail.date}</span></h4> <p className="mt-4">{detail.show}</p> <button onClick={()=>setDetail(null)} className="mt-6 w-full py-2.5 bg-white/10 rounded-xl">關閉</button> </div> </div> )} </div> );
+    return ( <div className="fixed inset-0 z-[1000] flex items-center justify-center p-3 bg-black/70" onClick={onClose}> <div className="animate-window bg-[var(--glass-modal)] border border-[var(--border-mid)] w-full max-w-4xl rounded-[var(--r-2xl)] flex flex-col max-h-[90vh] overflow-hidden" onClick={e=>e.stopPropagation()}> <div className="p-3.5 border-b border-[var(--border-dim)] flex items-center justify-between"> <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/[0.07] border border-[var(--border-mid)] text-white/55 hover:bg-white/15 hover:text-white/90 transition-all flex items-center justify-center text-[18px] leading-none">×</button> <h3 className="text-[15px] font-bold tracking-wide">Master Roster</h3> <div className="flex gap-2"> <TodayBtn onClick={handleBackToday}/> <CalBtn onClick={openCal}/> </div> </div> <div className="flex-1 overflow-hidden relative"> <div className="master-left-col"> <div className="master-hdr flex items-center justify-center border-b border-[var(--border-mid)] text-[9.5px] font-bold text-white/25 tracking-[0.18em] uppercase">STAFF</div> {STAFF_ORDER.map(s=>( <div key={s} className="master-row px-2"> <StaffBtn name={s} aliasMap={aliasMap} mode="master" forceName={s==="廖俊龍"?"阿龍":null} onClick={handleStaffClick}/> </div> ))} </div> <div id="master-scroll-container" className="master-right h-full overflow-y-auto no-scrollbar scroll-smooth"> <div style={{width:'fit-content'}}> <div className="flex bg-[rgba(12,12,14,0.96)] border-b border-[var(--border-mid)] sticky top-0 z-40 master-hdr"> {visibleDates.map(d=>( <div key={d.fullKey} id={`mnav-${d.fullKey}`} className={`master-cell p-1.5 flex flex-col justify-center ${d.fullKey===todayK?'master-today':''} ${d.w==='六'||d.w==='日'?'weekend-bg':''}`}> <div className="text-[9.5px] text-white/28 tracking-wide">週{d.w}</div> <div className="text-[14px] font-extrabold tabular-nums">{d.d}</div> </div> ))} </div> {STAFF_ORDER.map(staff=>( <div key={staff} className="master-row"> {visibleDates.map(d=>{ let labels=[], bgStyle={backgroundColor:'rgba(255,255,255,0.03)'}, hasS=false, activeV="", isB=false; VENUE_IDS.forEach(vid=>{ if(schedule.roster[d.fullKey]?.[vid]?.[staff]){ const sh=schedule.roster[d.fullKey][vid][staff].shift; labels.push(`${vid}-${sh}`); if(!hasS){ bgStyle={backgroundColor:`rgba(${VENUE_MAP[vid].masterBg},0.35)`}; activeV=vid; } else { bgStyle={background:`linear-gradient(90deg, rgba(${VENUE_MAP[labels[0].split('-')[0]].masterBg},0.5) 0%, rgba(${VENUE_MAP[vid].masterBg},0.5) 100%)`}; } if(sh==='B') isB=true; hasS=true; } }); const label = labels.length ? labels.join('/') : "—"; return ( <div key={d.fullKey} className={`master-cell p-1 ${d.fullKey===todayK?'master-today':''} ${d.w==='六'||d.w==='日'?'weekend-bg':''}`}> <div className={`w-full h-8 flex items-center justify-center rounded-lg text-[11px] font-bold ${isB?'b-row-glow':''} ${hasS?'cursor-pointer hover:brightness-125':''}`} style={bgStyle} onClick={()=>{ if(hasS){ const showParts=labels.map(l=>{ const v=l.split("-")[0]; const sh=schedule.shows[d.fullKey]?.[v]; return sh?`${v}:${sh}`:null; }).filter(Boolean); setDetail({date:d.fullKey,venue:labels.join("/"),show:showParts.join(" | ")||"無演出"}); } }}> {labels.length>1 ? labels.map((lbl,i)=>{ const vid=lbl.split('-')[0]; return (<span key={i} style={{color:'#FFFFFF'}}>{i>0&&<span style={{color:'rgba(255,255,255,0.25)'}}>/</span>}{lbl}</span>); }) : label} </div> </div> ); })} </div> ))} </div> </div> </div> </div> {detail&&( <div className="fixed inset-0 z-[5000] flex items-center justify-center p-4 bg-black/40" onClick={e=>{e.stopPropagation();setDetail(null);}}> <div className="animate-window bg-[var(--glass-modal)] border border-[var(--border-mid)] p-6 rounded-[var(--r-xl)] w-full max-w-xs text-center" onClick={e=>e.stopPropagation()}> <h4 className="text-[17px] font-extrabold">{detail.venue} <span className="text-[13px] opacity-50">{detail.date}</span></h4> <p className="mt-4">{detail.show}</p> <button onClick={()=>setDetail(null)} className="mt-6 w-full py-2.5 bg-white/[0.08] hover:bg-white/14 rounded-[var(--r-sm)] font-semibold transition-all">關閉</button> </div> </div> )} </div> );
 });
 
 const QueryModal = memo(({ queryStaff, queryVenue, onClose, setQueryStaff, setQueryVenue, visibleDates, schedule, aliasMap, curFk, handleStaffClick, handleBackToday, openCal }) => {
     if(!queryStaff&&!queryVenue) return null;
-    return ( <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/70" onClick={onClose}> <div className="animate-window bg-[rgba(28,28,30,0.98)] border border-white/10 w-full max-w-lg rounded-[2.2rem] flex flex-col max-h-[85vh] overflow-hidden" onClick={e=>e.stopPropagation()}> <div className="p-3 border-b border-white/10 bg-white/[0.04] flex items-center justify-between gap-2"> <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 text-xl">×</button> <div className="flex-1 flex justify-center"> {queryVenue?( <div className="flex bg-black/40 rounded-2xl p-1 border border-white/5"> {VENUES.map(v=>( <button key={v.id} onClick={()=>setQueryVenue(v.id)} className={`px-4 py-1.5 rounded-xl text-[14px] font-bold ${queryVenue===v.id?'bg-white/15 text-white':'text-white/30'}`} style={{color:queryVenue===v.id?v.color:undefined}}>{v.id}</button> ))} </div> ):( <h3 className="text-[17px] font-bold">{aliasMap[queryStaff]||queryStaff}</h3> )} </div> <div className="flex items-center gap-2"> <TodayBtn onClick={handleBackToday}/> <CalBtn onClick={openCal}/> </div> </div> <div id={queryVenue?"venue-scroll-container":"staff-scroll-container"} className="flex-1 overflow-y-auto p-4 space-y-3.5 no-scrollbar scroll-smooth"> {visibleDates.map(d=>{ const isS=d.fullKey===curFk, isW=d.w==='六'||d.w==='日'; if(queryVenue){ const vn=schedule.shows[d.fullKey]?.[queryVenue]||"—"; return ( <div key={d.fullKey} id={`mrow-${d.fullKey}`} className={`day-block ${isS?'day-block-today':''}`}> <div className="mb-2 text-[13px] opacity-50 text-right truncate italic">{vn}</div> <div className="flex items-center gap-4"> <div className="flex flex-col border-r border-white/10 pr-3 w-[72px]"> <span className={`text-[11px] font-bold ${isW?'text-rose-400':'opacity-40'}`}>週{d.w}</span> <span className={`text-[22px] font-black ${isW?'text-rose-400':'opacity-90'}`}>{d.d}</span> </div> <div className="flex-1 grid grid-cols-2 gap-2.5"> {SHIFTS.map(sh=>( <div key={sh} className="bg-black/20 rounded-xl p-1.5 min-h-[44px]"> {Object.entries(schedule.roster[d.fullKey]?.[queryVenue]||{}).filter(([,v])=>v.shift===sh).map(([n])=><StaffBtn key={n} name={n} aliasMap={aliasMap} onClick={handleStaffClick} mode="small"/>)} </div> ))} </div> </div> </div> ); } let stLabels=[], stColors=[], co="#FF9500", hasS=false, activeV="", activeSh=""; VENUE_IDS.forEach(vid=>{ if(schedule.roster[d.fullKey]?.[vid]?.[queryStaff]){ const sh=schedule.roster[d.fullKey][vid][queryStaff].shift; stLabels.push(`${vid}-${sh}`); stColors.push('#FFFFFF'); if(!hasS){ co=VENUE_MAP[vid]?.color||'#0A84FF'; activeV=vid; activeSh=sh; } hasS=true; if(sh==='B') activeSh='B'; } }); let st = stLabels.length ? stLabels.join('/') : "辦公"; if(schedule.statuses[d.fullKey]?.[queryStaff]?.match(/休|例|假/)){st="休假";co="#636366";} const sn=hasS?(schedule.shows[d.fullKey]?.[activeV]||""):""; const isBShift=activeSh==='B'; return ( <div key={d.fullKey} id={`mrow-${d.fullKey}`} className={`flex items-center gap-4 day-block ${isS?'day-block-today':''} ${isW?(hasS?`wk-${activeV}`:'wk-off'):''}`}> <div className="flex flex-col border-r border-white/10 pr-3 w-[72px]"> <span className={`text-[11px] font-bold ${isW?'text-rose-400':'opacity-40'}`}>週{d.w}</span> <span className={`text-[22px] font-black ${isW?'text-rose-400':'opacity-90'}`}>{d.d}</span> </div> <div className="flex-1 mq-wrap text-[16px] font-medium opacity-60 italic"> <span className={sn.length>10?"mq-run":""}>{sn}</span> </div> <button onClick={()=>{ if(hasS){setQueryStaff(null);setQueryVenue(activeV);} }} className={`text-[15px] font-bold px-3.5 py-1.5 rounded-xl shrink-0 transition-all ${isBShift?'b-badge-glow':''} ${hasS?'cursor-pointer hover:opacity-80 active:scale-95':'cursor-default'}`} style={{background:stColors.length>1?`linear-gradient(90deg, ${VENUE_MAP[stLabels[0].split('-')[0]]?.color}55 0%, ${VENUE_MAP[stLabels[stLabels.length-1].split('-')[0]]?.color}55 100%)`:undefined,backgroundColor:stColors.length>1?undefined:`${co}45`,border:isBShift?'none':stColors.length>1?'1.5px solid rgba(255,255,255,0.3)':`1.5px solid ${co}99`}}> {stColors.length>1 ? stLabels.map((lbl,i)=>(<span key={i} style={{color:stColors[i]}}>{i>0&&<span style={{color:'rgba(255,255,255,0.25)'}}>/</span>}{lbl}</span>)) : st} </button> </div> ); })} </div> </div> </div> ); });
+    return ( <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/70" onClick={onClose}> <div className="animate-window bg-[var(--glass-modal)] border border-[var(--border-mid)] w-full max-w-lg rounded-[var(--r-2xl)] flex flex-col max-h-[85vh] overflow-hidden" onClick={e=>e.stopPropagation()}> <div className="p-3 border-b border-[var(--border-dim)] bg-white/[0.03] flex items-center justify-between gap-2"> <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/[0.07] border border-[var(--border-mid)] text-white/55 hover:bg-white/15 hover:text-white/90 transition-all flex items-center justify-center text-[18px] leading-none">×</button> <div className="flex-1 flex justify-center"> {queryVenue?( <div className="flex bg-black/30 rounded-[var(--r-md)] p-1 border border-[var(--border-mid)]"> {VENUES.map(v=>( <button key={v.id} onClick={()=>setQueryVenue(v.id)} className={`px-4 py-1.5 rounded-[10px] text-[13.5px] font-bold transition-all ${queryVenue===v.id?'bg-white/14 text-white':'text-white/28 hover:text-white/55'}`} style={{color:queryVenue===v.id?v.color:undefined}}>{v.id}</button> ))} </div> ):( <h3 className="text-[17px] font-bold">{aliasMap[queryStaff]||queryStaff}</h3> )} </div> <div className="flex items-center gap-2"> <TodayBtn onClick={handleBackToday}/> <CalBtn onClick={openCal}/> </div> </div> <div id={queryVenue?"venue-scroll-container":"staff-scroll-container"} className="flex-1 overflow-y-auto p-4 space-y-3.5 no-scrollbar scroll-smooth"> {visibleDates.map(d=>{ const isS=d.fullKey===curFk, isW=d.w==='六'||d.w==='日'; if(queryVenue){ const vn=schedule.shows[d.fullKey]?.[queryVenue]||"—"; return ( <div key={d.fullKey} id={`mrow-${d.fullKey}`} className={`day-block ${isS?'day-block-today':''}`}> <div className="mb-2 text-[13px] opacity-50 text-right truncate italic">{vn}</div> <div className="flex items-center gap-4"> <div className="flex flex-col border-r border-white/10 pr-3 w-[72px]"> <span className={`text-[10px] font-semibold tracking-wide ${isW?'text-[var(--pink)]':'text-white/30'}`}>週{d.w}</span> <span className={`text-[21px] font-extrabold tabular-nums ${isW?'text-[var(--pink)]':'text-white/88'}`}>{d.d}</span> </div> <div className="flex-1 grid grid-cols-2 gap-2.5"> {SHIFTS.map(sh=>( <div key={sh} className="bg-[var(--glass-inset)] rounded-[var(--r-sm)] p-1.5 min-h-[44px]"> {Object.entries(schedule.roster[d.fullKey]?.[queryVenue]||{}).filter(([,v])=>v.shift===sh).map(([n])=><StaffBtn key={n} name={n} aliasMap={aliasMap} onClick={handleStaffClick} mode="small"/>)} </div> ))} </div> </div> </div> ); } let stLabels=[], stColors=[], co="#FF9500", hasS=false, activeV="", activeSh=""; VENUE_IDS.forEach(vid=>{ if(schedule.roster[d.fullKey]?.[vid]?.[queryStaff]){ const sh=schedule.roster[d.fullKey][vid][queryStaff].shift; stLabels.push(`${vid}-${sh}`); stColors.push('#FFFFFF'); if(!hasS){ co=VENUE_MAP[vid]?.color||'#0A84FF'; activeV=vid; activeSh=sh; } hasS=true; if(sh==='B') activeSh='B'; } }); let st = stLabels.length ? stLabels.join('/') : "辦公"; if(schedule.statuses[d.fullKey]?.[queryStaff]?.match(/休|例|假/)){st="休假";co="#636366";} const sn=hasS?(schedule.shows[d.fullKey]?.[activeV]||""):""; const isBShift=activeSh==='B'; return ( <div key={d.fullKey} id={`mrow-${d.fullKey}`} className={`flex items-center gap-4 day-block ${isS?'day-block-today':''} ${isW?(hasS?`wk-${activeV}`:'wk-off'):''}`}> <div className="flex flex-col border-r border-white/10 pr-3 w-[72px]"> <span className={`text-[10px] font-semibold tracking-wide ${isW?'text-[var(--pink)]':'text-white/30'}`}>週{d.w}</span> <span className={`text-[21px] font-extrabold tabular-nums ${isW?'text-[var(--pink)]':'text-white/88'}`}>{d.d}</span> </div> <div className="flex-1 mq-wrap text-[16px] font-medium opacity-60 italic"> <span className={sn.length>10?"mq-run":""}>{sn}</span> </div> <button onClick={()=>{ if(hasS){setQueryStaff(null);setQueryVenue(activeV);} }} className={`text-[15px] font-bold px-3.5 py-1.5 rounded-xl shrink-0 transition-all ${isBShift?'b-badge-glow':''} ${hasS?'cursor-pointer hover:opacity-80 active:scale-95':'cursor-default'}`} style={{background:stColors.length>1?`linear-gradient(90deg, ${VENUE_MAP[stLabels[0].split('-')[0]]?.color}55 0%, ${VENUE_MAP[stLabels[stLabels.length-1].split('-')[0]]?.color}55 100%)`:undefined,backgroundColor:stColors.length>1?undefined:`${co}45`,border:isBShift?'none':stColors.length>1?'1.5px solid rgba(255,255,255,0.3)':`1.5px solid ${co}99`}}> {stColors.length>1 ? stLabels.map((lbl,i)=>(<span key={i} style={{color:stColors[i]}}>{i>0&&<span style={{color:'rgba(255,255,255,0.25)'}}>/</span>}{lbl}</span>)) : st} </button> </div> ); })} </div> </div> </div> ); });
 
 /* ════════════════════════════════════════════════════════════
    MAIN APP (修正狀態記憶與監聽)
@@ -388,35 +548,35 @@ useEffect(()=>{
 
     const dData = useMemo(()=>{ if(!allDates.length||!allDates[dateIdx]) return null; const fk=allDates[dateIdx].fullKey, rawR=schedule.roster[fk]||{}, rawS=schedule.statuses[fk]||{}; const s={ ...Object.fromEntries(VENUE_IDS.map(vid=>[vid,Object.fromEntries(SHIFTS.map(sh=>[sh,[]]))])), "辦公":[], "休假":[], }; STAFF_ORDER.forEach(n=>{ let on=false; VENUE_IDS.forEach(vid=>{ if(rawR[vid]?.[n]){ const sh=(rawR[vid][n].shift||SHIFTS[0]).toUpperCase(); if(s[vid][sh]){s[vid][sh].push(n);on=true;} } }); if(!on){ (rawS[n]||"").match(/辦公|其他/)?s["辦公"].push(n):s["休假"].push(n); } }); return{s}; },[dateIdx,allDates,schedule]);
     
-    if(!isUnlocked) return ( <div className="h-screen bg-[#121213] flex flex-col items-center justify-center text-white/40 text-[13px] font-medium tracking-widest gap-4"> {errorMsg?<span className="text-rose-500 font-bold px-6 text-center leading-relaxed animate-pulse">{errorMsg}</span>:<span className="animate-pulse">CONNECTING...</span>} </div> );
+    if(!isUnlocked) return ( <div className="h-screen flex flex-col items-center justify-center text-white/35 text-[11px] font-medium tracking-[0.22em] gap-4" style={{background:'var(--bg-base)'}}> {errorMsg?<span className="text-rose-500 font-bold px-6 text-center leading-relaxed animate-pulse">{errorMsg}</span>:<span className="animate-pulse">CONNECTING...</span>} </div> );
     const todayK=formatK(new Date()), curFk=allDates.length?allDates[dateIdx]?.fullKey:todayK, todayNote=schedule.notes?.[curFk], hasNote=!!(todayNote?.trim()), queryStaff = activeModal==='queryStaff' ? queryTarget : null, queryVenue = activeModal==='queryVenue' ? queryTarget : null;
 
     return (
-        <div className="h-screen flex flex-col overflow-hidden relative text-white bg-[var(--mac-bg)]" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+        <div className="h-screen flex flex-col overflow-hidden relative text-white bg-[var(--bg-base)]" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
             <div className="aura-bg"/>
             <header className="mac-glass pt-12 pb-4 px-5 flex items-center justify-between shrink-0 z-50">
                 <div className="flex flex-col justify-center">
-                    <h1 className="text-[22px] font-bold tracking-tight cursor-pointer opacity-90 hover:opacity-100 transition-opacity leading-none" onClick={()=>setActiveModal('master')}>視 聽 班 表 系 統</h1>
-                    {lastUpdated&&( <div className={`flex items-center mt-1.5 ${isRecentlyUpdated?'cursor-pointer':''}`} onClick={markUpdateSeen} title={isRecentlyUpdated?"點擊標記為已讀":""}> {isRecentlyUpdated&&<span className="w-1.5 h-1.5 rounded-full bg-[var(--weekend-pink)] mr-1.5 animate-pulse shrink-0"/>} <span className={`text-[11px] font-bold tracking-wider transition-colors ${isRecentlyUpdated?'text-white/70':'text-white/40'}`}>SYNC: {lastUpdated}</span> </div> )}
+                    <h1 className="text-[19px] font-extrabold tracking-[-0.03em] cursor-pointer text-white/90 hover:text-white transition-colors leading-none" onClick={()=>setActiveModal('master')}>視 聽 班 表 系 統</h1>
+                    {lastUpdated&&( <div className={`flex items-center mt-1.5 ${isRecentlyUpdated?'cursor-pointer':''}`} onClick={markUpdateSeen} title={isRecentlyUpdated?"點擊標記為已讀":""}> {isRecentlyUpdated&&<span className="w-1.5 h-1.5 rounded-full bg-[var(--pink)] mr-1.5 animate-pulse shrink-0"/>} <span className={`text-[10px] font-semibold tracking-[0.12em] transition-colors ${isRecentlyUpdated?'text-white/60':'text-white/28'}`}>SYNC: {lastUpdated}</span> </div> )}
                 </div>
                 <div className="flex items-center gap-2.5 flex-shrink-0">
                     <TodayBtn onClick={handleBackToday}/>
-                    <button onClick={()=>setActiveModal('notes')} data-tip="重要提醒" className="w-8 h-8 rounded-full bg-white/[0.06] border border-white/10 flex items-center justify-center text-white/60 hover:bg-white/15 transition-all shrink-0"> <Icon name="bell" className="w-4 h-4"/> </button>
+                    <button onClick={()=>setActiveModal('notes')} data-tip="重要提醒" className="w-8 h-8 rounded-full bg-white/[0.05] border border-[var(--border-dim)] flex items-center justify-center text-white/50 hover:bg-white/10 hover:text-white/80 transition-all shrink-0"> <Icon name="bell" className="w-4 h-4"/> </button>
                     <CalBtn onClick={openCal}/>
-                    <button onClick={()=>setActiveModal('range')} data-tip="資料範圍" className="w-8 h-8 rounded-full bg-white/[0.06] border border-white/10 flex items-center justify-center text-white/60 hover:bg-white/15 transition-all shrink-0"> <Icon name="filter" className="w-4 h-4"/> </button>
+                    <button onClick={()=>setActiveModal('range')} data-tip="資料範圍" className="w-8 h-8 rounded-full bg-white/[0.05] border border-[var(--border-dim)] flex items-center justify-center text-white/50 hover:bg-white/10 hover:text-white/80 transition-all shrink-0"> <Icon name="filter" className="w-4 h-4"/> </button>
                 </div>
             </header>
-            <main className="flex-1 overflow-y-auto px-3 py-4 no-scrollbar pb-24 z-10 text-left">
-                <div className="mac-glass sticky top-0 -mx-3 px-3 py-3 flex flex-col mb-5 z-20 shadow-xl rounded-b-2xl">
-                    <div id="nav-scroll-container" className="flex gap-2.5 overflow-x-auto no-scrollbar pb-2 px-1"> {allDates.map(d=>(<button key={d.fullKey} id={`nav-${d.fullKey}`} onClick={()=>goDate(d.absIdx,d.fullKey)} className={`flex-none w-[58px] py-2.5 rounded-2xl border flex flex-col items-center justify-center transition-all duration-300 ${dateIdx===d.absIdx?'border-blue-500/50 bg-[var(--mac-blue)] shadow-[0_4px_12px_rgba(10,132,255,0.3)] scale-105':'border-white/5 bg-white/[0.03] hover:bg-white/[0.08]'}`}> <span className={`font-bold text-[10px] mb-0.5 ${dateIdx===d.absIdx?'text-white/80':d.w==='六'||d.w==='日'?'text-[var(--weekend-pink)]':'text-white/40'}`}>週{d.w}</span> <span className={`text-[17px] font-black leading-none ${dateIdx===d.absIdx?'text-white':d.w==='六'||d.w==='日'?'text-[var(--weekend-pink)]':'text-white/70'}`}>{d.d}</span> </button>))} </div>
-                    {hasNote&&( <div className="mt-3 px-1 cursor-pointer" onClick={()=>setActiveModal('notes')}> <div className="bg-[rgba(255,55,95,0.08)] border border-[rgba(255,55,95,0.2)] rounded-xl px-4 py-3.5 flex items-start gap-3 reminder-glow hover:bg-[rgba(255,55,95,0.12)] transition-colors"> <span className="text-[var(--reminder-pink)] mt-0.5 shrink-0"><Icon name="info"/></span> <div> <p className="text-[10px] font-bold uppercase text-[var(--reminder-pink)] tracking-wider mb-1">重要提醒</p> <p className="text-[14px] font-medium text-white/90 leading-snug">{todayNote}</p> </div> </div> </div> )}
+            <main className="flex-1 overflow-y-auto px-3.5 py-4 no-scrollbar pb-28 z-10 text-left">
+                <div className="mac-glass sticky top-0 -mx-3 px-3 py-3 flex flex-col mb-4 z-20 shadow-[0_8px_32px_rgba(0,0,0,0.4)] rounded-b-[20px]">
+                    <div id="nav-scroll-container" className="flex gap-2.5 overflow-x-auto no-scrollbar pb-2 px-1"> {allDates.map(d=>(<button key={d.fullKey} id={`nav-${d.fullKey}`} onClick={()=>goDate(d.absIdx,d.fullKey)} className={`flex-none w-[58px] py-2.5 rounded-2xl border flex flex-col items-center justify-center transition-all duration-300 ${dateIdx===d.absIdx?'border-blue-500/50 bg-[var(--blue)] shadow-[0_4px_12px_rgba(10,132,255,0.3)] scale-105':'border-white/5 bg-white/[0.03] hover:bg-white/[0.08]'}`}> <span className={`font-bold text-[10px] mb-0.5 ${dateIdx===d.absIdx?'text-white/80':d.w==='六'||d.w==='日'?'text-[var(--pink)]':'text-white/40'}`}>週{d.w}</span> <span className={`text-[17px] font-black leading-none ${dateIdx===d.absIdx?'text-white':d.w==='六'||d.w==='日'?'text-[var(--pink)]':'text-white/70'}`}>{d.d}</span> </button>))} </div>
+                    {hasNote&&( <div className="mt-3 px-1 cursor-pointer" onClick={()=>setActiveModal('notes')}> <div className="bg-[rgba(255,55,95,0.07)] border border-[rgba(255,55,95,0.22)] rounded-[var(--r-md)] px-4 py-3.5 flex items-start gap-3 reminder-glow hover:bg-[rgba(255,55,95,0.11)] transition-colors"> <span className="text-[var(--pink)] mt-0.5 shrink-0"><Icon name="info"/></span> <div> <p className="text-[9.5px] font-bold uppercase text-[var(--pink)] tracking-[0.14em] mb-1">重要提醒</p> <p className="text-[13.5px] font-medium text-white/88 leading-snug">{todayNote}</p> </div> </div> </div> )}
                 </div>
-                <div className="grid gap-3 mb-6" style={{gridTemplateColumns:`repeat(${VENUES.length},1fr)`}}>
-                    {VENUES.map(venue=>{ const sName=schedule.shows?.[curFk]?.[venue.id]||""; return ( <div key={venue.id} className="bg-[var(--mac-card)] rounded-[1.6rem] overflow-hidden flex flex-col border border-white/5 relative"> <div className="absolute inset-0 opacity-10 pointer-events-none" style={{background:`radial-gradient(circle at 50% 0%, ${venue.color} 0%, transparent 70%)`}}/> <button onClick={()=>handleVenueClick(venue.id)} className="py-2.5 font-bold text-[19px] tracking-tight bg-white/[0.02] border-b border-white/5 z-10 transition-colors hover:bg-white/[0.06]" style={{color:venue.color}}>{venue.id}</button> <div className="px-2 py-1.5 min-h-[32px] flex items-center justify-center border-b border-white/5 bg-black/20 text-center overflow-hidden text-[12px] font-medium text-white/60 z-10"> <div className="mq-wrap"><span className={sName.length>8?"mq-run":"truncate"}>{sName}</span></div> </div> <div className="p-1.5 space-y-1.5 z-10"> {SHIFTS.map(sh=>( <div key={sh} className="bg-black/20 rounded-xl p-1.5 flex flex-col gap-1.5 min-h-[65px] border border-white/[0.03]"> {dData?.s[venue.id][sh]?.map(n=><StaffBtn key={n} name={n} aliasMap={aliasMap} mode="small" onClick={handleStaffClick}/>)} </div> ))} </div> </div> ); })}
+                <div className="grid gap-2.5 mb-5" style={{gridTemplateColumns:`repeat(${VENUES.length},1fr)`}}>
+                    {VENUES.map(venue=>{ const sName=schedule.shows?.[curFk]?.[venue.id]||""; return ( <div key={venue.id} className="bg-[var(--glass-card)] rounded-[var(--r-lg)] overflow-hidden flex flex-col border border-[var(--border-dim)] relative"> <div className="absolute inset-0 opacity-10 pointer-events-none" style={{background:`radial-gradient(ellipse 100% 60% at 50% 0%, ${venue.color}22 0%, transparent 100%)`}}/> <button onClick={()=>handleVenueClick(venue.id)} className="py-3 font-extrabold text-[18px] tracking-tight bg-transparent border-b border-[var(--border-dim)] z-10 transition-all hover:bg-white/[0.04] active:scale-[0.98]" style={{color:venue.color}}>{venue.id}</button> <div className="px-2 py-1.5 min-h-[30px] flex items-center justify-center border-b border-[var(--border-dim)] bg-[var(--glass-inset)] text-center overflow-hidden text-[11px] font-medium text-white/50 z-10"> <div className="mq-wrap"><span className={sName.length>8?"mq-run":"truncate"}>{sName}</span></div> </div> <div className="p-1.5 space-y-1.5 z-10"> {SHIFTS.map(sh=>( <div key={sh} className="bg-[var(--glass-inset)] rounded-[var(--r-sm)] p-1.5 flex flex-col gap-1.5 min-h-[68px] border border-[var(--border-dim)]"> {dData?.s[venue.id][sh]?.map(n=><StaffBtn key={n} name={n} aliasMap={aliasMap} mode="small" onClick={handleStaffClick}/>)} </div> ))} </div> </div> ); })}
                 </div>
                 <div className="space-y-4">
-                    <section className="bg-[var(--mac-card-light)] border border-white/5 rounded-[1.6rem] p-4"> <h4 className="text-orange-400 text-[13px] font-bold uppercase tracking-wider mb-3.5 flex items-center gap-2"><Icon name="brief"/> 辦公人員</h4> <div className="grid grid-cols-4 gap-2.5">{dData?.s["辦公"]?.map(n=><StaffBtn key={n} name={n} aliasMap={aliasMap} mode="tiny" onClick={handleStaffClick}/>)}</div> </section>
-                    <section className="bg-[var(--mac-card-light)] border border-white/5 rounded-[1.6rem] p-4"> <h4 className="text-white/40 text-[13px] font-bold uppercase tracking-wider mb-3.5 flex items-center gap-2"><Icon name="sun"/> 今日休假</h4> <div className="grid grid-cols-4 gap-2.5">{dData?.s["休假"]?.map(n=><StaffBtn key={n} name={n} aliasMap={aliasMap} mode="tiny" onClick={handleStaffClick}/>)}</div> </section>
+                    <section className="bg-[var(--glass-card)] border border-[var(--border-dim)] rounded-[var(--r-lg)] p-4"> <h4 className="text-[var(--orange)]/80 text-[11px] font-bold uppercase tracking-[0.14em] mb-3 flex items-center gap-2"><Icon name="brief"/> 辦公人員</h4> <div className="grid grid-cols-4 gap-2.5">{dData?.s["辦公"]?.map(n=><StaffBtn key={n} name={n} aliasMap={aliasMap} mode="tiny" onClick={handleStaffClick}/>)}</div> </section>
+                    <section className="bg-[var(--glass-card)] border border-[var(--border-dim)] rounded-[var(--r-lg)] p-4"> <h4 className="text-white/30 text-[11px] font-bold uppercase tracking-[0.14em] mb-3 flex items-center gap-2"><Icon name="sun"/> 今日休假</h4> <div className="grid grid-cols-4 gap-2.5">{dData?.s["休假"]?.map(n=><StaffBtn key={n} name={n} aliasMap={aliasMap} mode="tiny" onClick={handleStaffClick}/>)}</div> </section>
                 </div>
             </main>
             {activeModal==='range'&&( <RangePickerModal onClose={closeModal} currentRange={rangeConfig} setRange={setRangeConfig}/> )}
@@ -425,7 +585,7 @@ useEffect(()=>{
             {(activeModal==='queryStaff'||activeModal==='queryVenue')&&( <QueryModal queryStaff={queryStaff} queryVenue={queryVenue} onClose={closeModal} setQueryStaff={name=>{ if(name){setQueryTarget(name);setActiveModal('queryStaff');} else closeModal(); }} setQueryVenue={id=>{ if(id){setQueryTarget(id);setActiveModal('queryVenue');} else closeModal(); }} visibleDates={visibleDates} schedule={schedule} aliasMap={aliasMap} curFk={curFk} handleStaffClick={handleStaffClick} handleBackToday={handleBackToday} openCal={openCal} /> )}
             {/* ⭐️ 修正 2：使用 prevModal 回到原本視窗 ⭐️ */}
             {activeModal==='calendar'&&( <CalendarPicker allDates={allDates} onSelect={fk=>{ const i=allDates.findIndex(d=>d.fullKey===fk); if(i!==-1)goDate(i,fk); if(prevModal){ setActiveModal(prevModal); setPrevModal(null); } else closeModal(); }} onClose={()=>{ if(prevModal){setActiveModal(prevModal);setPrevModal(null);} else closeModal(); }} calMonth={calMonth} setCalMonth={setCalMonth} /> )}
-            <footer className="fixed bottom-0 left-0 right-0 py-2 flex items-center justify-center pointer-events-none text-[10px] font-bold tracking-[0.25em] text-white/20"> <span>TPAC SCHEDULE SYSTEM | {APP_VERSION}</span> </footer>
+            <footer className="fixed bottom-0 left-0 right-0 py-2.5 flex items-center justify-center pointer-events-none text-[9px] font-semibold tracking-[0.28em] text-white/14"> <span>TPAC SCHEDULE SYSTEM | {APP_VERSION}</span> </footer>
         </div>
     );
 };
