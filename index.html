@@ -2,8 +2,8 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>視聽班表系統 | V12.6</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>視聽班表系統 | V14.3 Pro (終極版)</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -14,6 +14,63 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         window.Firebase = { initializeApp, getApps, getApp, getFirestore, doc, onSnapshot, getDoc, getAuth, signInAnonymously, onAuthStateChanged };
         window.isFirebaseReady = true;
+    </script>
+    
+    <script>
+        /* V14.3 Pro 穩定層：結合所有最優方案 */
+        
+        /* 精確 Form 防護 (V14.1) */
+        document.addEventListener("submit", function(e) {
+            if(e.target.matches("form.prevent-reload")){
+                e.preventDefault();
+            }
+        });
+        
+        /* 全局錯誤處理 (V15) */
+        window.addEventListener("error", function(e){
+            console.error("GlobalError:", e.message, "at", e.filename, e.lineno);
+        });
+        
+        window.addEventListener("unhandledrejection", function(e){
+            console.error("PromiseError:", e.reason);
+        });
+        
+        /* Passive Scroll 監聽優化 (V14.1 + ChatGPT) */
+        document.addEventListener("wheel", function(){}, {passive:true});
+        document.addEventListener("touchmove", function(){}, {passive:true});
+        document.addEventListener("touchstart", function(){}, {passive:true});
+        
+        /* 安全的 localStorage 包裝 (V15 + ChatGPT 改進) */
+        window.SafeStorage = {
+            set: function(key, value){
+                try{
+                    localStorage.setItem(key, JSON.stringify(value));
+                    return true;
+                }catch(err){
+                    console.warn("Storage write failed:", err);
+                    return false;
+                }
+            },
+            get: function(key, def){
+                try{
+                    var value = localStorage.getItem(key);
+                    return value ? JSON.parse(value) : (def !== undefined ? def : null);
+                }catch(err){
+                    console.warn("Storage read failed:", err);
+                    return (def !== undefined ? def : null);
+                }
+            },
+            remove: function(key){
+                try{
+                    localStorage.removeItem(key);
+                    return true;
+                }catch(err){
+                    console.warn("Storage remove failed:", err);
+                    return false;
+                }
+            }
+        };
+        
     </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
@@ -37,7 +94,7 @@
         @keyframes b-row-outline { 0%,100% { outline-color: rgba(255,255,255,0.2); } 50% { outline-color: rgba(255,255,255,0.9); } }
         .b-row-glow { animation:b-row-outline 1.8s infinite ease-in-out; outline:1.5px solid rgba(255,255,255,0.2); outline-offset:-1px; }
         @keyframes window-spring { 0%{opacity:0;transform:scale(0.97) translateY(10px);}100%{opacity:1;transform:scale(1) translateY(0);} }
-        .animate-window { animation:window-spring 0.35s cubic-bezier(0.16,1,0.3,1) forwards; }
+        .animate-window { animation:window-spring 0.35s cubic-bezier(0.16,1,0.3,1) forwards; will-change: transform, opacity; transform: translateZ(0); }
         .master-left-col { position:absolute; left:0; top:0; bottom:0; width:85px; z-index:50; background:rgba(25,25,27,0.98); border-right:1px solid rgba(255,255,255,0.12); display:flex; flex-direction:column; }
         .master-right { margin-left:85px; overflow-x:auto; overflow-y:hidden; display:block; }
         .master-cell { min-width:80px; flex-shrink:0; text-align:center; border-left:1px solid rgba(255,255,255,0.03); }
@@ -71,7 +128,7 @@
 <script type="text/babel">
 const { useState, useEffect, useMemo, memo, useCallback, useRef } = React;
 
-const APP_VERSION = 'V13.0';
+const APP_VERSION = 'V14.3 Pro';
 
 const safeParse = (v)=>{
  try{
@@ -129,7 +186,8 @@ const StaffBtn = memo(({ name, aliasMap={}, forceName=null, onClick, mode="norma
     const info = STAFF_INFO[name] || { gender:'M', type:'Normal' };
     const { text, dot } = staffColors(info);
     const disp = forceName || aliasMap[name] || name;
-    const sz = mode==="tiny" ? "text-[13px] h-9" : mode==="small" ? "text-[15px] h-8" : mode==="master" ? "text-[15px] h-8" : "text-[20px] h-10";
+    const isLong = name==="廖俊龍";
+    const sz = mode==="tiny" ? "text-[13px] h-9" : mode==="small" ? `${isLong?"text-[13px]":"text-[15px]"} h-8` : mode==="master" ? "text-[15px] h-8" : `${isLong?"text-[18px]":"text-[20px]"} h-10`;
     return ( <button onClick={e=>{e.stopPropagation();onClick&&onClick(name);}} className={`w-full ${sz} rounded-xl font-medium border border-white/5 bg-white/[0.04] flex items-center justify-center gap-1.5 ${text} truncate shrink-0 transition-all hover:bg-white/10 hover:scale-[1.02] active:scale-95`}> <span className={`w-1.5 h-1.5 rounded-full ${dot}`}></span>{disp} </button> );
 });
 
@@ -162,12 +220,12 @@ const NotesModal = memo(({ onClose, visibleDates, schedule, goDate, handleBackTo
 
 const MasterRosterModal = memo(({ onClose, visibleDates, schedule, aliasMap, todayK, handleStaffClick, handleBackToday, openCal }) => {
     const [detail, setDetail] = useState(null);
-    return ( <div className="fixed inset-0 z-[1000] flex items-center justify-center p-3 bg-black/70" onClick={onClose}> <div className="animate-window bg-[rgba(28,28,30,0.98)] border border-white/10 w-full max-w-4xl rounded-[2.2rem] flex flex-col max-h-[90vh] overflow-hidden" onClick={e=>e.stopPropagation()}> <div className="p-3.5 border-b border-white/10 flex items-center justify-between"> <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 text-xl">×</button> <h3 className="text-[17px] font-bold">Master Roster</h3> <div className="flex gap-2"> <TodayBtn onClick={handleBackToday}/> <CalBtn onClick={openCal}/> </div> </div> <div className="flex-1 overflow-hidden relative"> <div className="master-left-col"> <div className="master-hdr flex items-center justify-center border-b border-white/10 text-[10px] font-bold text-white/30">STAFF</div> {STAFF_ORDER.map(s=>( <div key={s} className="master-row px-2"> <StaffBtn name={s} aliasMap={aliasMap} mode="master" forceName={s==="廖俊龍"?"阿龍":null} onClick={handleStaffClick}/> </div> ))} </div> <div id="master-scroll-container" className="master-right h-full overflow-y-auto no-scrollbar scroll-smooth"> <div style={{width:'fit-content'}}> <div className="flex bg-black/20 border-b border-white/10 sticky top-0 z-40 master-hdr"> {visibleDates.map(d=>( <div key={d.fullKey} id={`mnav-${d.fullKey}`} className={`master-cell p-1.5 flex flex-col justify-center ${d.fullKey===todayK?'master-today':''} ${d.w==='六'||d.w==='日'?'weekend-bg':''}`}> <div className="text-[10px] opacity-40">週{d.w}</div> <div className="text-[14px] font-black">{d.d}</div> </div> ))} </div> {STAFF_ORDER.map(staff=>( <div key={staff} className="master-row"> {visibleDates.map(d=>{ let label="—", bgStyle={backgroundColor:'rgba(255,255,255,0.03)'}, hasS=false, activeV=""; VENUE_IDS.forEach(vid=>{ if(schedule.roster[d.fullKey]?.[vid]?.[staff]){ const sh=schedule.roster[d.fullKey][vid][staff].shift; label=`${vid}-${sh}`; bgStyle={backgroundColor:`rgba(${VENUE_MAP[vid].masterBg},0.25)`}; hasS=true; activeV=vid; } }); return ( <div key={d.fullKey} className={`master-cell p-1 ${d.fullKey===todayK?'master-today':''} ${d.w==='六'||d.w==='日'?'weekend-bg':''}`}> <div className={`w-full h-8 flex items-center justify-center rounded-lg text-[11px] font-bold ${hasS?'cursor-pointer hover:brightness-125':''}`} style={bgStyle} onClick={()=>{ if(hasS) setDetail({date:d.fullKey,venue:activeV,show:schedule.shows[d.fullKey]?.[activeV]||"無演出"}); }}> {label} </div> </div> ); })} </div> ))} </div> </div> </div> </div> {detail&&( <div className="fixed inset-0 z-[5000] flex items-center justify-center p-4 bg-black/40" onClick={()=>setDetail(null)}> <div className="animate-window bg-[rgba(40,40,42,0.95)] border border-white/10 p-6 rounded-[2rem] w-full max-w-xs text-center"> <h4 className="text-[18px] font-black">{detail.venue} <span className="text-[13px] opacity-50">{detail.date}</span></h4> <p className="mt-4">{detail.show}</p> <button onClick={()=>setDetail(null)} className="mt-6 w-full py-2.5 bg-white/10 rounded-xl">關閉</button> </div> </div> )} </div> );
+    return ( <div className="fixed inset-0 z-[1000] flex items-center justify-center p-3 bg-black/70" onClick={onClose}> <div className="animate-window bg-[rgba(28,28,30,0.98)] border border-white/10 w-full max-w-4xl rounded-[2.2rem] flex flex-col max-h-[90vh] overflow-hidden" onClick={e=>e.stopPropagation()}> <div className="p-3.5 border-b border-white/10 flex items-center justify-between"> <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 text-xl">×</button> <h3 className="text-[17px] font-bold">Master Roster</h3> <div className="flex gap-2"> <TodayBtn onClick={handleBackToday}/> <CalBtn onClick={openCal}/> </div> </div> <div className="flex-1 overflow-hidden relative"> <div className="master-left-col"> <div className="master-hdr flex items-center justify-center border-b border-white/10 text-[10px] font-bold text-white/30">STAFF</div> {STAFF_ORDER.map(s=>( <div key={s} className="master-row px-2"> <StaffBtn name={s} aliasMap={aliasMap} mode="master" forceName={s==="廖俊龍"?"阿龍":null} onClick={handleStaffClick}/> </div> ))} </div> <div id="master-scroll-container" className="master-right h-full overflow-y-auto no-scrollbar scroll-smooth"> <div style={{width:'fit-content'}}> <div className="flex bg-black/20 border-b border-white/10 sticky top-0 z-40 master-hdr"> {visibleDates.map(d=>( <div key={d.fullKey} id={`mnav-${d.fullKey}`} className={`master-cell p-1.5 flex flex-col justify-center ${d.fullKey===todayK?'master-today':''} ${d.w==='六'||d.w==='日'?'weekend-bg':''}`}> <div className="text-[10px] opacity-40">週{d.w}</div> <div className="text-[14px] font-black">{d.d}</div> </div> ))} </div> {STAFF_ORDER.map(staff=>( <div key={staff} className="master-row"> {visibleDates.map(d=>{ let label="—", bgStyle={backgroundColor:'rgba(255,255,255,0.03)'}, hasS=false, activeV=""; VENUE_IDS.forEach(vid=>{ if(schedule.roster[d.fullKey]?.[vid]?.[staff]){ const sh=schedule.roster[d.fullKey][vid][staff].shift; label=`${vid}-${sh}`; bgStyle={backgroundColor:`rgba(${VENUE_MAP[vid].masterBg},0.25)`}; hasS=true; activeV=vid; } }); return ( <div key={d.fullKey} className={`master-cell p-1 ${d.fullKey===todayK?'master-today':''} ${d.w==='六'||d.w==='日'?'weekend-bg':''}`}> <div className={`w-full h-8 flex items-center justify-center rounded-lg text-[11px] font-bold ${hasS?'cursor-pointer hover:brightness-125':''}`} style={bgStyle} onClick={()=>{ if(hasS) setDetail({date:d.fullKey,venue:activeV,show:schedule.shows[d.fullKey]?.[activeV]||"無演出"}); }}> {label} </div> </div> ); })} </div> ))} </div> </div> </div> </div> {detail&&( <div className="fixed inset-0 z-[5000] flex items-center justify-center p-4 bg-black/40" onClick={()=>setDetail(null)}> <div className="animate-window bg-[rgba(40,40,42,0.95)] border border-white/10 p-6 rounded-[2rem] w-full max-w-xs text-center" onClick={e=>e.stopPropagation()}> <h4 className="text-[18px] font-black">{detail.venue} <span className="text-[13px] opacity-50">{detail.date}</span></h4> <p className="mt-4">{detail.show}</p> <button onClick={()=>setDetail(null)} className="mt-6 w-full py-2.5 bg-white/10 rounded-xl">關閉</button> </div> </div> )} </div> );
 });
 
 const QueryModal = memo(({ queryStaff, queryVenue, onClose, setQueryStaff, setQueryVenue, visibleDates, schedule, aliasMap, curFk, handleStaffClick, handleBackToday, openCal }) => {
     if(!queryStaff&&!queryVenue) return null;
-    return ( <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/70" onClick={onClose}> <div className="animate-window bg-[rgba(28,28,30,0.98)] border border-white/10 w-full max-w-lg rounded-[2.2rem] flex flex-col max-h-[85vh] overflow-hidden" onClick={e=>e.stopPropagation()}> <div className="p-3 border-b border-white/10 bg-white/[0.04] flex items-center justify-between gap-2"> <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 text-xl">×</button> <div className="flex-1 flex justify-center"> {queryVenue?( <div className="flex bg-black/40 rounded-2xl p-1 border border-white/5"> {VENUES.map(v=>( <button key={v.id} onClick={()=>setQueryVenue(v.id)} className={`px-4 py-1.5 rounded-xl text-[14px] font-bold ${queryVenue===v.id?'bg-white/15 text-white':'text-white/30'}`} style={{color:queryVenue===v.id?v.color:undefined}}>{v.id}</button> ))} </div> ):( <h3 className="text-[17px] font-bold">{aliasMap[queryStaff]||queryStaff}</h3> )} </div> <div className="flex items-center gap-2"> <TodayBtn onClick={handleBackToday}/> <CalBtn onClick={openCal}/> </div> </div> <div id={queryVenue?"venue-scroll-container":"staff-scroll-container"} className="flex-1 overflow-y-auto p-4 space-y-3.5 no-scrollbar scroll-smooth"> {visibleDates.map(d=>{ const isS=d.fullKey===curFk, isW=d.w==='六'||d.w==='日'; if(queryVenue){ const vn=schedule.shows[d.fullKey]?.[queryVenue]||"—"; return ( <div key={d.fullKey} id={`mrow-${d.fullKey}`} className={`day-block ${isS?'day-block-today':''}`}> <div className="mb-2 text-[13px] opacity-50 text-right truncate italic">{vn}</div> <div className="flex items-center gap-4"> <div className="flex flex-col border-r border-white/10 pr-3 w-[72px]"> <span className={`text-[11px] font-bold ${isW?'text-rose-400':'opacity-40'}`}>週{d.w}</span> <span className={`text-[22px] font-black ${isW?'text-rose-400':'opacity-90'}`}>{d.d}</span> </div> <div className="flex-1 grid grid-cols-2 gap-2.5"> {SHIFTS.map(sh=>( <div key={sh} className="bg-black/20 rounded-xl p-1.5 min-h-[44px]"> {Object.entries(schedule.roster[d.fullKey]?.[queryVenue]||{}).filter(([,v])=>v.shift===sh).map(([n])=><StaffBtn key={n} name={n} aliasMap={aliasMap} onClick={handleStaffClick} mode="small"/>)} </div> ))} </div> </div> </div> ); } let st="辦公", co="#FF9500", hasS=false, activeV=""; VENUE_IDS.forEach(vid=>{ if(schedule.roster[d.fullKey]?.[vid]?.[queryStaff]){ const sh=schedule.roster[d.fullKey][vid][queryStaff].shift; st=`${vid}-${sh}`; co=VENUE_MAP[vid]?.color||'#0A84FF'; hasS=true; activeV=vid; } }); if(schedule.statuses[d.fullKey]?.[queryStaff]?.match(/休|例|假/)){st="休假";co="#636366";} const sn=hasS?(schedule.shows[d.fullKey]?.[activeV]||""):""; return ( <div key={d.fullKey} id={`mrow-${d.fullKey}`} className={`flex items-center gap-4 day-block ${isS?'day-block-today':''} ${isW?(hasS?`wk-${activeV}`:'wk-off'):''}`}> <div className="flex flex-col border-r border-white/10 pr-3 w-[72px]"> <span className={`text-[11px] font-bold ${isW?'text-rose-400':'opacity-40'}`}>週{d.w}</span> <span className={`text-[22px] font-black ${isW?'text-rose-400':'opacity-90'}`}>{d.d}</span> </div> <div className="flex-1 mq-wrap text-[16px] font-medium opacity-60 italic"> <span className={sn.length>10?"mq-run":""}>{sn}</span> </div> <button onClick={()=>{ if(hasS){setQueryStaff(null);setQueryVenue(activeV);} }} className={`text-[15px] font-bold px-3.5 py-1.5 rounded-xl shrink-0 transition-all ${hasS?'cursor-pointer hover:opacity-80':'cursor-default'}`} style={{color:co,backgroundColor:`${co}1A`}}> {st} </button> </div> ); })} </div> </div> </div> ); });
+    return ( <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/70" onClick={onClose}> <div className="animate-window bg-[rgba(28,28,30,0.98)] border border-white/10 w-full max-w-lg rounded-[2.2rem] flex flex-col max-h-[85vh] overflow-hidden" onClick={e=>e.stopPropagation()}> <div className="p-3 border-b border-white/10 bg-white/[0.04] flex items-center justify-between gap-2"> <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 text-xl">×</button> <div className="flex-1 flex justify-center"> {queryVenue?( <div className="flex bg-black/40 rounded-2xl p-1 border border-white/5"> {VENUES.map(v=>( <button key={v.id} onClick={()=>setQueryVenue(v.id)} className={`px-4 py-1.5 rounded-xl text-[14px] font-bold ${queryVenue===v.id?'bg-white/15 text-white':'text-white/30'}`} style={{color:queryVenue===v.id?v.color:undefined}}>{v.id}</button> ))} </div> ):( <h3 className="text-[17px] font-bold">{aliasMap[queryStaff]||queryStaff}</h3> )} </div> <div className="flex items-center gap-2"> <TodayBtn onClick={handleBackToday}/> <CalBtn onClick={openCal}/> </div> </div> <div id={queryVenue?"venue-scroll-container":"staff-scroll-container"} className="flex-1 overflow-y-auto p-4 space-y-3.5 no-scrollbar scroll-smooth"> {visibleDates.map(d=>{ const isS=d.fullKey===curFk, isW=d.w==='六'||d.w==='日'; if(queryVenue){ const vn=schedule.shows[d.fullKey]?.[queryVenue]||"—"; return ( <div key={d.fullKey} id={`mrow-${d.fullKey}`} className={`day-block ${isS?'day-block-today':''}`}> <div className="mb-2 text-[13px] opacity-50 text-right truncate italic">{vn}</div> <div className="flex items-center gap-4"> <div className="flex flex-col border-r border-white/10 pr-3 w-[72px]"> <span className={`text-[11px] font-bold ${isW?'text-rose-400':'opacity-40'}`}>週{d.w}</span> <span className={`text-[22px] font-black ${isW?'text-rose-400':'opacity-90'}`}>{d.d}</span> </div> <div className="flex-1 grid grid-cols-2 gap-2.5"> {SHIFTS.map(sh=>( <div key={sh} className="bg-black/20 rounded-xl p-1.5 min-h-[44px]"> {Object.entries(schedule.roster[d.fullKey]?.[queryVenue]||{}).filter(([,v])=>v.shift===sh).map(([n])=><StaffBtn key={n} name={n} aliasMap={aliasMap} onClick={handleStaffClick} mode="small"/>)} </div> ))} </div> </div> </div> ); } let st="辦公", co="#FF9500", hasS=false, activeV="", activeSh=""; VENUE_IDS.forEach(vid=>{ if(schedule.roster[d.fullKey]?.[vid]?.[queryStaff]){ const sh=schedule.roster[d.fullKey][vid][queryStaff].shift; st=`${vid}-${sh}`; co=VENUE_MAP[vid]?.color||'#0A84FF'; hasS=true; activeV=vid; activeSh=sh; } }); if(schedule.statuses[d.fullKey]?.[queryStaff]?.match(/休|例|假/)){st="休假";co="#636366";} const sn=hasS?(schedule.shows[d.fullKey]?.[activeV]||""):""; const isBShift=activeSh==='B'; return ( <div key={d.fullKey} id={`mrow-${d.fullKey}`} className={`flex items-center gap-4 day-block ${isS?'day-block-today':''} ${isW?(hasS?`wk-${activeV}`:'wk-off'):''}`}> <div className="flex flex-col border-r border-white/10 pr-3 w-[72px]"> <span className={`text-[11px] font-bold ${isW?'text-rose-400':'opacity-40'}`}>週{d.w}</span> <span className={`text-[22px] font-black ${isW?'text-rose-400':'opacity-90'}`}>{d.d}</span> </div> <div className="flex-1 mq-wrap text-[16px] font-medium opacity-60 italic"> <span className={sn.length>10?"mq-run":""}>{sn}</span> </div> <button onClick={()=>{ if(hasS){setQueryStaff(null);setQueryVenue(activeV);} }} className={`text-[15px] font-bold px-3.5 py-1.5 rounded-xl shrink-0 transition-all ${isBShift?'b-badge-glow':''} ${hasS?'cursor-pointer hover:opacity-80 active:scale-95':'cursor-default'}`} style={{color:co,backgroundColor:`${co}1A`,border:isBShift?'none':`1px solid ${co}33`}}> {st} </button> </div> ); })} </div> </div> </div> ); });
 
 /* ════════════════════════════════════════════════════════════
    MAIN APP (修正狀態記憶與監聽)
@@ -178,7 +236,7 @@ const App = () => {
     const [aliasMap,setAliasMap] = useState({});
     const [lastUpdated,setLastUpdated] = useState("");
     const [isRecentlyUpdated,setIsRecentlyUpdated] = useState(false);
-    const seenUpdateRef = useRef(localStorage.getItem('tpac_seen_update') || '');
+    const seenUpdateRef = useRef(window.SafeStorage.get('tpac_seen_update') || '');
     const [isUnlocked,setIsUnlocked] = useState(false);
     const [errorMsg,setErrorMsg] = useState(null);
     const [user,setUser] = useState(null);
@@ -189,18 +247,17 @@ const App = () => {
     const [queryTarget,setQueryTarget] = useState(null);
     const [calMonth,setCalMonth] = useState(()=>{const n=new Date();return{y:n.getFullYear(),m:n.getMonth()};});
     
-    const markUpdateSeen = useCallback(()=>{ if(!isRecentlyUpdated) return; localStorage.setItem('tpac_seen_update', seenUpdateRef.current); setIsRecentlyUpdated(false); },[isRecentlyUpdated]);
+    const markUpdateSeen = useCallback(()=>{ if(!isRecentlyUpdated) return; window.SafeStorage.set('tpac_seen_update', seenUpdateRef.current); setIsRecentlyUpdated(false); },[isRecentlyUpdated]);
 
     const [rangeConfig,setRangeConfig] = useState(()=>{
         const fallback = {type:'default',past:7,future:60};
-        try{ const s=localStorage.getItem('tpac_range_v12'); if(s){ const parsed = JSON.parse(s); if (parsed && typeof parsed.future === 'number') return parsed; } }catch(e){}
+        const stored = window.SafeStorage.get('tpac_range_v12');
+        if(stored && typeof stored.future === 'number') return stored;
         return fallback;
     });
-    useEffect(()=>{ localStorage.setItem('tpac_range_v12',JSON.stringify(rangeConfig)); },[rangeConfig]);
+    useEffect(()=>{ window.SafeStorage.set('tpac_range_v12',rangeConfig); },[rangeConfig]);
 
     const visibleDates = useMemo(()=>{ if(!allDates.length) return []; if(rangeConfig.type==='all') return allDates; const start=Math.max(0,dateIdx-(rangeConfig.past||7)); const end=Math.min(allDates.length,dateIdx+(rangeConfig.future||60)+1); return allDates.slice(start,end); },[allDates,dateIdx,rangeConfig]);
-    
-    const scrollTimers = useRef({});
     
 const scrollTo = useCallback((fk,cid)=>{
 
@@ -311,7 +368,7 @@ useEffect(()=>{
 
     useEffect(()=>{
         if(!user)return; const db=Firebase.getFirestore();
-        return Firebase.onSnapshot( Firebase.doc(db,'artifacts',APP_ID,'public','data','rosters','master'), snap=>{ if(!snap.exists()){ setErrorMsg("找不到班表資料庫，請聯絡管理員"); return; } const data=snap.data(), roster=safeParse(data.roster), statuses=safeParse(data.statuses), shows=safeParse(data.shows), notes=safeParse(data.notes); if(data.lastUpdated){ const d=new Date(data.lastUpdated), fmtKey=`${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; setLastUpdated(fmtKey); seenUpdateRef.current = fmtKey; setIsRecentlyUpdated(fmtKey !== (localStorage.getItem('tpac_seen_update') || '')); } const keys=Object.keys(roster).sort(), sd=keys.map((k,idx)=>{ const [yy,mm,dd]=k.split('/').map(Number), o=new Date(yy,mm-1,dd); return{d:`${mm}/${dd}`,w:['日','一','二','三','四','五','六'][o.getDay()],fullKey:k,absIdx:idx}; }); setSchedule({roster,statuses,shows,notes}); setAllDates(sd); setIsUnlocked(true); const tK=formatK(new Date()), mi=keys.indexOf(tK); if(mi!==-1){setDateIdx(mi);setTimeout(()=>scrollTo(tK,"nav-scroll-container"),500);} }, ()=>setErrorMsg("資料同步失敗，請重新整理") );
+        return Firebase.onSnapshot( Firebase.doc(db,'artifacts',APP_ID,'public','data','rosters','master'), snap=>{ if(!snap.exists()){ setErrorMsg("找不到班表資料庫，請聯絡管理員"); return; } const data=snap.data(), roster=safeParse(data.roster), statuses=safeParse(data.statuses), shows=safeParse(data.shows), notes=safeParse(data.notes); if(data.lastUpdated){ const d=new Date(data.lastUpdated), fmtKey=`${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; setLastUpdated(fmtKey); seenUpdateRef.current = fmtKey; setIsRecentlyUpdated(fmtKey !== (window.SafeStorage.get('tpac_seen_update') || '')); } const keys=Object.keys(roster).sort(), sd=keys.map((k,idx)=>{ const [yy,mm,dd]=k.split('/').map(Number), o=new Date(yy,mm-1,dd); return{d:`${mm}/${dd}`,w:['日','一','二','三','四','五','六'][o.getDay()],fullKey:k,absIdx:idx}; }); setSchedule({roster,statuses,shows,notes}); setAllDates(sd); setIsUnlocked(true); const tK=formatK(new Date()), mi=keys.indexOf(tK); if(mi!==-1){setDateIdx(mi);setTimeout(()=>scrollTo(tK,"nav-scroll-container"),500);} }, ()=>setErrorMsg("資料同步失敗，請重新整理") );
     },[user,scrollTo]);
 
     /* ⭐️ 修正 3：加入 queryTarget 確保對位觸發 ⭐️ */
