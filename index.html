@@ -146,7 +146,8 @@ const Icon = memo(({ name, className="w-4 h-4" }) => {
 
 /* ── ⭐️ 共用圖示按鈕 (Home & Cal) ⭐️ ── */
 const HomeBtn = ({ onClick }) => (
-    <button onClick={onClick} title="回到今天" className="w-8 h-8 rounded-full bg-[var(--mac-blue)]/20 border border-[var(--mac-blue)]/40 flex items-center justify-center text-[var(--mac-blue)] hover:bg-[var(--mac-blue)]/35 transition-all active:scale-90 shrink-0">
+    <button onClick={onClick} title="回到今天" 
+        className="w-8 h-8 rounded-full bg-white/[0.06] border border-white/10 flex items-center justify-center text-[var(--mac-blue)] hover:bg-white/15 transition-all active:scale-90 shrink-0">
         <Icon name="home" className="w-4 h-4"/>
     </button>
 );
