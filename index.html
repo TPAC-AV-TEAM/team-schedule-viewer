@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>視聽班表系統 | V11.2</title>
+    <title>視聽班表系統 | V12.6</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -28,75 +28,41 @@
             --reminder-pink: #FF375F;
         }
         body { font-family:'Inter','Noto Sans TC',sans-serif; height:100vh; overflow:hidden; background:var(--mac-bg); color:#fff; -webkit-font-smoothing:antialiased; letter-spacing:-0.01em; }
-
-        .aura-bg {
-            position:fixed; inset:0; z-index:0; pointer-events:none;
-            background:
-                radial-gradient(circle at 15% 0%, rgba(10,132,255,0.12) 0%, transparent 40%),
-                radial-gradient(circle at 85% 100%, rgba(255,55,95,0.08) 0%, transparent 50%),
-                radial-gradient(circle at 50% 50%, #1e1e1f 0%, #121213 100%);
-        }
+        .aura-bg { position:fixed; inset:0; z-index:0; pointer-events:none; background: radial-gradient(circle at 15% 0%, rgba(10,132,255,0.12) 0%, transparent 40%), radial-gradient(circle at 85% 100%, rgba(255,55,95,0.08) 0%, transparent 50%), radial-gradient(circle at 50% 50%, #1e1e1f 0%, #121213 100%); }
         .mac-glass { background:rgba(30,30,32,0.65); backdrop-filter:blur(50px) saturate(180%); border-bottom:0.5px solid rgba(255,255,255,0.08); box-shadow:0 4px 30px rgba(0,0,0,0.1); }
         .no-scrollbar::-webkit-scrollbar { display:none; }
-
-        .btn-today { background:var(--mac-blue); color:white; padding:4.5px 14px; border-radius:9999px; font-size:11px; font-weight:800; box-shadow:0 4px 12px rgba(10,132,255,0.3); transition:all 0.2s cubic-bezier(0.25,1,0.5,1); flex-shrink:0; }
-        .btn-today:active { transform:scale(0.92); }
         .weekend-bg { background:rgba(255,55,95,0.05) !important; }
-
-        @keyframes b-badge-pulse {
-            0%,100% { border-color: rgba(255,255,255,0.2); background-color: rgba(255,255,255,0.05); }
-            50%     { border-color: rgba(255,255,255,0.8); background-color: rgba(255,255,255,0.2); }
-        }
+        @keyframes b-badge-pulse { 0%,100% { border-color: rgba(255,255,255,0.2); background-color: rgba(255,255,255,0.05); } 50% { border-color: rgba(255,255,255,0.8); background-color: rgba(255,255,255,0.2); } }
         .b-badge-glow { animation:b-badge-pulse 1.8s infinite ease-in-out; border-width:1.5px !important; border-style:solid !important; }
-
-        @keyframes b-row-outline {
-            0%,100% { outline-color: rgba(255,255,255,0.2); }
-            50%      { outline-color: rgba(255,255,255,0.9); }
-        }
+        @keyframes b-row-outline { 0%,100% { outline-color: rgba(255,255,255,0.2); } 50% { outline-color: rgba(255,255,255,0.9); } }
         .b-row-glow { animation:b-row-outline 1.8s infinite ease-in-out; outline:1.5px solid rgba(255,255,255,0.2); outline-offset:-1px; }
-
         @keyframes window-spring { 0%{opacity:0;transform:scale(0.97) translateY(10px);}100%{opacity:1;transform:scale(1) translateY(0);} }
         .animate-window { animation:window-spring 0.35s cubic-bezier(0.16,1,0.3,1) forwards; }
-
         .master-left-col { position:absolute; left:0; top:0; bottom:0; width:85px; z-index:50; background:rgba(25,25,27,0.98); border-right:1px solid rgba(255,255,255,0.12); display:flex; flex-direction:column; }
         .master-right { margin-left:85px; overflow-x:auto; overflow-y:hidden; display:block; }
         .master-cell { min-width:80px; flex-shrink:0; text-align:center; border-left:1px solid rgba(255,255,255,0.03); }
         .master-hdr { height:50px; }
         .master-row { height:48px; display:flex; align-items:center; border-bottom:0.5px solid rgba(255,255,255,0.04); }
-
         .day-block { background:var(--mac-card-light); border:0.5px solid rgba(255,255,255,0.1); border-radius:1.25rem; padding:14px; margin-bottom:12px; box-shadow:inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 15px rgba(0,0,0,0.2); }
-        .day-block-today { background:rgba(72,72,74,0.6)!important; border:1.5px solid var(--mac-blue)!important; box-shadow:inset 0 1px 0 rgba(255,255,255,0.1), 0 0 20px rgba(10,132,255,0.25)!important; }
-        .master-today { background:rgba(10,132,255,0.15)!important; border-left:1px solid var(--mac-blue)!important; border-right:1px solid var(--mac-blue)!important; }
-
         .mq-wrap { overflow:hidden; white-space:nowrap; position:relative; width:100%; }
         .mq-run { display:inline-block; padding-left:100%; animation:mq 25s linear infinite; }
         @keyframes mq { 0%{transform:translateX(0);}100%{transform:translateX(-100%);} }
-
-        @keyframes reminder-pulse {
-            0%,100% { border-color: rgba(255,55,95,0.2); }
-            50%     { border-color: rgba(255,55,95,0.9); }
-        }
+        @keyframes reminder-pulse { 0%,100% { border-color: rgba(255,55,95,0.2); } 50% { border-color: rgba(255,55,95,0.9); } }
         .reminder-glow { animation:reminder-pulse 3s infinite ease-in-out; border-width:1px!important; }
-
         .wk-GT  { background:rgba(255,59,48,0.08)  !important; border-color:rgba(255,59,48,0.2)  !important; }
         .wk-BB  { background:rgba(90,200,250,0.08) !important; border-color:rgba(90,200,250,0.2) !important; }
         .wk-GP  { background:rgba(52,199,89,0.08)  !important; border-color:rgba(52,199,89,0.2)  !important; }
         .wk-off { background:rgba(255,55,95,0.04)  !important; border-color:rgba(255,55,95,0.1)  !important; }
 
+        /* ⭐️ 提高 Today 權重，確保高亮外框穩定顯示 ⭐️ */
+        .day-block-today { background:rgba(72,72,74,0.6)!important; border:1.5px solid var(--mac-blue)!important; box-shadow:inset 0 1px 0 rgba(255,255,255,0.1), 0 0 20px rgba(10,132,255,0.25)!important; }
+        .master-today { background:rgba(10,132,255,0.15)!important; border-left:1px solid var(--mac-blue)!important; border-right:1px solid var(--mac-blue)!important; z-index: 10; position: relative; }
+
         .range-input { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:white; width:60px; text-align:center; padding:4px; border-radius:8px; font-weight:bold; outline:none; transition:border 0.2s; }
         .range-input:focus { border-color:var(--mac-blue); }
 
-        /* ── 瞬發型工具提示 ── */
         [data-tip] { position: relative; }
-        [data-tip]:hover::after {
-            content: attr(data-tip);
-            position: absolute; top: 115%; left: 50%; transform: translateX(-50%);
-            background: rgba(45,45,48,0.98); color: #fff; border: 0.5px solid rgba(255,255,255,0.15);
-            padding: 5px 10px; border-radius: 8px; font-size: 11px; font-weight: 700;
-            white-space: nowrap; z-index: 10000; pointer-events: none;
-            backdrop-filter: blur(8px); box-shadow: 0 5px 15px rgba(0,0,0,0.4);
-            animation: tip-fade 0.1s ease-out forwards;
-        }
+        [data-tip]:hover::after { content: attr(data-tip); position: absolute; top: 115%; left: 50%; transform: translateX(-50%); background: rgba(45,45,48,0.98); color: #fff; border: 0.5px solid rgba(255,255,255,0.15); padding: 5px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; white-space: nowrap; z-index: 10000; pointer-events: none; backdrop-filter: blur(8px); box-shadow: 0 5px 15px rgba(0,0,0,0.4); animation: tip-fade 0.1s ease-out forwards; }
         @keyframes tip-fade { from{opacity:0;transform:translateX(-50%) translateY(-3px);}to{opacity:1;transform:translateX(-50%) translateY(0);} }
     </style>
 </head>
@@ -105,51 +71,9 @@
 <script type="text/babel">
 const { useState, useEffect, useMemo, memo, useCallback, useRef } = React;
 
-const APP_VERSION = 'V12';
+const APP_VERSION = 'V12.6';
 
-/* ══════════════════════════════════════════════════════════
-   CENTRAL CONFIG
-   ══════════════════════════════════════════════════════════ */
-const VENUES = [
-    { id:'GT', color:'#FF3B30', masterBg:'255,59,48'   },
-    { id:'BB', color:'#5AC8FA', masterBg:'90,200,250'  },
-    { id:'GP', color:'#34C759', masterBg:'52,199,89'   },
-];
-const VENUE_IDS = VENUES.map(v => v.id);
-const VENUE_MAP = Object.fromEntries(VENUES.map(v => [v.id, v]));
-const SHIFTS = ['A', 'B'];
-
-const STAFF_ORDER = ["王志剛","張國飛","張劭如","謝祥玄","張懷德","楊淯舒","黎祐甄","廖俊龍","曾健洋","劉智敏"];
-const STAFF_INFO = {
-    "王志剛":{ gender:"M", type:"Normal"  }, "張國飛":{ gender:"M", type:"Normal"  },
-    "張劭如":{ gender:"F", type:"Normal"  }, "謝祥玄":{ gender:"M", type:"Normal"  },
-    "張懷德":{ gender:"M", type:"Normal"  }, "楊淯舒":{ gender:"F", type:"Normal"  },
-    "黎祐甄":{ gender:"F", type:"Normal"  }, "廖俊龍":{ gender:"M", type:"Normal"  },
-    "曾健洋":{ gender:"M", type:"Special" }, "劉智敏":{ gender:"M", type:"Special" },
-};
-
-const FIREBASE_CONFIG = {
-    apiKey: "AIzaSyA7tgFRxDCnZpOzEvfT978wIAcqcXNZXVQ",
-    authDomain: "team-schedule-viewer.firebaseapp.com",
-    projectId: "team-schedule-viewer",
-    storageBucket: "team-schedule-viewer.firebasestorage.app",
-    messagingSenderId: "202883367260",
-    appId: "1:202883367260:web:b31e495084a4ea8af20199"
-};
-const APP_ID = "team-schedule-viewer";
-
-/* ── 防彈 Date 工具 ── */
-const formatK = d => `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
-const parseK = k => { const [y,m,d] = k.split('/').map(Number); return new Date(y, m-1, d); };
-
-const staffColors = info => {
-    if (!info || info.type==="Special") return { text:"text-[var(--special-text)]", dot:"bg-[var(--special-dot)]" };
-    return info.gender==="F"
-        ? { text:"text-[var(--women-text)]", dot:"bg-[var(--women-dot)]" }
-        : { text:"text-[var(--men-text)]",   dot:"bg-[var(--men-dot)]"   };
-};
-
-/* ── Icons ── */
+/* ── 核心組件定義 (修復 Today 圖示) ── */
 const Icon = memo(({ name, className="w-4 h-4" }) => {
     const icons = {
         filter: <><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></>,
@@ -158,648 +82,209 @@ const Icon = memo(({ name, className="w-4 h-4" }) => {
         brief:  <><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></>,
         cal:    <><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></>,
         bell:   <><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></>,
-        today:  <><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="12" cy="16" r="2"/></>,
+        today:  <><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="12" cy="16" r="1.2"/></>,
     };
     return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{icons[name]}</svg>;
 });
+
+const TodayBtn = ({ onClick, tip="回到今天" }) => (
+    <button onClick={onClick} data-tip={tip}
+        className="w-8 h-8 rounded-full bg-white/[0.06] border border-white/10 flex items-center justify-center text-[var(--mac-blue)] hover:bg-white/15 transition-all active:scale-90 shrink-0">
+        <Icon name="today" className="w-4 h-4"/>
+    </button>
+);
+
+const CalBtn = ({ onClick }) => (
+    <button onClick={onClick} data-tip="跳轉日期" className="w-8 h-8 rounded-full bg-white/[0.06] border border-white/10 flex items-center justify-center text-white/60 hover:bg-white/15 transition-all shrink-0">
+        <Icon name="cal" className="w-4 h-4"/>
+    </button>
+);
+
+/* ══════════════════════════════════════════════════════════
+   CENTRAL CONFIG & HELPERS
+   ══════════════════════════════════════════════════════════ */
+const VENUES = [ { id:'GT', color:'#FF3B30', masterBg:'255,59,48' }, { id:'BB', color:'#5AC8FA', masterBg:'90,200,250' }, { id:'GP', color:'#34C759', masterBg:'52,199,89' } ];
+const VENUE_IDS = VENUES.map(v => v.id);
+const VENUE_MAP = Object.fromEntries(VENUES.map(v => [v.id, v]));
+const SHIFTS = ['A', 'B'];
+const STAFF_ORDER = ["王志剛","張國飛","張劭如","謝祥玄","張懷德","楊淯舒","黎祐甄","廖俊龍","曾健洋","劉智敏"];
+const STAFF_INFO = { "王志剛":{ gender:"M", type:"Normal" }, "張國飛":{ gender:"M", type:"Normal" }, "張劭如":{ gender:"F", type:"Normal" }, "謝祥玄":{ gender:"M", type:"Normal" }, "張懷德":{ gender:"M", type:"Normal" }, "楊淯舒":{ gender:"F", type:"Normal" }, "黎祐甄":{ gender:"F", type:"Normal" }, "廖俊龍":{ gender:"M", type:"Normal" }, "曾健洋":{ gender:"M", type:"Special" }, "劉智敏":{ gender:"M", type:"Special" }, };
+const FIREBASE_CONFIG = { apiKey: "AIzaSyA7tgFRxDCnZpOzEvfT978wIAcqcXNZXVQ", authDomain: "team-schedule-viewer.firebaseapp.com", projectId: "team-schedule-viewer", storageBucket: "team-schedule-viewer.firebasestorage.app", messagingSenderId: "202883367260", appId: "1:202883367260:web:b31e495084a4ea8af20199" };
+const APP_ID = "team-schedule-viewer";
+const formatK = d => `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+const parseK = k => { const [y,m,d] = k.split('/').map(Number); return new Date(y, m-1, d); };
+const staffColors = info => info && info.type==="Special" ? { text:"text-[var(--special-text)]", dot:"bg-[var(--special-dot)]" } : info && info.gender==="F" ? { text:"text-[var(--women-text)]", dot:"bg-[var(--women-dot)]" } : { text:"text-[var(--men-text)]", dot:"bg-[var(--men-dot)]" };
 
 /* ── StaffBtn ── */
 const StaffBtn = memo(({ name, aliasMap={}, forceName=null, onClick, mode="normal" }) => {
     const info = STAFF_INFO[name] || { gender:'M', type:'Normal' };
     const { text, dot } = staffColors(info);
     const disp = forceName || aliasMap[name] || name;
-    const isLong = name==="廖俊龍";
-    const sz = mode==="tiny"   ? "text-[13px] h-9"
-             : mode==="small"  ? `${isLong?"text-[15px]":"text-[17px]"} h-8`
-             : mode==="master" ? "text-[15px] h-8"
-             :                   `${isLong?"text-[20px]":"text-[24px]"} h-10`;
-    return (
-        <button onClick={e=>{e.stopPropagation();onClick&&onClick(name);}}
-            className={`w-full ${sz} rounded-xl font-medium border border-white/5 bg-white/[0.04] flex items-center justify-center gap-1.5 ${text} truncate shrink-0 transition-all hover:bg-white/10 hover:scale-[1.02] active:scale-95`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${dot}`}></span>{disp}
-        </button>
-    );
+    const sz = mode==="tiny" ? "text-[13px] h-9" : mode==="small" ? "text-[15px] h-8" : mode==="master" ? "text-[15px] h-8" : "text-[20px] h-10";
+    return ( <button onClick={e=>{e.stopPropagation();onClick&&onClick(name);}} className={`w-full ${sz} rounded-xl font-medium border border-white/5 bg-white/[0.04] flex items-center justify-center gap-1.5 ${text} truncate shrink-0 transition-all hover:bg-white/10 hover:scale-[1.02] active:scale-95`}> <span className={`w-1.5 h-1.5 rounded-full ${dot}`}></span>{disp} </button> );
 });
 
-/* ── ⭐️ 共用圖示按鈕 ── */
-const TodayBtn = ({ onClick, tip="回到今天" }) => (
-    <button onClick={onClick} data-tip={tip}
-        className="w-8 h-8 rounded-full bg-[var(--mac-blue)]/20 border border-[var(--mac-blue)]/40 flex items-center justify-center text-[var(--mac-blue)] hover:bg-[var(--mac-blue)]/35 transition-all active:scale-90 shrink-0">
-        <Icon name="today" className="w-4 h-4"/>
-    </button>
-);
-
-const CalBtn = ({ onClick }) => (
-    <button onClick={onClick} data-tip="跳轉日期" className="w-8 h-8 rounded-full bg-white/[0.06] border border-white/10 flex items-center justify-center text-white/60 hover:bg-white/15 hover:text-white transition-all shrink-0">
-        <Icon name="cal" className="w-4 h-4"/>
-    </button>
-);
-
 /* ════════════════════════════════════════════════════════════
-   RangePickerModal
+   Modal Components (修正 Today 行為)
    ════════════════════════════════════════════════════════════ */
 const RangePickerModal = memo(({ onClose, currentRange, setRange }) => {
     const [cP, setCP] = useState(currentRange.past);
     const [cF, setCF] = useState(currentRange.future);
-
-    useEffect(()=>{ 
-        setCP(currentRange.past); 
-        setCF(currentRange.future); 
-    },[currentRange]);
-
-    return (
-        <div className="fixed inset-0 z-[3000] flex items-center justify-center p-6 bg-black/70 backdrop-blur-sm" onClick={onClose}>
-            <div className="animate-window bg-[rgba(30,30,32,0.95)] border border-white/10 w-full max-w-sm rounded-[2.5rem] p-6 shadow-2xl flex flex-col gap-3" onClick={e=>e.stopPropagation()}>
-                <h3 className="text-xl font-black tracking-widest mb-2 text-center">載入範圍設定</h3>
-                <button onClick={()=>{ setRange({type:'default',past:7,future:60}); onClose(); }}
-                    className={`w-full py-3.5 rounded-2xl border flex flex-col items-center justify-center transition-all ${currentRange.type==='default'?'bg-[var(--mac-blue)] border-blue-400':'bg-white/5 border-white/10 hover:bg-white/10'}`}>
-                    <span className="font-bold text-[15px]">標準效能模式 (推薦)</span>
-                    <span className="text-[11px] opacity-60 mt-1">載入 前 7 天 ➔ 後 60 天</span>
-                </button>
-                <button onClick={()=>{ setRange({type:'all'}); onClose(); }}
-                    className={`w-full py-3.5 rounded-2xl border flex flex-col items-center justify-center transition-all ${currentRange.type==='all'?'bg-rose-600/80 border-rose-400':'bg-white/5 border-white/10 hover:bg-rose-500/20'}`}>
-                    <span className="font-bold text-[15px]">載入全年度資料</span>
-                </button>
-                <div className={`mt-2 p-4 rounded-2xl border flex flex-col items-center gap-3 transition-all ${currentRange.type==='custom'?'border-orange-400 bg-orange-500/10':'border-white/10 bg-white/5'}`}>
-                    <span className={`font-bold text-[14px] ${currentRange.type==='custom'?'text-orange-400':'text-white'}`}>⚙️ 自訂滑動視窗範圍</span>
-                    <div className="flex items-center gap-3 text-[13px] font-medium">
-                        <span>前 <input type="number" min="0" max="300" className="range-input" value={cP} onChange={e=>setCP(e.target.value)}/> 天</span>
-                        <span className="text-white/30">|</span>
-                        <span>後 <input type="number" min="0" max="300" className="range-input" value={cF} onChange={e=>setCF(e.target.value)}/> 天</span>
-                    </div>
-                    <button onClick={()=>{ setRange({type:'custom',past:parseInt(cP)||0,future:parseInt(cF)||0}); onClose(); }}
-                        className="w-full mt-1 py-2 bg-white/10 hover:bg-white/20 rounded-xl font-bold text-[12px] transition-colors">
-                        套用自訂範圍
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
+    useEffect(()=>{ setCP(currentRange.past); setCF(currentRange.future); },[currentRange]);
+    return ( <div className="fixed inset-0 z-[3000] flex items-center justify-center p-6 bg-black/70 backdrop-blur-sm" onClick={onClose}> <div className="animate-window bg-[rgba(30,30,32,0.95)] border border-white/10 w-full max-w-sm rounded-[2.5rem] p-6 shadow-2xl flex flex-col gap-3" onClick={e=>e.stopPropagation()}> <h3 className="text-xl font-black tracking-widest mb-2 text-center">載入範圍設定</h3> <button onClick={()=>{ setRange({type:'default',past:7,future:60}); onClose(); }} className={`w-full py-3.5 rounded-2xl border flex flex-col items-center justify-center transition-all ${currentRange.type==='default'?'bg-[var(--mac-blue)] border-blue-400':'bg-white/5 border-white/10 hover:bg-white/10'}`}> <span className="font-bold text-[15px]">標準效能模式 (推薦)</span> </button> <button onClick={()=>{ setRange({type:'all'}); onClose(); }} className={`w-full py-3.5 rounded-2xl border flex flex-col items-center justify-center transition-all ${currentRange.type==='all'?'bg-rose-600/80 border-rose-400':'bg-white/5 border-white/10 hover:bg-rose-500/20'}`}> <span className="font-bold text-[15px]">載入全年度資料</span> </button> <div className={`mt-2 p-4 rounded-2xl border flex flex-col items-center gap-3 transition-all ${currentRange.type==='custom'?'border-orange-400 bg-orange-500/10':'border-white/10 bg-white/5'}`}> <span className="font-bold text-[14px]">⚙️ 自訂滑動視窗範圍</span> <div className="flex items-center gap-3"> <span>前 <input type="number" className="range-input" value={cP} onChange={e=>setCP(e.target.value)}/> 天</span> <span>後 <input type="number" className="range-input" value={cF} onChange={e=>setCF(e.target.value)}/> 天</span> </div> <button onClick={()=>{ setRange({type:'custom',past:parseInt(cP)||0,future:parseInt(cF)||0}); onClose(); }} className="w-full py-2 bg-white/10 hover:bg-white/20 rounded-xl font-bold text-[12px]">套用</button> </div> </div> </div> );
 });
 
-/* ════════════════════════════════════════════════════════════
-   CalendarPicker
-   ════════════════════════════════════════════════════════════ */
 const CalendarPicker = memo(({ allDates, onSelect, onClose, calMonth, setCalMonth }) => {
     const dateSet = useMemo(()=>new Set(allDates.map(d=>d.fullKey)),[allDates]);
     const {y,m} = calMonth;
     const firstDay = new Date(y,m,1).getDay();
     const daysInMonth = new Date(y,m+1,0).getDate();
     const todayK = formatK(new Date());
-    const cells = [];
-    for(let i=0;i<firstDay;i++) cells.push(null);
-    for(let d=1;d<=daysInMonth;d++) cells.push(d);
+    const cells = []; for(let i=0;i<firstDay;i++) cells.push(null); for(let d=1;d<=daysInMonth;d++) cells.push(d);
     const toKey = d => `${y}/${String(m+1).padStart(2,'0')}/${String(d).padStart(2,'0')}`;
-    return (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-md" onClick={onClose}>
-            <div className="animate-window bg-[rgba(30,30,32,0.92)] border border-white/10 rounded-[1.8rem] shadow-[0_20px_50px_rgba(0,0,0,0.6)] w-full max-w-[280px] p-5" onClick={e=>e.stopPropagation()}>
-                <div className="flex items-center justify-between mb-4 px-1">
-                    <button onClick={()=>setCalMonth(p=>p.m===0?{y:p.y-1,m:11}:{y:p.y,m:p.m-1})} className="w-8 h-8 rounded-full flex items-center justify-center text-white/50 hover:bg-white/10 hover:text-white transition-all text-xl">&#8249;</button>
-                    <span className="font-bold text-[15px]">{y} 年 {m+1} 月</span>
-                    <button onClick={()=>setCalMonth(p=>p.m===11?{y:p.y+1,m:0}:{y:p.y,m:p.m+1})} className="w-8 h-8 rounded-full flex items-center justify-center text-white/50 hover:bg-white/10 hover:text-white transition-all text-xl">&#8250;</button>
-                </div>
-                <div className="grid grid-cols-7 mb-2">
-                    {['日','一','二','三','四','五','六'].map((w,i)=>(
-                        <div key={w} className={`text-center text-[11px] font-semibold py-1 ${i===0||i===6?'text-[var(--weekend-pink)]':'text-white/40'}`}>{w}</div>
-                    ))}
-                </div>
-                <div className="grid grid-cols-7 gap-y-1.5 gap-x-1">
-                    {cells.map((d,i)=>{
-                        if(!d) return <div key={"e"+i}/>;
-                        const fk=toKey(d), has=dateSet.has(fk), isToday=fk===todayK;
-                        const dow=(firstDay+d-1)%7, isWk=dow===0||dow===6;
-                        return (
-                            <button key={fk} disabled={!has} onClick={()=>{onSelect(fk);onClose();}}
-                                className={`h-8 w-full rounded-full text-[13px] font-medium transition-all flex items-center justify-center ${
-                                    isToday?'bg-[var(--mac-blue)] text-white shadow-[0_2px_8px_rgba(10,132,255,0.4)]':
-                                    has?(isWk?'text-[var(--weekend-pink)] hover:bg-white/10':'text-white hover:bg-white/10'):
-                                    'text-white/12 cursor-default'}`}>{d}
-                            </button>
-                        );
-                    })}
-                </div>
-            </div>
-        </div>
-    );
+    return ( <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-md" onClick={onClose}> <div className="animate-window bg-[rgba(30,30,32,0.92)] border border-white/10 rounded-[1.8rem] shadow-2xl w-full max-w-[280px] p-5" onClick={e=>e.stopPropagation()}> <div className="flex items-center justify-between mb-4"> <button onClick={()=>setCalMonth(p=>p.m===0?{y:p.y-1,m:11}:{y:p.y,m:p.m-1})} className="text-xl">‹</button> <span className="font-bold">{y} 年 {m+1} 月</span> <button onClick={()=>setCalMonth(p=>p.m===11?{y:p.y+1,m:0}:{y:p.y,m:p.m+1})} className="text-xl">›</button> </div> <div className="grid grid-cols-7 gap-y-1.5 gap-x-1"> {['日','一','二','三','四','五','六'].map(w=>(<div key={w} className="text-center text-[11px] font-semibold text-white/40">{w}</div>))} {cells.map((d,i)=>{ if(!d) return <div key={"e"+i}/>; const fk=toKey(d), has=dateSet.has(fk), isToday=fk===todayK, isWk=(firstDay+d-1)%7===0||(firstDay+d-1)%7===6; return ( <button key={fk} disabled={!has} onClick={()=>{onSelect(fk);onClose();}} className={`h-8 w-full rounded-full text-[13px] flex items-center justify-center transition-all ${isToday?'bg-[var(--mac-blue)] text-white':has?(isWk?'text-rose-400 hover:bg-white/10':'text-white hover:bg-white/10'):'text-white/12 cursor-default'}`}>{d}</button> ); })} </div> </div> </div> );
 });
 
-/* ════════════════════════════════════════════════════════════
-   NotesModal — 提醒總覽
-   ════════════════════════════════════════════════════════════ */
 const NotesModal = memo(({ onClose, visibleDates, schedule, goDate, handleBackToday }) => {
     const today = new Date(); today.setHours(0,0,0,0);
     const notesList = visibleDates.filter(d => schedule.notes?.[d.fullKey]?.trim());
-    return (
-        <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={onClose}>
-            <div className="animate-window bg-[rgba(30,30,32,0.98)] border border-white/10 w-full max-w-md rounded-[2.2rem] shadow-2xl flex flex-col max-h-[85vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
-                <div className="p-3 border-b border-white/10 bg-white/[0.04] flex items-center justify-between">
-                    <div className="w-[44px] shrink-0">
-                        <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:bg-white/20 transition-all text-xl">×</button>
-                    </div>
-                    <div className="flex-1 flex justify-center">
-                        <h3 className="text-[17px] font-bold tracking-tight text-[var(--reminder-pink)] flex items-center gap-2">
-                            <Icon name="bell" className="w-5 h-5"/> 提醒總覽
-                        </h3>
-                    </div>
-                    <div className="w-[44px] flex justify-end shrink-0">
-                        <TodayBtn onClick={handleBackToday}/>
-                    </div>
-                </div>
-                <div className="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar">
-                    {notesList.length===0 ? (
-                        <div className="text-center text-white/40 py-10 font-medium text-[14px]">在此載入範圍內，無任何提醒事項</div>
-                    ) : notesList.map(d=>{
-                        const note = schedule.notes[d.fullKey];
-                        const isPast = parseK(d.fullKey) < today;
-                        return (
-                            <button key={d.fullKey}
-                                onClick={()=>{ goDate(d.absIdx,d.fullKey); onClose(); }}
-                                className={`w-full text-left p-3.5 rounded-2xl border transition-all flex flex-col gap-1.5 active:scale-[0.98] ${
-                                    isPast?'bg-white/[0.02] border-white/5 opacity-60 hover:opacity-100 hover:bg-white/[0.06]'
-                                         :'bg-[rgba(255,55,95,0.08)] border-[rgba(255,55,95,0.2)] hover:bg-[rgba(255,55,95,0.15)]'}`}>
-                                <div className={`text-[12px] font-bold tracking-wider ${isPast?'text-white/40':'text-[var(--reminder-pink)]'}`}>
-                                    {d.fullKey} (週{d.w})
-                                </div>
-                                <div className="text-[14.5px] font-medium text-white/90 leading-snug">{note}</div>
-                            </button>
-                        );
-                    })}
-                </div>
-            </div>
-        </div>
-    );
+    return ( <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={onClose}> <div className="animate-window bg-[rgba(30,30,32,0.98)] border border-white/10 w-full max-w-md rounded-[2.2rem] flex flex-col max-h-[85vh] overflow-hidden" onClick={e=>e.stopPropagation()}> <div className="p-3 border-b border-white/10 bg-white/[0.04] flex items-center justify-between"> <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 text-xl">×</button> <h3 className="text-[17px] font-bold text-[var(--reminder-pink)]">重要提醒</h3> <TodayBtn onClick={handleBackToday}/> </div> <div id="notes-scroll-container" className="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar scroll-smooth"> {notesList.length===0 ? ( <div className="text-center text-white/40 py-10">無任何提醒事項</div> ) : notesList.map(d=>( <button key={d.fullKey} id={`note-${d.fullKey}`} onClick={()=>{ goDate(d.absIdx,d.fullKey); onClose(); }} className={`w-full text-left p-3.5 rounded-2xl border transition-all ${parseK(d.fullKey)<today?'bg-white/[0.02] border-white/5 opacity-60':'bg-[rgba(255,55,95,0.08)] border-[rgba(255,55,95,0.2)]'}`}> <div className="text-[12px] font-bold">{d.fullKey} (週{d.w})</div> <div className="text-[14.5px] font-medium leading-snug">{schedule.notes[d.fullKey]}</div> </button> ))} </div> </div> </div> );
 });
 
-/* ════════════════════════════════════════════════════════════
-   MasterRosterModal
-   ════════════════════════════════════════════════════════════ */
 const MasterRosterModal = memo(({ onClose, visibleDates, schedule, aliasMap, todayK, handleStaffClick, handleBackToday, openCal }) => {
     const [detail, setDetail] = useState(null);
-    return (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-3 bg-black/70" onClick={onClose}>
-            <div className="animate-window bg-[rgba(28,28,30,0.98)] border border-white/10 w-full max-w-4xl rounded-[2.2rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col max-h-[90vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
-                <div className="p-3.5 border-b border-white/10 flex items-center justify-between bg-white/[0.04]">
-                    <div className="w-[44px] shrink-0">
-                        <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:bg-white/20 transition-all text-xl">×</button>
-                    </div>
-                    <div className="flex-1 flex justify-center">
-                        <h3 className="text-[17px] font-bold tracking-tight">Master Roster</h3>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                        <TodayBtn onClick={handleBackToday}/>
-                        <CalBtn onClick={openCal}/>
-                    </div>
-                </div>
-                <div className="flex-1 overflow-hidden relative">
-                    <div className="master-left-col">
-                        <div className="master-hdr flex items-center justify-center border-b border-white/10 text-[10px] font-bold text-white/30 tracking-widest">STAFF</div>
-                        {STAFF_ORDER.map(s=>(
-                            <div key={s} className="master-row px-2">
-                                <StaffBtn name={s} aliasMap={aliasMap} mode="master" forceName={s==="廖俊龍"?"阿龍":null} onClick={handleStaffClick}/>
-                            </div>
-                        ))}
-                    </div>
-                    <div id="master-scroll-container" className="master-right h-full overflow-y-auto no-scrollbar scroll-smooth">
-                        <div style={{width:'fit-content'}}>
-                            <div className="flex bg-black/20 border-b border-white/10 sticky top-0 z-40 master-hdr">
-                                {visibleDates.map(d=>{
-                                    const isW=d.w==='六'||d.w==='日';
-                                    return (
-                                        <div key={d.fullKey} id={`mnav-${d.fullKey}`} className={`master-cell p-1.5 flex flex-col justify-center ${d.fullKey===todayK?'master-today':''} ${isW?'weekend-bg':''}`}>
-                                            <div className={`font-bold text-[10px] ${isW?'text-[var(--weekend-pink)]':'text-white/40'}`}>週{d.w}</div>
-                                            <div className={`text-[14px] font-black tracking-tight ${isW?'text-[var(--weekend-pink)]':'text-white/90'}`}>{d.d}</div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                            {STAFF_ORDER.map(staff=>(
-                                <div key={staff} className="master-row">
-                                    {visibleDates.map(d=>{
-                                        const dk=d.fullKey, isW=d.w==='六'||d.w==='日';
-                                        let label="—", bgStyle={backgroundColor:'rgba(255,255,255,0.03)'};
-                                        let txtCls="text-white/10 text-[13px] font-medium";
-                                        let isB=false, hasS=false, activeV="";
-                                        VENUE_IDS.forEach(vid=>{
-                                            if(schedule.roster[dk]?.[vid]?.[staff]){
-                                                const sh=schedule.roster[dk][vid][staff].shift;
-                                                label=`${vid}-${sh}`;
-                                                bgStyle={backgroundColor:`rgba(${VENUE_MAP[vid].masterBg},0.25)`};
-                                                txtCls="text-white text-[11px] font-bold tracking-wide";
-                                                hasS=true; activeV=vid; if(sh==='B')isB=true;
-                                            }
-                                        });
-                                        if(schedule.statuses[dk]?.[staff]?.match(/辦公|其他/)){
-                                            label="辦"; bgStyle={backgroundColor:'rgba(255,255,255,0.03)'}; txtCls="text-orange-400 text-[13px] font-bold";
-                                        } else if(!hasS){
-                                            label="休"; bgStyle={backgroundColor:'rgba(255,255,255,0.03)'}; txtCls="text-white/25 text-[13px] font-medium";
-                                        }
-                                        return (
-                                            <div key={dk} className={`master-cell p-1 ${dk===todayK?'master-today':''} ${isW?'weekend-bg':''}`}>
-                                                <div className={`w-full h-8 flex items-center justify-center rounded-lg ${txtCls} ${isB?'b-row-glow':''} ${hasS?'cursor-pointer hover:brightness-125':''}`}
-                                                    style={bgStyle}
-                                                    onClick={()=>{ if(hasS) setDetail({date:dk,venue:activeV,show:schedule.shows[dk]?.[activeV]||"無演出內容"}); }}>
-                                                    {label}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {detail&&(
-                <div className="fixed inset-0 z-[5000] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={()=>setDetail(null)}>
-                    <div className="animate-window bg-[rgba(40,40,42,0.95)] border border-white/10 p-6 rounded-[2rem] shadow-2xl max-w-xs w-full text-center" onClick={e=>e.stopPropagation()}>
-                        <div className="text-[var(--mac-blue)] mb-3 flex justify-center"><Icon name="info" className="w-8 h-8 opacity-90"/></div>
-                        <h4 className="text-[18px] font-black text-white mb-2 tracking-wide flex items-baseline justify-center gap-2">
-                            {detail.venue}<span className="text-[13px] font-medium text-white/50">{detail.date}</span>
-                        </h4>
-                        <p className="text-[15px] font-medium text-white/80 leading-snug break-words px-2">{detail.show}</p>
-                        <button onClick={()=>setDetail(null)} className="mt-6 w-full py-2.5 bg-white/10 hover:bg-white/20 rounded-xl font-bold text-[14px] transition-colors active:scale-95">關閉</button>
-                    </div>
-                </div>
-            )}
-        </div>
-    );
+    return ( <div className="fixed inset-0 z-[1000] flex items-center justify-center p-3 bg-black/70" onClick={onClose}> <div className="animate-window bg-[rgba(28,28,30,0.98)] border border-white/10 w-full max-w-4xl rounded-[2.2rem] flex flex-col max-h-[90vh] overflow-hidden" onClick={e=>e.stopPropagation()}> <div className="p-3.5 border-b border-white/10 flex items-center justify-between"> <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 text-xl">×</button> <h3 className="text-[17px] font-bold">Master Roster</h3> <div className="flex gap-2"> <TodayBtn onClick={handleBackToday}/> <CalBtn onClick={openCal}/> </div> </div> <div className="flex-1 overflow-hidden relative"> <div className="master-left-col"> <div className="master-hdr flex items-center justify-center border-b border-white/10 text-[10px] font-bold text-white/30">STAFF</div> {STAFF_ORDER.map(s=>( <div key={s} className="master-row px-2"> <StaffBtn name={s} aliasMap={aliasMap} mode="master" forceName={s==="廖俊龍"?"阿龍":null} onClick={handleStaffClick}/> </div> ))} </div> <div id="master-scroll-container" className="master-right h-full overflow-y-auto no-scrollbar scroll-smooth"> <div style={{width:'fit-content'}}> <div className="flex bg-black/20 border-b border-white/10 sticky top-0 z-40 master-hdr"> {visibleDates.map(d=>( <div key={d.fullKey} id={`mnav-${d.fullKey}`} className={`master-cell p-1.5 flex flex-col justify-center ${d.fullKey===todayK?'master-today':''} ${d.w==='六'||d.w==='日'?'weekend-bg':''}`}> <div className="text-[10px] opacity-40">週{d.w}</div> <div className="text-[14px] font-black">{d.d}</div> </div> ))} </div> {STAFF_ORDER.map(staff=>( <div key={staff} className="master-row"> {visibleDates.map(d=>{ let label="—", bgStyle={backgroundColor:'rgba(255,255,255,0.03)'}, hasS=false, activeV=""; VENUE_IDS.forEach(vid=>{ if(schedule.roster[d.fullKey]?.[vid]?.[staff]){ const sh=schedule.roster[d.fullKey][vid][staff].shift; label=`${vid}-${sh}`; bgStyle={backgroundColor:`rgba(${VENUE_MAP[vid].masterBg},0.25)`}; hasS=true; activeV=vid; } }); return ( <div key={d.fullKey} className={`master-cell p-1 ${d.fullKey===todayK?'master-today':''} ${d.w==='六'||d.w==='日'?'weekend-bg':''}`}> <div className={`w-full h-8 flex items-center justify-center rounded-lg text-[11px] font-bold ${hasS?'cursor-pointer hover:brightness-125':''}`} style={bgStyle} onClick={()=>{ if(hasS) setDetail({date:d.fullKey,venue:activeV,show:schedule.shows[d.fullKey]?.[activeV]||"無演出"}); }}> {label} </div> </div> ); })} </div> ))} </div> </div> </div> </div> {detail&&( <div className="fixed inset-0 z-[5000] flex items-center justify-center p-4 bg-black/40" onClick={()=>setDetail(null)}> <div className="animate-window bg-[rgba(40,40,42,0.95)] border border-white/10 p-6 rounded-[2rem] w-full max-w-xs text-center"> <h4 className="text-[18px] font-black">{detail.venue} <span className="text-[13px] opacity-50">{detail.date}</span></h4> <p className="mt-4">{detail.show}</p> <button onClick={()=>setDetail(null)} className="mt-6 w-full py-2.5 bg-white/10 rounded-xl">關閉</button> </div> </div> )} </div> );
 });
 
-/* ════════════════════════════════════════════════════════════
-   QueryModal
-   ════════════════════════════════════════════════════════════ */
 const QueryModal = memo(({ queryStaff, queryVenue, onClose, setQueryStaff, setQueryVenue, visibleDates, schedule, aliasMap, curFk, handleStaffClick, handleBackToday, openCal }) => {
     if(!queryStaff&&!queryVenue) return null;
-    return (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/70" onClick={onClose}>
-            <div className="animate-window bg-[rgba(28,28,30,0.98)] border border-white/10 w-full max-w-lg rounded-[2.2rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col max-h-[85vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
-                
-                <div className="p-3 border-b border-white/10 bg-white/[0.04] flex items-center justify-between gap-2">
-                    <div className="w-[44px] shrink-0">
-                        <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:bg-white/20 transition-all text-xl">×</button>
-                    </div>
-                    <div className="flex-1 flex justify-center overflow-hidden px-1">
-                        {queryVenue?(
-                            <div className="flex bg-black/40 rounded-2xl p-1 border border-white/5 w-full max-w-sm">
-                                {VENUES.map(v=>(
-                                    <button key={v.id} onClick={()=>setQueryVenue(v.id)}
-                                        className={`flex-1 py-1.5 rounded-xl text-[14px] sm:text-[15px] font-bold tracking-wider transition-all ${queryVenue===v.id?'bg-white/15 shadow-sm':'text-white/30 hover:text-white/70 hover:bg-white/5'}`}
-                                        style={{color:queryVenue===v.id?v.color:undefined}}>{v.id}</button>
-                                ))}
-                            </div>
-                        ):(
-                            <h3 className="text-[17px] font-bold tracking-tight truncate px-2">{aliasMap[queryStaff]||queryStaff}</h3>
-                        )}
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                        <TodayBtn onClick={handleBackToday}/>
-                        <CalBtn onClick={openCal}/>
-                    </div>
-                </div>
-
-                <div id={queryVenue?"venue-scroll-container":"staff-scroll-container"} className="flex-1 overflow-y-auto p-4 space-y-3.5 no-scrollbar scroll-smooth">
-                    {visibleDates.map(d=>{
-                        const isS=d.fullKey===curFk, isW=d.w==='六'||d.w==='日';
-                        if(queryVenue){
-                            const vn=schedule.shows[d.fullKey]?.[queryVenue]||"—";
-                            return (
-                                <div key={d.fullKey} id={`mrow-${d.fullKey}`} className={`day-block ${isS?'day-block-today':''}`}>
-                                    <div className="mb-2.5 pb-2.5 border-b border-white/5 text-[13px] font-medium text-white/50 text-right overflow-hidden">
-                                        <div className="mq-wrap"><span className={vn.length>8?"mq-run":""}>{vn}</span></div>
-                                    </div>
-                                    <div className="flex items-center gap-4">
-                                        <div className="flex flex-col text-left pr-3 border-r border-white/10 w-[72px] justify-center">
-                                            <span className={`font-bold mb-0.5 text-[11px] ${isW?'text-[var(--weekend-pink)]':'text-white/40'}`}>週{d.w}</span>
-                                            <span className={`text-[22px] font-black tracking-tight leading-none ${isW?'text-[var(--weekend-pink)]':'text-white/90'}`}>{d.d}</span>
-                                        </div>
-                                        <div className="flex-1 grid grid-cols-2 gap-2.5">
-                                            {SHIFTS.map(sh=>(
-                                                <div key={sh} className="bg-black/20 rounded-[1rem] p-1.5 min-h-[44px] flex flex-col gap-1.5 border border-white/5">
-                                                    {Object.entries(schedule.roster[d.fullKey]?.[queryVenue]||{})
-                                                        .filter(([,v])=>v.shift===sh)
-                                                        .map(([n])=><StaffBtn key={n} name={n} aliasMap={aliasMap} onClick={handleStaffClick} mode="small"/>)}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        }
-                        let st="辦公", co="#FF9500", hasS=false, activeV="", activeSh="";
-                        VENUE_IDS.forEach(vid=>{
-                            if(schedule.roster[d.fullKey]?.[vid]?.[queryStaff]){
-                                const sh=schedule.roster[d.fullKey][vid][queryStaff].shift;
-                                st=`${vid}-${sh}`; co=VENUE_MAP[vid]?.color||'#0A84FF';
-                                hasS=true; activeV=vid; activeSh=sh;
-                            }
-                        });
-                        if(schedule.statuses[d.fullKey]?.[queryStaff]?.match(/休|例|假/)){st="休假";co="#636366";}
-                        const sn=hasS?(schedule.shows[d.fullKey]?.[activeV]||""):"";
-                        const wkCls=isW?(hasS?`wk-${activeV}`:'wk-off'):'';
-                        const isBShift=activeSh==='B';
-                        return (
-                            <div key={d.fullKey} id={`mrow-${d.fullKey}`} className={`flex items-center gap-4 day-block ${isS?'day-block-today':''} ${wkCls}`}>
-                                <div className="flex flex-col text-left pr-3 border-r border-white/10 w-[72px] shrink-0 justify-center">
-                                    <span className={`font-bold mb-0.5 text-[11px] ${isW?'text-[var(--weekend-pink)]':'text-white/40'}`}>週{d.w}</span>
-                                    <span className={`text-[22px] font-black tracking-tight leading-none ${isW?'text-[var(--weekend-pink)]':'text-white/90'}`}>{d.d}</span>
-                                </div>
-                                <div className="flex-1 mq-wrap text-[16px] font-medium text-white/60 italic">
-                                    <span className={sn.length>10?"mq-run":""}>{sn}</span>
-                                </div>
-                                <button onClick={()=>{ if(hasS){setQueryStaff(null);setQueryVenue(activeV);} }}
-                                    className={`text-[15px] font-bold tracking-wide px-3.5 py-1.5 rounded-xl shrink-0 transition-all ${isBShift?'b-badge-glow':''} ${hasS?'hover:opacity-80 active:scale-95 cursor-pointer':'cursor-default'}`}
-                                    style={{color:co,backgroundColor:`${co}1A`,border:isBShift?'none':`1px solid ${co}33`}}>
-                                    {st}
-                                </button>
-                            </div>
-                        );
-                    })}
-                </div>
-            </div>
-        </div>
-    );
-});
+    return ( <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/70" onClick={onClose}> <div className="animate-window bg-[rgba(28,28,30,0.98)] border border-white/10 w-full max-w-lg rounded-[2.2rem] flex flex-col max-h-[85vh] overflow-hidden" onClick={e=>e.stopPropagation()}> <div className="p-3 border-b border-white/10 bg-white/[0.04] flex items-center justify-between gap-2"> <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 text-xl">×</button> <div className="flex-1 flex justify-center"> {queryVenue?( <div className="flex bg-black/40 rounded-2xl p-1 border border-white/5"> {VENUES.map(v=>( <button key={v.id} onClick={()=>setQueryVenue(v.id)} className={`px-4 py-1.5 rounded-xl text-[14px] font-bold ${queryVenue===v.id?'bg-white/15 text-white':'text-white/30'}`} style={{color:queryVenue===v.id?v.color:undefined}}>{v.id}</button> ))} </div> ):( <h3 className="text-[17px] font-bold">{aliasMap[queryStaff]||queryStaff}</h3> )} </div> <div className="flex items-center gap-2"> <TodayBtn onClick={handleBackToday}/> <CalBtn onClick={openCal}/> </div> </div> <div id={queryVenue?"venue-scroll-container":"staff-scroll-container"} className="flex-1 overflow-y-auto p-4 space-y-3.5 no-scrollbar scroll-smooth"> {visibleDates.map(d=>{ const isS=d.fullKey===curFk, isW=d.w==='六'||d.w==='日'; if(queryVenue){ const vn=schedule.shows[d.fullKey]?.[queryVenue]||"—"; return ( <div key={d.fullKey} id={`mrow-${d.fullKey}`} className={`day-block ${isS?'day-block-today':''}`}> <div className="mb-2 text-[13px] opacity-50 text-right truncate italic">{vn}</div> <div className="flex items-center gap-4"> <div className="flex flex-col border-r border-white/10 pr-3 w-[72px]"> <span className={`text-[11px] font-bold ${isW?'text-rose-400':'opacity-40'}`}>週{d.w}</span> <span className={`text-[22px] font-black ${isW?'text-rose-400':'opacity-90'}`}>{d.d}</span> </div> <div className="flex-1 grid grid-cols-2 gap-2.5"> {SHIFTS.map(sh=>( <div key={sh} className="bg-black/20 rounded-xl p-1.5 min-h-[44px]"> {Object.entries(schedule.roster[d.fullKey]?.[queryVenue]||{}).filter(([,v])=>v.shift===sh).map(([n])=><StaffBtn key={n} name={n} aliasMap={aliasMap} onClick={handleStaffClick} mode="small"/>)} </div> ))} </div> </div> </div> ); } let st="辦公", co="#FF9500", hasS=false, activeV=""; VENUE_IDS.forEach(vid=>{ if(schedule.roster[d.fullKey]?.[vid]?.[queryStaff]){ const sh=schedule.roster[d.fullKey][vid][queryStaff].shift; st=`${vid}-${sh}`; co=VENUE_MAP[vid]?.color||'#0A84FF'; hasS=true; activeV=vid; } }); if(schedule.statuses[d.fullKey]?.[queryStaff]?.match(/休|例|假/)){st="休假";co="#636366";} const sn=hasS?(schedule.shows[d.fullKey]?.[activeV]||""):""; return ( <div key={d.fullKey} id={`mrow-${d.fullKey}`} className={`flex items-center gap-4 day-block ${isS?'day-block-today':''} ${isW?(hasS?`wk-${activeV}`:'wk-off'):''}`}> <div className="flex flex-col border-r border-white/10 pr-3 w-[72px]"> <span className={`text-[11px] font-bold ${isW?'text-rose-400':'opacity-40'}`}>週{d.w}</span> <span className={`text-[22px] font-black ${isW?'text-rose-400':'opacity-90'}`}>{d.d}</span> </div> <div className="flex-1 mq-wrap text-[16px] font-medium opacity-60 italic"> <span className={sn.length>10?"mq-run":""}>{sn}</span> </div> <button onClick={()=>{ if(hasS){setQueryStaff(null);setQueryVenue(activeV);} }} className={`text-[15px] font-bold px-3.5 py-1.5 rounded-xl shrink-0 transition-all ${hasS?'cursor-pointer hover:opacity-80':'cursor-default'}`} style={{color:co,backgroundColor:`${co}1A`}}> {st} </button> </div> ); })} </div> </div> </div> ); });
 
 /* ════════════════════════════════════════════════════════════
-   MAIN APP
+   MAIN APP (修正狀態記憶與監聽)
    ════════════════════════════════════════════════════════════ */
 const App = () => {
-    const [allDates,setAllDates]   = useState([]);
-    const [schedule,setSchedule]   = useState({roster:{},statuses:{},shows:{},notes:{}});
-    const [aliasMap,setAliasMap]   = useState({});
-    const [lastUpdated,setLastUpdated]           = useState("");
+    const [allDates,setAllDates] = useState([]);
+    const [schedule,setSchedule] = useState({roster:{},statuses:{},shows:{},notes:{}});
+    const [aliasMap,setAliasMap] = useState({});
+    const [lastUpdated,setLastUpdated] = useState("");
     const [isRecentlyUpdated,setIsRecentlyUpdated] = useState(false);
-    
     const seenUpdateRef = useRef(localStorage.getItem('tpac_seen_update') || '');
-    const markUpdateSeen = useCallback(()=>{
-        if(!isRecentlyUpdated) return;
-        localStorage.setItem('tpac_seen_update', seenUpdateRef.current);
-        setIsRecentlyUpdated(false);
-    },[isRecentlyUpdated]);
-
     const [isUnlocked,setIsUnlocked] = useState(false);
-    const [errorMsg,setErrorMsg]     = useState(null);
-    const [user,setUser]             = useState(null);
-
+    const [errorMsg,setErrorMsg] = useState(null);
+    const [user,setUser] = useState(null);
     const [dateIdx,setDateIdx] = useState(0);
     const [activeModal,setActiveModal] = useState(null);
+    /* ⭐️ 修正 2：增加 prevModal 狀態，記憶返回路徑 ⭐️ */
+    const [prevModal, setPrevModal] = useState(null);
     const [queryTarget,setQueryTarget] = useState(null);
     const [calMonth,setCalMonth] = useState(()=>{const n=new Date();return{y:n.getFullYear(),m:n.getMonth()};});
+    
+    const markUpdateSeen = useCallback(()=>{ if(!isRecentlyUpdated) return; localStorage.setItem('tpac_seen_update', seenUpdateRef.current); setIsRecentlyUpdated(false); },[isRecentlyUpdated]);
 
     const [rangeConfig,setRangeConfig] = useState(()=>{
         const fallback = {type:'default',past:7,future:60};
-        try{ 
-            const s=localStorage.getItem('tpac_range_v11'); 
-            if(s){
-                const parsed = JSON.parse(s);
-                if (parsed && typeof parsed.future === 'number') return parsed;
-            }
-        }catch(e){}
+        try{ const s=localStorage.getItem('tpac_range_v12'); if(s){ const parsed = JSON.parse(s); if (parsed && typeof parsed.future === 'number') return parsed; } }catch(e){}
         return fallback;
     });
-    useEffect(()=>{ localStorage.setItem('tpac_range_v11',JSON.stringify(rangeConfig)); },[rangeConfig]);
+    useEffect(()=>{ localStorage.setItem('tpac_range_v12',JSON.stringify(rangeConfig)); },[rangeConfig]);
 
-    const visibleDates = useMemo(()=>{
-        if(!allDates.length) return [];
-        if(rangeConfig.type==='all') return allDates;
-        const start=Math.max(0,dateIdx-(rangeConfig.past||7));
-        const end=Math.min(allDates.length,dateIdx+(rangeConfig.future||60)+1);
-        return allDates.slice(start,end);
-    },[allDates,dateIdx,rangeConfig]);
-
+    const visibleDates = useMemo(()=>{ if(!allDates.length) return []; if(rangeConfig.type==='all') return allDates; const start=Math.max(0,dateIdx-(rangeConfig.past||7)); const end=Math.min(allDates.length,dateIdx+(rangeConfig.future||60)+1); return allDates.slice(start,end); },[allDates,dateIdx,rangeConfig]);
+    
     const scrollTimers = useRef({});
     const scrollTo = useCallback((fk,cid)=>{
         if(scrollTimers.current[cid]) clearTimeout(scrollTimers.current[cid]);
         scrollTimers.current[cid]=setTimeout(()=>{
             const c=document.getElementById(cid); if(!c)return;
-            const idMap={"nav-scroll-container":`nav-${fk}`,"master-scroll-container":`mnav-${fk}`};
+            const idMap={"nav-scroll-container":`nav-${fk}`,"master-scroll-container":`mnav-${fk}`,"notes-scroll-container":`note-${fk}`};
             const el=document.getElementById(idMap[cid]||`mrow-${fk}`); if(!el)return;
             const horiz=cid==="nav-scroll-container"||cid==="master-scroll-container";
-            horiz?c.scrollTo({left:el.offsetLeft-c.offsetWidth/2+el.offsetWidth/2,behavior:'smooth'})
-                 :c.scrollTo({top:el.offsetTop-c.offsetHeight/2+el.offsetHeight/2,behavior:'smooth'});
+            horiz?c.scrollTo({left:el.offsetLeft-c.offsetWidth/2+el.offsetWidth/2,behavior:'smooth'}) :c.scrollTo({top:el.offsetTop-c.offsetHeight/2+el.offsetHeight/2,behavior:'smooth'});
         },50);
     },[]);
-
-    const allScrollTo = useCallback(fk=>{
-        ["nav-scroll-container","master-scroll-container","venue-scroll-container","staff-scroll-container"].forEach(id=>scrollTo(fk,id));
-    },[scrollTo]);
-
+    const allScrollTo = useCallback(fk=>{ ["nav-scroll-container","master-scroll-container","venue-scroll-container","staff-scroll-container","notes-scroll-container"].forEach(id=>scrollTo(fk,id)); },[scrollTo]);
     const goDate = useCallback((absIdx,fk)=>{ setDateIdx(absIdx); allScrollTo(fk); },[allScrollTo]);
-    const handleBackToday = useCallback(()=>{
-        const tK=formatK(new Date()); const i=allDates.findIndex(d=>d.fullKey===tK);
-        if(i!==-1) goDate(i,tK);
-    },[allDates,goDate]);
-    const openCal = useCallback(()=>{ setCalMonth({y:new Date().getFullYear(),m:new Date().getMonth()}); setActiveModal('calendar'); },[]);
+    const handleBackToday = useCallback(()=>{ const tK=formatK(new Date()); const i=allDates.findIndex(d=>d.fullKey===tK); if(i!==-1) goDate(i,tK); },[allDates,goDate]);
+    
+    /* ⭐️ 修正 2：日曆開啟時記住當前 Modal ⭐️ */
+    const openCal = useCallback(()=>{ 
+        setPrevModal(activeModal);
+        setCalMonth({y:new Date().getFullYear(),m:new Date().getMonth()}); 
+        setActiveModal('calendar'); 
+    },[activeModal]);
 
     const swipeRef = useRef({});
     const handleTouchStart = useCallback(e=>{ swipeRef.current = { x:e.touches[0].clientX, y:e.touches[0].clientY }; },[]);
-    const handleTouchEnd = useCallback(e=>{
-        if(activeModal) return;
-        const dx = e.changedTouches[0].clientX - swipeRef.current.x;
-        const dy = Math.abs(e.changedTouches[0].clientY - swipeRef.current.y);
-        if(Math.abs(dx)>60 && dy<40){
-            const dir = dx<0?1:-1;
-            const ni = Math.max(0,Math.min(allDates.length-1,dateIdx+dir));
-            goDate(ni,allDates[ni].fullKey);
-        }
-    },[allDates,dateIdx,goDate,activeModal]);
-
+    const handleTouchEnd = useCallback(e=>{ if(activeModal) return; const dx = e.changedTouches[0].clientX - swipeRef.current.x, dy = Math.abs(e.changedTouches[0].clientY - swipeRef.current.y); if(Math.abs(dx)>60 && dy<40){ const dir = dx<0?1:-1, ni = Math.max(0,Math.min(allDates.length-1,dateIdx+dir)); goDate(ni,allDates[ni].fullKey); } },[allDates,dateIdx,goDate,activeModal]);
+    
     const handleStaffClick = useCallback(name=>{ setQueryTarget(name); setActiveModal('queryStaff'); },[]);
+    /* ⭐️ 修正 4：補上 const ⭐️ */
     const handleVenueClick = useCallback(id=>{ setQueryTarget(id); setActiveModal('queryVenue'); },[]);
-    const closeModal = useCallback(()=>{ setActiveModal(null); },[]);
+    const closeModal = useCallback(()=>{ setActiveModal(null); setPrevModal(null); },[]);
 
     useEffect(()=>{
         const t=setInterval(()=>{
-            if(!window.isFirebaseReady||!window.Firebase)return;
-            clearInterval(t);
+            if(!window.isFirebaseReady||!window.Firebase)return; clearInterval(t);
             const app=Firebase.getApps().length===0?Firebase.initializeApp(FIREBASE_CONFIG):Firebase.getApp();
-            Firebase.signInAnonymously(Firebase.getAuth(app)).then(()=>{
-                Firebase.onAuthStateChanged(Firebase.getAuth(app),async u=>{
-                    if(!u)return; setUser(u);
-                    const s=await Firebase.getDoc(Firebase.doc(Firebase.getFirestore(app),'artifacts',APP_ID,'public','data','configs','name_mapping'));
-                    if(s.exists())setAliasMap(s.data().maps||{});
-                });
-            }).catch(()=>setErrorMsg("登入系統失敗，請重新整理"));
-        },200);
-        return()=>clearInterval(t);
+            Firebase.signInAnonymously(Firebase.getAuth(app)).then(()=>{ Firebase.onAuthStateChanged(Firebase.getAuth(app),async u=>{ if(!u)return; setUser(u); const s=await Firebase.getDoc(Firebase.doc(Firebase.getFirestore(app),'artifacts',APP_ID,'public','data','configs','name_mapping')); if(s.exists())setAliasMap(s.data().maps||{}); }); }).catch(()=>setErrorMsg("登入系統失敗，請重新整理"));
+        },200); return()=>clearInterval(t);
     },[]);
 
     useEffect(()=>{
-        if(isUnlocked)return;
-        const t=setTimeout(()=>setErrorMsg("網路連線逾時，請檢查連線或重新整理頁面"),8000);
-        return()=>clearTimeout(t);
-    },[isUnlocked]);
-
-    useEffect(()=>{
-        if(!user)return;
-        const db=Firebase.getFirestore();
-        return Firebase.onSnapshot(
-            Firebase.doc(db,'artifacts',APP_ID,'public','data','rosters','master'),
-            snap=>{
-                if(!snap.exists()){ setErrorMsg("找不到班表資料庫，請聯絡管理員"); return; }
-                const data=snap.data();
-                const roster=JSON.parse(data.roster||'{}'), statuses=JSON.parse(data.statuses||'{}');
-                const shows=JSON.parse(data.shows||'{}'), notes=JSON.parse(data.notes||'{}');
-                if(data.lastUpdated){
-                    const d=new Date(data.lastUpdated);
-                    const fmtKey=`${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-                    setLastUpdated(fmtKey);
-                    seenUpdateRef.current = fmtKey;
-                    setIsRecentlyUpdated(fmtKey !== (localStorage.getItem('tpac_seen_update') || ''));
-                }
-                const keys=Object.keys(roster).sort();
-                const sd=keys.map((k,idx)=>{
-                    const [yy,mm,dd]=k.split('/').map(Number);
-                    const o=new Date(yy,mm-1,dd);
-                    return{d:`${mm}/${dd}`,w:['日','一','二','三','四','五','六'][o.getDay()],fullKey:k,absIdx:idx};
-                });
-                setSchedule({roster,statuses,shows,notes});
-                setAllDates(sd); setIsUnlocked(true);
-                const tK=formatK(new Date()), mi=keys.indexOf(tK);
-                if(mi!==-1){setDateIdx(mi);setTimeout(()=>scrollTo(tK,"nav-scroll-container"),500);}
-            },
-            ()=>setErrorMsg("資料同步失敗，請重新整理")
-        );
+        if(!user)return; const db=Firebase.getFirestore();
+        return Firebase.onSnapshot( Firebase.doc(db,'artifacts',APP_ID,'public','data','rosters','master'), snap=>{ if(!snap.exists()){ setErrorMsg("找不到班表資料庫，請聯絡管理員"); return; } const data=snap.data(), roster=JSON.parse(data.roster||'{}'), statuses=JSON.parse(data.statuses||'{}'), shows=JSON.parse(data.shows||'{}'), notes=JSON.parse(data.notes||'{}'); if(data.lastUpdated){ const d=new Date(data.lastUpdated), fmtKey=`${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; setLastUpdated(fmtKey); seenUpdateRef.current = fmtKey; setIsRecentlyUpdated(fmtKey !== (localStorage.getItem('tpac_seen_update') || '')); } const keys=Object.keys(roster).sort(), sd=keys.map((k,idx)=>{ const [yy,mm,dd]=k.split('/').map(Number), o=new Date(yy,mm-1,dd); return{d:`${mm}/${dd}`,w:['日','一','二','三','四','五','六'][o.getDay()],fullKey:k,absIdx:idx}; }); setSchedule({roster,statuses,shows,notes}); setAllDates(sd); setIsUnlocked(true); const tK=formatK(new Date()), mi=keys.indexOf(tK); if(mi!==-1){setDateIdx(mi);setTimeout(()=>scrollTo(tK,"nav-scroll-container"),500);} }, ()=>setErrorMsg("資料同步失敗，請重新整理") );
     },[user,scrollTo]);
 
-    /* ⭐️ 修正：監聽 queryTarget，確保場館切換時能自動對位 ⭐️ */
+    /* ⭐️ 修正 3：加入 queryTarget 確保對位觸發 ⭐️ */
     useEffect(()=>{
         if(!allDates.length||!allDates[dateIdx])return;
         const fk=allDates[dateIdx].fullKey;
-        if(activeModal==='master') scrollTo(fk,"master-scroll-container");
+        if(activeModal==='master')     scrollTo(fk,"master-scroll-container");
         if(activeModal==='queryVenue') scrollTo(fk,"venue-scroll-container");
         if(activeModal==='queryStaff') scrollTo(fk,"staff-scroll-container");
+        if(activeModal==='notes')      scrollTo(fk,"notes-scroll-container");
     },[activeModal, queryTarget, allDates, dateIdx, scrollTo]);
 
-    const dData = useMemo(()=>{
-        if(!allDates.length||!allDates[dateIdx]) return null;
-        const fk=allDates[dateIdx].fullKey, rawR=schedule.roster[fk]||{}, rawS=schedule.statuses[fk]||{};
-        const s={ ...Object.fromEntries(VENUE_IDS.map(vid=>[vid,Object.fromEntries(SHIFTS.map(sh=>[sh,[]]))])), "辦公":[], "休假":[], };
-        STAFF_ORDER.forEach(n=>{
-            let on=false;
-            VENUE_IDS.forEach(vid=>{ if(rawR[vid]?.[n]){ const sh=(rawR[vid][n].shift||SHIFTS[0]).toUpperCase(); if(s[vid][sh]){s[vid][sh].push(n);on=true;} } });
-            if(!on){ (rawS[n]||"").match(/辦公|其他/)?s["辦公"].push(n):s["休假"].push(n); }
-        });
-        return{s};
-    },[dateIdx,allDates,schedule]);
-
-    if(!isUnlocked) return (
-        <div className="h-screen bg-[#121213] flex flex-col items-center justify-center text-white/40 text-[13px] font-medium tracking-widest gap-4">
-            {errorMsg?<span className="text-rose-500 font-bold px-6 text-center leading-relaxed animate-pulse">{errorMsg}</span>:<span className="animate-pulse">CONNECTING...</span>}
-        </div>
-    );
-
-    const todayK=formatK(new Date()), curFk=allDates.length?allDates[dateIdx]?.fullKey:todayK;
-    const todayNote=schedule.notes?.[curFk], hasNote=!!(todayNote?.trim());
-
-    const queryStaff = activeModal==='queryStaff' ? queryTarget : null;
-    const queryVenue = activeModal==='queryVenue' ? queryTarget : null;
+    const dData = useMemo(()=>{ if(!allDates.length||!allDates[dateIdx]) return null; const fk=allDates[dateIdx].fullKey, rawR=schedule.roster[fk]||{}, rawS=schedule.statuses[fk]||{}; const s={ ...Object.fromEntries(VENUE_IDS.map(vid=>[vid,Object.fromEntries(SHIFTS.map(sh=>[sh,[]]))])), "辦公":[], "休假":[], }; STAFF_ORDER.forEach(n=>{ let on=false; VENUE_IDS.forEach(vid=>{ if(rawR[vid]?.[n]){ const sh=(rawR[vid][n].shift||SHIFTS[0]).toUpperCase(); if(s[vid][sh]){s[vid][sh].push(n);on=true;} } }); if(!on){ (rawS[n]||"").match(/辦公|其他/)?s["辦公"].push(n):s["休假"].push(n); } }); return{s}; },[dateIdx,allDates,schedule]);
+    
+    if(!isUnlocked) return ( <div className="h-screen bg-[#121213] flex flex-col items-center justify-center text-white/40 text-[13px] font-medium tracking-widest gap-4"> {errorMsg?<span className="text-rose-500 font-bold px-6 text-center leading-relaxed animate-pulse">{errorMsg}</span>:<span className="animate-pulse">CONNECTING...</span>} </div> );
+    const todayK=formatK(new Date()), curFk=allDates.length?allDates[dateIdx]?.fullKey:todayK, todayNote=schedule.notes?.[curFk], hasNote=!!(todayNote?.trim()), queryStaff = activeModal==='queryStaff' ? queryTarget : null, queryVenue = activeModal==='queryVenue' ? queryTarget : null;
 
     return (
-        <div className="h-screen flex flex-col overflow-hidden relative text-white bg-[var(--mac-bg)]"
-            onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+        <div className="h-screen flex flex-col overflow-hidden relative text-white bg-[var(--mac-bg)]" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
             <div className="aura-bg"/>
-
             <header className="mac-glass pt-12 pb-4 px-5 flex items-center justify-between shrink-0 z-50">
                 <div className="flex flex-col justify-center">
-                    <h1 className="text-[22px] font-bold tracking-tight cursor-pointer opacity-90 hover:opacity-100 transition-opacity leading-none"
-                        onClick={()=>setActiveModal('master')}>視 聽 班 表 系 統</h1>
-                    {lastUpdated&&(
-                        <div className={`flex items-center mt-1.5 ${isRecentlyUpdated?'cursor-pointer':''}`}
-                            onClick={markUpdateSeen} title={isRecentlyUpdated?"點擊標記為已讀":""}>
-                            {isRecentlyUpdated&&<span className="w-1.5 h-1.5 rounded-full bg-[var(--weekend-pink)] mr-1.5 animate-pulse shrink-0"/>}
-                            <span className={`text-[11px] font-bold tracking-wider transition-colors ${isRecentlyUpdated?'text-white/70':'text-white/40'}`}>SYNC: {lastUpdated}</span>
-                        </div>
-                    )}
+                    <h1 className="text-[22px] font-bold tracking-tight cursor-pointer opacity-90 hover:opacity-100 transition-opacity leading-none" onClick={()=>setActiveModal('master')}>視 聽 班 表 系 統</h1>
+                    {lastUpdated&&( <div className={`flex items-center mt-1.5 ${isRecentlyUpdated?'cursor-pointer':''}`} onClick={markUpdateSeen} title={isRecentlyUpdated?"點擊標記為已讀":""}> {isRecentlyUpdated&&<span className="w-1.5 h-1.5 rounded-full bg-[var(--weekend-pink)] mr-1.5 animate-pulse shrink-0"/>} <span className={`text-[11px] font-bold tracking-wider transition-colors ${isRecentlyUpdated?'text-white/70':'text-white/40'}`}>SYNC: {lastUpdated}</span> </div> )}
                 </div>
                 <div className="flex items-center gap-2.5 flex-shrink-0">
-                    {/* ⭐️ 補齊首頁的 Tooltip 按鈕 ⭐️ */}
                     <TodayBtn onClick={handleBackToday}/>
-                    <button onClick={()=>setActiveModal('notes')} data-tip="重要提醒" className="w-8 h-8 rounded-full bg-white/[0.06] border border-white/10 flex items-center justify-center text-white/60 hover:bg-white/15 transition-all shrink-0">
-                        <Icon name="bell" className="w-4 h-4"/>
-                    </button>
+                    <button onClick={()=>setActiveModal('notes')} data-tip="重要提醒" className="w-8 h-8 rounded-full bg-white/[0.06] border border-white/10 flex items-center justify-center text-white/60 hover:bg-white/15 transition-all shrink-0"> <Icon name="bell" className="w-4 h-4"/> </button>
                     <CalBtn onClick={openCal}/>
-                    <button onClick={()=>setActiveModal('range')} data-tip="資料範圍" className="w-8 h-8 rounded-full bg-white/[0.06] border border-white/10 flex items-center justify-center text-white/60 hover:bg-white/15 transition-all shrink-0">
-                        <Icon name="filter" className="w-4 h-4"/>
-                    </button>
+                    <button onClick={()=>setActiveModal('range')} data-tip="資料範圍" className="w-8 h-8 rounded-full bg-white/[0.06] border border-white/10 flex items-center justify-center text-white/60 hover:bg-white/15 transition-all shrink-0"> <Icon name="filter" className="w-4 h-4"/> </button>
                 </div>
             </header>
-
             <main className="flex-1 overflow-y-auto px-3 py-4 no-scrollbar pb-24 z-10 text-left">
                 <div className="mac-glass sticky top-0 -mx-3 px-3 py-3 flex flex-col mb-5 z-20 shadow-xl rounded-b-2xl">
-                    <div id="nav-scroll-container" className="flex gap-2.5 overflow-x-auto no-scrollbar pb-2 px-1">
-                        {allDates.map(d=>{
-                            const active=dateIdx===d.absIdx, isW=d.w==='六'||d.w==='日';
-                            return (
-                                <button key={d.fullKey} id={`nav-${d.fullKey}`} onClick={()=>goDate(d.absIdx,d.fullKey)}
-                                    className={`flex-none w-[58px] py-2.5 rounded-2xl border flex flex-col items-center justify-center transition-all duration-300 ${active?'border-blue-500/50 bg-[var(--mac-blue)] shadow-[0_4px_12px_rgba(10,132,255,0.3)] scale-105':'border-white/5 bg-white/[0.03] hover:bg-white/[0.08]'}`}>
-                                    <span className={`font-bold text-[10px] mb-0.5 ${active?'text-white/80':isW?'text-[var(--weekend-pink)]':'text-white/40'}`}>週{d.w}</span>
-                                    <span className={`text-[17px] font-black leading-none ${active?'text-white':isW?'text-[var(--weekend-pink)]':'text-white/70'}`}>{d.d}</span>
-                                </button>
-                            );
-                        })}
-                    </div>
-                    {hasNote&&(
-                        <div className="mt-3 px-1 cursor-pointer" onClick={()=>setActiveModal('notes')}>
-                            <div className="bg-[rgba(255,55,95,0.08)] border border-[rgba(255,55,95,0.2)] rounded-xl px-4 py-3.5 flex items-start gap-3 reminder-glow hover:bg-[rgba(255,55,95,0.12)] transition-colors">
-                                <span className="text-[var(--reminder-pink)] mt-0.5 shrink-0"><Icon name="info"/></span>
-                                <div>
-                                    <p className="text-[10px] font-bold uppercase text-[var(--reminder-pink)] tracking-wider mb-1">重要提醒</p>
-                                    <p className="text-[14px] font-medium text-white/90 leading-snug">{todayNote}</p>
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                    <div id="nav-scroll-container" className="flex gap-2.5 overflow-x-auto no-scrollbar pb-2 px-1"> {allDates.map(d=>(<button key={d.fullKey} id={`nav-${d.fullKey}`} onClick={()=>goDate(d.absIdx,d.fullKey)} className={`flex-none w-[58px] py-2.5 rounded-2xl border flex flex-col items-center justify-center transition-all duration-300 ${dateIdx===d.absIdx?'border-blue-500/50 bg-[var(--mac-blue)] shadow-[0_4px_12px_rgba(10,132,255,0.3)] scale-105':'border-white/5 bg-white/[0.03] hover:bg-white/[0.08]'}`}> <span className={`font-bold text-[10px] mb-0.5 ${dateIdx===d.absIdx?'text-white/80':d.w==='六'||d.w==='日'?'text-[var(--weekend-pink)]':'text-white/40'}`}>週{d.w}</span> <span className={`text-[17px] font-black leading-none ${dateIdx===d.absIdx?'text-white':d.w==='六'||d.w==='日'?'text-[var(--weekend-pink)]':'text-white/70'}`}>{d.d}</span> </button>))} </div>
+                    {hasNote&&( <div className="mt-3 px-1 cursor-pointer" onClick={()=>setActiveModal('notes')}> <div className="bg-[rgba(255,55,95,0.08)] border border-[rgba(255,55,95,0.2)] rounded-xl px-4 py-3.5 flex items-start gap-3 reminder-glow hover:bg-[rgba(255,55,95,0.12)] transition-colors"> <span className="text-[var(--reminder-pink)] mt-0.5 shrink-0"><Icon name="info"/></span> <div> <p className="text-[10px] font-bold uppercase text-[var(--reminder-pink)] tracking-wider mb-1">重要提醒</p> <p className="text-[14px] font-medium text-white/90 leading-snug">{todayNote}</p> </div> </div> </div> )}
                 </div>
-
                 <div className="grid gap-3 mb-6" style={{gridTemplateColumns:`repeat(${VENUES.length},1fr)`}}>
-                    {VENUES.map(venue=>{
-                        const sName=schedule.shows?.[curFk]?.[venue.id]||"";
-                        return (
-                            <div key={venue.id} className="bg-[var(--mac-card)] rounded-[1.6rem] overflow-hidden flex flex-col border border-white/5 relative">
-                                <div className="absolute inset-0 opacity-10 pointer-events-none" style={{background:`radial-gradient(circle at 50% 0%, ${venue.color} 0%, transparent 70%)`}}/>
-                                <button onClick={()=>handleVenueClick(venue.id)} className="py-2.5 font-bold text-[19px] tracking-tight bg-white/[0.02] border-b border-white/5 z-10 transition-colors hover:bg-white/[0.06]" style={{color:venue.color}}>{venue.id}</button>
-                                <div className="px-2 py-1.5 min-h-[32px] flex items-center justify-center border-b border-white/5 bg-black/20 text-center overflow-hidden text-[12px] font-medium text-white/60 z-10">
-                                    <div className="mq-wrap"><span className={sName.length>8?"mq-run":"truncate"}>{sName}</span></div>
-                                </div>
-                                <div className="p-1.5 space-y-1.5 z-10">
-                                    {SHIFTS.map(sh=>(
-                                        <div key={sh} className="bg-black/20 rounded-xl p-1.5 flex flex-col gap-1.5 min-h-[65px] border border-white/[0.03]">
-                                            {dData?.s[venue.id][sh]?.map(n=><StaffBtn key={n} name={n} aliasMap={aliasMap} mode="small" onClick={handleStaffClick}/>)}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        );
-                    })}
+                    {VENUES.map(venue=>{ const sName=schedule.shows?.[curFk]?.[venue.id]||""; return ( <div key={venue.id} className="bg-[var(--mac-card)] rounded-[1.6rem] overflow-hidden flex flex-col border border-white/5 relative"> <div className="absolute inset-0 opacity-10 pointer-events-none" style={{background:`radial-gradient(circle at 50% 0%, ${venue.color} 0%, transparent 70%)`}}/> <button onClick={()=>handleVenueClick(venue.id)} className="py-2.5 font-bold text-[19px] tracking-tight bg-white/[0.02] border-b border-white/5 z-10 transition-colors hover:bg-white/[0.06]" style={{color:venue.color}}>{venue.id}</button> <div className="px-2 py-1.5 min-h-[32px] flex items-center justify-center border-b border-white/5 bg-black/20 text-center overflow-hidden text-[12px] font-medium text-white/60 z-10"> <div className="mq-wrap"><span className={sName.length>8?"mq-run":"truncate"}>{sName}</span></div> </div> <div className="p-1.5 space-y-1.5 z-10"> {SHIFTS.map(sh=>( <div key={sh} className="bg-black/20 rounded-xl p-1.5 flex flex-col gap-1.5 min-h-[65px] border border-white/[0.03]"> {dData?.s[venue.id][sh]?.map(n=><StaffBtn key={n} name={n} aliasMap={aliasMap} mode="small" onClick={handleStaffClick}/>)} </div> ))} </div> </div> ); })}
                 </div>
-
                 <div className="space-y-4">
-                    <section className="bg-[var(--mac-card-light)] border border-white/5 rounded-[1.6rem] p-4">
-                        <h4 className="text-orange-400 text-[13px] font-bold uppercase tracking-wider mb-3.5 flex items-center gap-2"><Icon name="brief"/> 辦公人員</h4>
-                        <div className="grid grid-cols-4 gap-2.5">{dData?.s["辦公"]?.map(n=><StaffBtn key={n} name={n} aliasMap={aliasMap} mode="tiny" onClick={handleStaffClick}/>)}</div>
-                    </section>
-                    <section className="bg-[var(--mac-card-light)] border border-white/5 rounded-[1.6rem] p-4">
-                        <h4 className="text-white/40 text-[13px] font-bold uppercase tracking-wider mb-3.5 flex items-center gap-2"><Icon name="sun"/> 今日休假</h4>
-                        <div className="grid grid-cols-4 gap-2.5">{dData?.s["休假"]?.map(n=><StaffBtn key={n} name={n} aliasMap={aliasMap} mode="tiny" onClick={handleStaffClick}/>)}</div>
-                    </section>
+                    <section className="bg-[var(--mac-card-light)] border border-white/5 rounded-[1.6rem] p-4"> <h4 className="text-orange-400 text-[13px] font-bold uppercase tracking-wider mb-3.5 flex items-center gap-2"><Icon name="brief"/> 辦公人員</h4> <div className="grid grid-cols-4 gap-2.5">{dData?.s["辦公"]?.map(n=><StaffBtn key={n} name={n} aliasMap={aliasMap} mode="tiny" onClick={handleStaffClick}/>)}</div> </section>
+                    <section className="bg-[var(--mac-card-light)] border border-white/5 rounded-[1.6rem] p-4"> <h4 className="text-white/40 text-[13px] font-bold uppercase tracking-wider mb-3.5 flex items-center gap-2"><Icon name="sun"/> 今日休假</h4> <div className="grid grid-cols-4 gap-2.5">{dData?.s["休假"]?.map(n=><StaffBtn key={n} name={n} aliasMap={aliasMap} mode="tiny" onClick={handleStaffClick}/>)}</div> </section>
                 </div>
             </main>
-
             {activeModal==='range'&&( <RangePickerModal onClose={closeModal} currentRange={rangeConfig} setRange={setRangeConfig}/> )}
             {activeModal==='notes'&&( <NotesModal onClose={closeModal} visibleDates={visibleDates} schedule={schedule} goDate={goDate} handleBackToday={handleBackToday}/> )}
             {activeModal==='master'&&( <MasterRosterModal onClose={closeModal} visibleDates={visibleDates} schedule={schedule} aliasMap={aliasMap} todayK={todayK} handleStaffClick={handleStaffClick} handleBackToday={handleBackToday} openCal={openCal}/> )}
-            {(activeModal==='queryStaff'||activeModal==='queryVenue')&&(
-                <QueryModal queryStaff={queryStaff} queryVenue={queryVenue} onClose={closeModal}
-                    setQueryStaff={name=>{ if(name){setQueryTarget(name);setActiveModal('queryStaff');} else closeModal(); }}
-                    setQueryVenue={id=>{ if(id){setQueryTarget(id);setActiveModal('queryVenue');} else closeModal(); }}
-                    visibleDates={visibleDates} schedule={schedule} aliasMap={aliasMap} curFk={curFk} handleStaffClick={handleStaffClick} handleBackToday={handleBackToday} openCal={openCal} />
-            )}
-            {activeModal==='calendar'&&( <CalendarPicker allDates={allDates} onSelect={fk=>{ const i=allDates.findIndex(d=>d.fullKey===fk); if(i!==-1)goDate(i,fk); closeModal(); }} onClose={closeModal} calMonth={calMonth} setCalMonth={setCalMonth} /> )}
-
-            <footer className="fixed bottom-0 left-0 right-0 py-2 flex items-center justify-center pointer-events-none text-[10px] font-bold tracking-[0.25em] text-white/20">
-                <span>TPAC SCHEDULE SYSTEM | {APP_VERSION}</span>
-            </footer>
+            {(activeModal==='queryStaff'||activeModal==='queryVenue')&&( <QueryModal queryStaff={queryStaff} queryVenue={queryVenue} onClose={closeModal} setQueryStaff={name=>{ if(name){setQueryTarget(name);setActiveModal('queryStaff');} else closeModal(); }} setQueryVenue={id=>{ if(id){setQueryTarget(id);setActiveModal('queryVenue');} else closeModal(); }} visibleDates={visibleDates} schedule={schedule} aliasMap={aliasMap} curFk={curFk} handleStaffClick={handleStaffClick} handleBackToday={handleBackToday} openCal={openCal} /> )}
+            {/* ⭐️ 修正 2：使用 prevModal 回到原本視窗 ⭐️ */}
+            {activeModal==='calendar'&&( <CalendarPicker allDates={allDates} onSelect={fk=>{ const i=allDates.findIndex(d=>d.fullKey===fk); if(i!==-1)goDate(i,fk); if(prevModal){ setActiveModal(prevModal); setPrevModal(null); } else closeModal(); }} onClose={()=>{ if(prevModal){setActiveModal(prevModal);setPrevModal(null);} else closeModal(); }} calMonth={calMonth} setCalMonth={setCalMonth} /> )}
+            <footer className="fixed bottom-0 left-0 right-0 py-2 flex items-center justify-center pointer-events-none text-[10px] font-bold tracking-[0.25em] text-white/20"> <span>TPAC SCHEDULE SYSTEM | {APP_VERSION}</span> </footer>
         </div>
     );
 };
