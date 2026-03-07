@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>視聽班表系統 | V11.6</title>
+    <title>視聽班表系統 | V11.7</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -84,7 +84,7 @@
         .range-input { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:white; width:60px; text-align:center; padding:4px; border-radius:8px; font-weight:bold; outline:none; transition:border 0.2s; }
         .range-input:focus { border-color:var(--mac-blue); }
 
-        /* ⭐️ V11.6 瞬發型工具提示 ⭐️ */
+        /* ⭐️ 瞬發型工具提示 (Tooltip) ⭐️ */
         [data-tip] { position: relative; }
         [data-tip]:hover::after {
             content: attr(data-tip);
@@ -103,7 +103,7 @@
 <script type="text/babel">
 const { useState, useEffect, useMemo, memo, useCallback, useRef } = React;
 
-const APP_VERSION = 'V11.6';
+const APP_VERSION = 'V11.7';
 
 /* ══════════════════════════════════════════════════════════
    CENTRAL CONFIG
@@ -155,14 +155,14 @@ const Icon = memo(({ name, className="w-4 h-4" }) => {
         brief:  <><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></>,
         cal:    <><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></>,
         bell:   <><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></>,
+        /* 更專業的日曆點圖示 */
         today:  <><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="12" cy="16" r="1.2"/></>,
     };
     return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{icons[name]}</svg>;
 });
 
-/* ── ⭐️ 視覺平衡 Today 鈕與共用圖示 ⭐️ ── */
+/* ── ⭐️ 視覺平衡共用按鈕 (去白圈外框、瞬發 Tooltip) ⭐️ ── */
 const TodayBtn = ({ onClick }) => (
-    /* 改用方案 A：極簡去邊框化，與鈴鐺一致的底座 */
     <button onClick={onClick} data-tip="回到今天"
         className="w-8 h-8 rounded-full bg-white/[0.06] border border-white/10 flex items-center justify-center text-[var(--mac-blue)] hover:bg-white/15 hover:scale-105 transition-all active:scale-90 shrink-0">
         <Icon name="today" className="w-4 h-4"/>
@@ -193,7 +193,7 @@ const StaffBtn = memo(({ name, aliasMap={}, forceName=null, onClick, mode="norma
 });
 
 /* ════════════════════════════════════════════════════════════
-   RangePickerModal
+   Modals
    ════════════════════════════════════════════════════════════ */
 const RangePickerModal = memo(({ onClose, currentRange, setRange }) => {
     const [cP, setCP] = useState(currentRange.past);
@@ -230,9 +230,6 @@ const RangePickerModal = memo(({ onClose, currentRange, setRange }) => {
     );
 });
 
-/* ════════════════════════════════════════════════════════════
-   CalendarPicker
-   ════════════════════════════════════════════════════════════ */
 const CalendarPicker = memo(({ allDates, onSelect, onClose, calMonth, setCalMonth }) => {
     const dateSet = useMemo(()=>new Set(allDates.map(d=>d.fullKey)),[allDates]);
     const {y,m} = calMonth;
@@ -276,17 +273,15 @@ const CalendarPicker = memo(({ allDates, onSelect, onClose, calMonth, setCalMont
     );
 });
 
-/* ════════════════════════════════════════════════════════════
-   NotesModal — 提醒總覽
-   ════════════════════════════════════════════════════════════ */
 const NotesModal = memo(({ onClose, visibleDates, schedule, goDate, handleBackToday }) => {
     const today = new Date(); today.setHours(0,0,0,0);
     const notesList = visibleDates.filter(d => schedule.notes?.[d.fullKey]?.trim());
     return (
         <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={onClose}>
             <div className="animate-window bg-[rgba(30,30,32,0.98)] border border-white/10 w-full max-w-md rounded-[2.2rem] shadow-2xl flex flex-col max-h-[85vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
+                {/* ⭐️ Header 絕對置中佈局：左右佔位精確對稱 (w-[80px]) ⭐️ */}
                 <div className="p-3 border-b border-white/10 bg-white/[0.04] flex items-center justify-between">
-                    <div className="w-[85px] shrink-0">
+                    <div className="flex items-center w-[80px] shrink-0">
                         <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:bg-white/20 transition-all text-xl">×</button>
                     </div>
                     <div className="flex-1 flex justify-center">
@@ -294,8 +289,9 @@ const NotesModal = memo(({ onClose, visibleDates, schedule, goDate, handleBackTo
                             <Icon name="bell" className="w-5 h-5"/> 提醒總覽
                         </h3>
                     </div>
-                    <div className="flex items-center justify-end w-[85px] shrink-0">
-                        <TodayBtn onClick={handleBackToday} />
+                    <div className="flex items-center justify-end gap-2.5 w-[80px] shrink-0">
+                        {/* ⭐️ 修正：點擊 Today 既能跳轉又能關閉 Modal ⭐️ */}
+                        <TodayBtn onClick={() => { handleBackToday(); onClose(); }} />
                     </div>
                 </div>
                 <div className="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar">
@@ -323,23 +319,20 @@ const NotesModal = memo(({ onClose, visibleDates, schedule, goDate, handleBackTo
     );
 });
 
-/* ════════════════════════════════════════════════════════════
-   MasterRosterModal
-   ════════════════════════════════════════════════════════════ */
 const MasterRosterModal = memo(({ onClose, visibleDates, schedule, aliasMap, todayK, handleStaffClick, handleBackToday, openCal }) => {
     const [detail, setDetail] = useState(null);
     return (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-3 bg-black/70" onClick={onClose}>
             <div className="animate-window bg-[rgba(28,28,30,0.98)] border border-white/10 w-full max-w-4xl rounded-[2.2rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col max-h-[90vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
                 <div className="p-3.5 border-b border-white/10 flex items-center justify-between bg-white/[0.04]">
-                    <div className="w-[50px] shrink-0">
+                    <div className="flex items-center w-[80px] shrink-0">
                         <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:bg-white/20 transition-all text-xl">×</button>
                     </div>
                     <div className="flex-1 flex justify-center">
                         <h3 className="text-[17px] font-bold tracking-tight">Master Roster</h3>
                     </div>
-                    <div className="flex items-center justify-end gap-2.5 w-[85px] shrink-0">
-                        <TodayBtn onClick={handleBackToday} />
+                    <div className="flex items-center justify-end gap-2.5 w-[80px] shrink-0">
+                        <TodayBtn onClick={() => { handleBackToday(); onClose(); }} />
                         <CalBtn onClick={openCal} />
                     </div>
                 </div>
@@ -418,9 +411,6 @@ const MasterRosterModal = memo(({ onClose, visibleDates, schedule, aliasMap, tod
     );
 });
 
-/* ════════════════════════════════════════════════════════════
-   QueryModal
-   ════════════════════════════════════════════════════════════ */
 const QueryModal = memo(({ queryStaff, queryVenue, onClose, setQueryStaff, setQueryVenue, visibleDates, schedule, aliasMap, curFk, handleStaffClick, handleBackToday, openCal }) => {
     if(!queryStaff&&!queryVenue) return null;
     return (
@@ -428,7 +418,7 @@ const QueryModal = memo(({ queryStaff, queryVenue, onClose, setQueryStaff, setQu
             <div className="animate-window bg-[rgba(28,28,30,0.98)] border border-white/10 w-full max-w-lg rounded-[2.2rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col max-h-[85vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
                 
                 <div className="p-3 border-b border-white/10 bg-white/[0.04] flex items-center justify-between gap-2">
-                    <div className="w-[40px] shrink-0">
+                    <div className="flex items-center w-[80px] shrink-0">
                         <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:bg-white/20 transition-all text-xl">×</button>
                     </div>
                     <div className="flex-1 flex justify-center overflow-hidden px-1">
@@ -444,8 +434,8 @@ const QueryModal = memo(({ queryStaff, queryVenue, onClose, setQueryStaff, setQu
                             <h3 className="text-[17px] font-bold tracking-tight truncate px-2">{aliasMap[queryStaff]||queryStaff}</h3>
                         )}
                     </div>
-                    <div className="flex items-center justify-end gap-2.5 w-[85px] shrink-0">
-                        <TodayBtn onClick={handleBackToday} />
+                    <div className="flex items-center justify-end gap-2.5 w-[80px] shrink-0">
+                        <TodayBtn onClick={() => { handleBackToday(); onClose(); }} />
                         <CalBtn onClick={openCal} />
                     </div>
                 </div>
@@ -688,12 +678,12 @@ const App = () => {
                     {lastUpdated&&(
                         <div className="flex items-center mt-1.5">
                             {isRecentlyUpdated&&<span className="w-1.5 h-1.5 rounded-full bg-[var(--weekend-pink)] mr-1.5 animate-pulse"/>}
-                            <span className="text-[11px] text-white/50 font-bold tracking-wider">SYNCED: {lastUpdated}</span>
+                            <span className="text-[11px] text-white/40 font-bold tracking-wider">SYNC: {lastUpdated}</span>
                         </div>
                     )}
                 </div>
                 <div className="flex items-center gap-2.5 flex-shrink-0">
-                    {/* ⭐️ 最終視覺平衡 Today 鈕 ⭐️ */}
+                    {/* ⭐️ Header 工具列：無邊框 Today 鈕與 0.1s 瞬發提示 ⭐️ */}
                     <TodayBtn onClick={handleBackToday} />
                     <button onClick={()=>setActiveModal('notes')} data-tip="重要提醒" className="w-8 h-8 rounded-full bg-white/[0.06] border border-white/10 flex items-center justify-center text-white/60 hover:bg-white/15 transition-all shrink-0">
                         <Icon name="bell" className="w-4 h-4"/>
@@ -777,7 +767,7 @@ const App = () => {
             )}
             {activeModal==='calendar'&&( <CalendarPicker allDates={allDates} onSelect={fk=>{ const i=allDates.findIndex(d=>d.fullKey===fk); if(i!==-1)goDate(i,fk); closeModal(); }} onClose={closeModal} calMonth={calMonth} setCalMonth={setCalMonth} /> )}
 
-            <footer className="fixed bottom-0 left-0 right-0 py-2 flex items-center justify-center pointer-events-none text-[10px] font-bold tracking-[0.25em] text-white/50">
+            <footer className="fixed bottom-0 left-0 right-0 py-2 flex items-center justify-center pointer-events-none text-[10px] font-bold tracking-[0.25em] text-white/20">
                 <span>TPAC SCHEDULE SYSTEM | {APP_VERSION}</span>
             </footer>
         </div>
