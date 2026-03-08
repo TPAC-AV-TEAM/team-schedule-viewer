@@ -161,9 +161,14 @@
         .wk-off { background: rgba(255,55,95,0.04)  !important; border-color: rgba(255,55,95,0.12)  !important; }
 
         .day-block-today {
-            background: rgba(10,132,255,0.09) !important; border: 1.5px solid rgba(10,132,255,0.45) !important;
-            box-shadow: 0 0 0 1px rgba(10,132,255,0.10), 0 4px 20px rgba(10,132,255,0.14), 0 1px 0 rgba(255,255,255,0.08) inset !important;
-        }
+    background: rgba(10, 132, 255, 0.16) !important; /* 加深底色 */
+    border: 1px solid #0A84FF !important;           /* 外框加粗到 3px */
+    box-shadow: 
+        0 0 30px rgba(10, 132, 255, 0.5),           /* 顯著的藍色外發光 */
+        0 1px 0 rgba(255, 255, 255, 0.2) inset !important;
+    position: relative;
+    z-index: 10;
+}
         .master-today {
             background: rgba(10,132,255,0.13) !important; border-left: 1.5px solid rgba(10,132,255,0.55) !important;
             border-right: 1.5px solid rgba(10,132,255,0.55) !important; z-index: 10; position: relative;
