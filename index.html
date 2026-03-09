@@ -277,7 +277,6 @@ const App = () => {
     const scrollTimeoutsRef = useRef({});
     useEffect(() => { return () => Object.values(scrollTimeoutsRef.current).forEach(clearTimeout); }, []);
 
-    // ⭐️ 修正 4：直接依賴 lastUpdated 來保存已讀狀態，拔除 seenUpdateRef
     const markUpdateSeen = useCallback(()=>{ 
         if(!isRecentlyUpdated || !lastUpdated) return; 
         window.SafeStorage.set('tpac_seen_update', lastUpdated); 
@@ -406,7 +405,8 @@ const App = () => {
         return{s}; 
     },[dateIdx,allDates,schedule]);
     
-    if(!isUnlocked) return ( <div className="h-screen flex flex-col items-center justify-center text-white/35 text-[20px] font-medium tracking-[0.22em] gap-4" style={{background:'var(--bg-base)'}}> {errorMsg?<span className="text-rose-500 font-bold px-6 text-center leading-relaxed animate-pulse">{errorMsg}</span>:<span className="animate-pulse">CONNECTING...</span>} </div> );
+
+    if(!isUnlocked) return ( <div className="h-screen flex flex-col items-center justify-center text-white/35 text-[16px] font-medium tracking-[0.22em] gap-4" style={{background:'var(--bg-base)'}}> {errorMsg?<span className="text-rose-500 font-bold px-6 text-center leading-relaxed animate-pulse">{errorMsg}</span>:<span className="animate-pulse">CONNECTING...</span>} </div> );
     
     const todayK=formatK(new Date()), curFk=allDates.length?allDates[dateIdx]?.fullKey:todayK, todayNote=schedule?.notes?.[curFk], hasNote=!!(todayNote?.trim()), queryStaff = activeModal==='queryStaff' ? queryTarget : null, queryVenue = activeModal==='queryVenue' ? queryTarget : null;
 
