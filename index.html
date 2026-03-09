@@ -333,15 +333,20 @@ const App = () => {
     const scrollTo = useCallback((fk,cid)=>{ requestAnimationFrame(()=>{ const container = document.getElementById(cid); if(!container) return; const idMap={ "nav-scroll-container":`nav-${fk}`, "master-scroll-container":`mnav-${fk}`, "notes-scroll-container":`note-${fk}` }; const el=document.getElementById(idMap[cid]||`mrow-${fk}`); if(!el) return; const horizontal = cid==="nav-scroll-container" || cid==="master-scroll-container"; if(horizontal){ container.scrollTo({ left: el.offsetLeft - container.offsetWidth/2 + el.offsetWidth/2, behavior:'smooth' }); }else{ container.scrollTo({ top: el.offsetTop - container.offsetHeight/2 + el.offsetHeight/2, behavior:'smooth' }); } }); },[]);
     const allScrollTo = useCallback(fk=>{ ["nav-scroll-container","master-scroll-container","venue-scroll-container","staff-scroll-container","notes-scroll-container"].forEach(id=>scrollTo(fk,id)); },[scrollTo]);
     const goDate = useCallback((absIdx,fk)=>{ setDateIdx(absIdx); allScrollTo(fk); },[allScrollTo]);
-    const handleRefresh = () => {
-        if(isRefreshing) return;
+    const handleRefresh = async () => {
+        if(isRefreshing || !user) return;
         setIsRefreshing(true);
-        // 重新取得 Firestore 資料：取消舊 snapshot 再重建
-        // 簡單做法：強制 re-mount user effect 觸發 onSnapshot
-        setIsUnlocked(false);
-        setSchedule(null);
-        setTimeout(() => setUser(u => u ? {...u} : u), 100);
-        setTimeout(() => setIsRefreshing(false), 2000);
+        try {
+            const db = Firebase.getFirestore(Firebase.getApp());
+            const snap = await Firebase.getDoc(Firebase.doc(db,'artifacts',APP_ID,'public','data','rosters','master'));
+            if(snap.exists()){
+                const data=snap.data(), roster=safeParse(data.roster), statuses=safeParse(data.statuses), shows=safeParse(data.shows), notes=safeParse(data.notes);
+                if(data.lastUpdated){ const d=new Date(data.lastUpdated), fmtKey=`${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; setLastUpdated(fmtKey); setIsRecentlyUpdated(fmtKey !== (window.SafeStorage.get('tpac_seen_update') || '')); }
+                const keys=Object.keys(roster).sort(), sd=keys.map((k,idx)=>{ const [yy,mm,dd]=k.split('/').map(Number), o=new Date(yy,mm-1,dd); return{d:`${mm}/${dd}`,w:['日','一','二','三','四','五','六'][o.getDay()],fullKey:k,absIdx:idx}; });
+                setSchedule({roster,statuses,shows,notes}); setAllDates(sd);
+            }
+        } catch(e){ console.error(e); }
+        finally { setIsRefreshing(false); }
     };
     const handleBackToday = useCallback(()=>{ const tK=formatK(new Date()), i=allDates.findIndex(d=>d.fullKey===tK); if(i!==-1) goDate(i,tK); },[allDates,goDate]);
     const openCal = useCallback(()=>{ setPrevModal(activeModal); if(allDates[dateIdx]){ const d = new Date(allDates[dateIdx].fullKey.replace(/\//g,'-')); setCalMonth({y:d.getFullYear(), m:d.getMonth()}); } setActiveModal('calendar'); },[activeModal, allDates, dateIdx]);
