@@ -324,7 +324,7 @@ const QueryModal = memo(({ queryStaff, queryVenue, onClose, setQueryStaff, setQu
 const App = () => {
     const [allDates,setAllDates] = useState([]), [schedule,setSchedule] = useState({roster:{},statuses:{},shows:{},notes:{}});
     const [aliasMap,setAliasMap] = useState({}), [lastUpdated,setLastUpdated] = useState(""), [isRecentlyUpdated,setIsRecentlyUpdated] = useState(false);
-    const seenUpdateRef = useRef(window.SafeStorage.get('tpac_seen_update') || ''), [isUnlocked,setIsUnlocked] = useState(false), [errorMsg,setErrorMsg] = useState(null);
+    const seenUpdateRef = useRef(window.SafeStorage.get('tpac_seen_update') || ''), [isUnlocked,setIsUnlocked] = useState(false), [isRefreshing,setIsRefreshing] = useState(false), [errorMsg,setErrorMsg] = useState(null);
     const [user,setUser] = useState(null), [dateIdx,setDateIdx] = useState(0), [activeModal,setActiveModal] = useState(null), [prevModal, setPrevModal] = useState(null), [queryTarget,setQueryTarget] = useState(null);
     const [calMonth,setCalMonth] = useState(()=>{const n=new Date();return{y:n.getFullYear(),m:n.getMonth()};}), [rangeConfig,setRangeConfig] = useState(()=>window.SafeStorage.get('tpac_range_v12', {type:'default',past:7,future:60}));
     const markUpdateSeen = useCallback(()=>{ if(!isRecentlyUpdated) return; window.SafeStorage.set('tpac_seen_update', seenUpdateRef.current); setIsRecentlyUpdated(false); },[isRecentlyUpdated]);
@@ -333,6 +333,16 @@ const App = () => {
     const scrollTo = useCallback((fk,cid)=>{ requestAnimationFrame(()=>{ const container = document.getElementById(cid); if(!container) return; const idMap={ "nav-scroll-container":`nav-${fk}`, "master-scroll-container":`mnav-${fk}`, "notes-scroll-container":`note-${fk}` }; const el=document.getElementById(idMap[cid]||`mrow-${fk}`); if(!el) return; const horizontal = cid==="nav-scroll-container" || cid==="master-scroll-container"; if(horizontal){ container.scrollTo({ left: el.offsetLeft - container.offsetWidth/2 + el.offsetWidth/2, behavior:'smooth' }); }else{ container.scrollTo({ top: el.offsetTop - container.offsetHeight/2 + el.offsetHeight/2, behavior:'smooth' }); } }); },[]);
     const allScrollTo = useCallback(fk=>{ ["nav-scroll-container","master-scroll-container","venue-scroll-container","staff-scroll-container","notes-scroll-container"].forEach(id=>scrollTo(fk,id)); },[scrollTo]);
     const goDate = useCallback((absIdx,fk)=>{ setDateIdx(absIdx); allScrollTo(fk); },[allScrollTo]);
+    const handleRefresh = () => {
+        if(isRefreshing) return;
+        setIsRefreshing(true);
+        // 重新取得 Firestore 資料：取消舊 snapshot 再重建
+        // 簡單做法：強制 re-mount user effect 觸發 onSnapshot
+        setIsUnlocked(false);
+        setSchedule(null);
+        setTimeout(() => setUser(u => u ? {...u} : u), 100);
+        setTimeout(() => setIsRefreshing(false), 2000);
+    };
     const handleBackToday = useCallback(()=>{ const tK=formatK(new Date()), i=allDates.findIndex(d=>d.fullKey===tK); if(i!==-1) goDate(i,tK); },[allDates,goDate]);
     const openCal = useCallback(()=>{ setPrevModal(activeModal); if(allDates[dateIdx]){ const d = new Date(allDates[dateIdx].fullKey.replace(/\//g,'-')); setCalMonth({y:d.getFullYear(), m:d.getMonth()}); } setActiveModal('calendar'); },[activeModal, allDates, dateIdx]);
     const swipeRef = useRef({});
@@ -345,8 +355,14 @@ const App = () => {
     useEffect(() => {
         let unsubscribeAuth = null;
         const initFirebase = async () => {
+            // 等 module script 把 window.Firebase 設好（最多等 5 秒）
+            let waited = 0;
+            while(!window.Firebase && waited < 50) {
+                await new Promise(r => setTimeout(r, 100));
+                waited++;
+            }
+            if(!window.Firebase) { setErrorMsg("Firebase 載入逾時，請重新整理"); return; }
             try {
-                if(!window.Firebase) return;
                 const app = Firebase.getApps().length === 0 ? Firebase.initializeApp(FIREBASE_CONFIG) : Firebase.getApp();
                 const auth = Firebase.getAuth(app); await Firebase.signInAnonymously(auth);
                 unsubscribeAuth = Firebase.onAuthStateChanged(auth, async (u) => {
@@ -360,7 +376,7 @@ const App = () => {
     }, []);
 
     useEffect(()=>{
-        if(!user)return; const db=Firebase.getFirestore();
+        if(!user)return; const db=Firebase.getFirestore(Firebase.getApp());
         return Firebase.onSnapshot( Firebase.doc(db,'artifacts',APP_ID,'public','data','rosters','master'), snap=>{ if(!snap.exists()){ setErrorMsg("找不到班表資料庫，請聯絡管理員"); return; } const data=snap.data(), roster=safeParse(data.roster), statuses=safeParse(data.statuses), shows=safeParse(data.shows), notes=safeParse(data.notes); if(data.lastUpdated){ const d=new Date(data.lastUpdated), fmtKey=`${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; setLastUpdated(fmtKey); seenUpdateRef.current = fmtKey; setIsRecentlyUpdated(fmtKey !== (window.SafeStorage.get('tpac_seen_update') || '')); } const keys=Object.keys(roster).sort(), sd=keys.map((k,idx)=>{ const [yy,mm,dd]=k.split('/').map(Number), o=new Date(yy,mm-1,dd); return{d:`${mm}/${dd}`,w:['日','一','二','三','四','五','六'][o.getDay()],fullKey:k,absIdx:idx}; }); setSchedule({roster,statuses,shows,notes}); setAllDates(sd); setIsUnlocked(true); const tK=formatK(new Date()), mi=keys.indexOf(tK); if(mi!==-1){setDateIdx(mi);setTimeout(()=>scrollTo(tK,"nav-scroll-container"),500);} }, ()=>setErrorMsg("資料同步失敗，請重新整理") );
     },[user,scrollTo]);
 
@@ -388,6 +404,9 @@ const App = () => {
                 </div>
                 <div className="flex items-center gap-2.5 flex-shrink-0">
                     <TodayBtn onClick={handleBackToday}/>
+                    <button onClick={handleRefresh} data-tip="刷新資料" className={`w-8 h-8 rounded-full bg-white/[0.05] border border-[var(--border-dim)] flex items-center justify-center text-white/50 hover:bg-white/10 hover:text-white/80 transition-all shrink-0 ${isRefreshing?'opacity-50 cursor-not-allowed':''}`}>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`w-4 h-4 ${isRefreshing?'animate-spin':''}`}><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                    </button>
                     <button onClick={()=>setActiveModal('notes')} data-tip="重要提醒" className="w-8 h-8 rounded-full bg-white/[0.05] border border-[var(--border-dim)] flex items-center justify-center text-white/50 hover:bg-white/10 hover:text-white/80 transition-all shrink-0"> <Icon name="bell" className="w-4 h-4"/> </button>
                     <CalBtn onClick={openCal}/>
                     <button onClick={()=>setActiveModal('range')} data-tip="資料範圍" className="w-8 h-8 rounded-full bg-white/[0.05] border border-[var(--border-dim)] flex items-center justify-center text-white/50 hover:bg-white/10 hover:text-white/80 transition-all shrink-0"> <Icon name="filter" className="w-4 h-4"/> </button>
