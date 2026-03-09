@@ -22,7 +22,6 @@
         import { getFirestore, doc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         window.Firebase = { initializeApp, getApps, getApp, getFirestore, doc, onSnapshot, getDoc, getAuth, signInAnonymously, onAuthStateChanged };
-        window.isFirebaseReady = true;
     </script>
     
     <script>
@@ -41,12 +40,12 @@
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
 
         :root {
-            --bg-base: #0c0c0e; --bg-mid: #111113; --bg-raise: #1a1a1c; --bg-float: #222224;
+            --bg-base: #0c0c0e; 
             --glass-nav: rgba(14,14,16,0.88); --glass-modal: rgba(20,20,23,0.97);
             --glass-card: rgba(255,255,255,0.038); --glass-card-hover: rgba(255,255,255,0.065);
             --glass-inset: rgba(0,0,0,0.28);
             --border-dim: rgba(255,255,255,0.07); --border-mid: rgba(255,255,255,0.11);
-            --blue: #0A84FF; --pink: #FF375F; --orange: #FF9F0A; --yellow: #FFD60A;
+            --blue: #0A84FF; --pink: #FF375F; --orange: #FF9F0A; 
             --women-text: #FFD6E0; --men-text: #D0ECFF; --special-text: #FFF2CC;
             --women-dot: #FF375F; --men-dot: #5AC8FA; --special-dot:#FFD60A;
             --font: 'Plus Jakarta Sans','Noto Sans TC',system-ui,sans-serif;
@@ -103,7 +102,6 @@
         .day-block { background: var(--glass-card); border: 1px solid var(--border-dim); border-radius: var(--r-lg); padding: 14px 15px; margin-bottom: 10px; box-shadow: 0 1px 0 rgba(255,255,255,0.05) inset, 0 3px 14px rgba(0,0,0,0.22); }
         
         .mq-wrap { overflow: hidden; white-space: nowrap; position: relative; width: 100%; }
-        /* 修改跑馬燈動畫，首尾停留 20% 時間確保可讀性 */
         .mq-run { display: inline-block; padding-left: 0; animation: mq 15s linear infinite; }
         @keyframes mq { 0%, 20%{transform:translateX(0);} 80%, 100%{transform:translateX(-100%);} }
         @media (hover: hover) { .mq-wrap:hover .mq-run { animation-play-state: paused; } }
@@ -132,7 +130,7 @@
 const { useState, useEffect, useMemo, memo, useCallback, useRef } = React;
 
 /* =========================================================================
-   1. CENTRAL CONFIG (中央設定與環境常數)
+   1. CENTRAL CONFIG
    ========================================================================= */
 const CONFIG = {
     APP_VERSION: 'V16.5',
@@ -157,7 +155,7 @@ const VENUE_IDS = CONFIG.VENUES.map(v => v.id);
 const VENUE_MAP = Object.fromEntries(CONFIG.VENUES.map(v => [v.id, v]));
 
 /* =========================================================================
-   2. HELPER FUNCTIONS (工具函式庫)
+   2. HELPER FUNCTIONS
    ========================================================================= */
 const safeParse = (v, def = {}) => { try { return JSON.parse(v ?? JSON.stringify(def)); } catch(e) { return def; } };
 const formatK = d => `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
@@ -165,12 +163,11 @@ const parseK = k => { const [y,m,d] = k.split('/').map(Number); return new Date(
 const getStaffColors = info => info?.type==="Special" ? { text:"text-[var(--special-text)]", dot:"bg-[var(--special-dot)]" } : info?.gender==="F" ? { text:"text-[var(--women-text)]", dot:"bg-[var(--women-dot)]" } : { text:"text-[var(--men-text)]", dot:"bg-[var(--men-dot)]" };
 
 /* =========================================================================
-   3. COMPONENTS (UI 元件庫)
+   3. COMPONENTS
    ========================================================================= */
 const Icon = memo(({ name, className="w-4 h-4" }) => {
     const icons = {
-        filter:  <><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></>,
-        refresh: <><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></>, // 補回正確的旋轉箭頭
+        refresh: <><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></>,
         info:    <><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></>,
         sun:     <path d="M12 2v2m0 16v2m10-10h-2M4 12H2m15.364-7.364-1.414 1.414M7.05 16.95l-1.414 1.414M16.95 16.95l1.414 1.414M5.636 5.636l1.414 1.414M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/>,
         brief:   <><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></>,
@@ -187,10 +184,10 @@ const ActionBtn = ({ onClick, tip, icon, active = false }) => (
     </button>
 );
 
-const StaffBtn = memo(({ name, aliasMap={}, forceName=null, onClick, mode="normal" }) => {
+const StaffBtn = memo(({ name, aliasMap={}, onClick, mode="normal" }) => {
     const info = CONFIG.STAFF_INFO[name] || { gender:'M', type:'Normal' };
     const { text, dot } = getStaffColors(info);
-    const disp = forceName || aliasMap[name] || info.defaultAlias || name;
+    const disp = aliasMap[name] || info.defaultAlias || name;
     const isLong = disp.length >= 3;
     
     const sz = mode==="tiny" ? "text-[14px] h-9" : 
@@ -273,19 +270,19 @@ const QueryModal = memo(({ queryStaff, queryVenue, onClose, setQueryStaff, setQu
 const App = () => {
     const [allDates,setAllDates] = useState([]), [schedule,setSchedule] = useState({roster:{},statuses:{},shows:{},notes:{}});
     const [aliasMap,setAliasMap] = useState({}), [lastUpdated,setLastUpdated] = useState(""), [isRecentlyUpdated,setIsRecentlyUpdated] = useState(false);
-    const seenUpdateRef = useRef(window.SafeStorage.get('tpac_seen_update') || ''), [isUnlocked,setIsUnlocked] = useState(false), [errorMsg,setErrorMsg] = useState(null);
+    const [isUnlocked,setIsUnlocked] = useState(false), [errorMsg,setErrorMsg] = useState(null);
     const [user,setUser] = useState(null), [dateIdx,setDateIdx] = useState(0), [activeModal,setActiveModal] = useState(null), [prevModal, setPrevModal] = useState(null), [queryTarget,setQueryTarget] = useState(null);
     const [calMonth,setCalMonth] = useState(()=>{const n=new Date();return{y:n.getFullYear(),m:n.getMonth()};});
     
-    // 固定前7後60
-    
-    // ✅ 修正 3: 將計時器改為物件結構，確保各容器獨立 Debounce，不互相抵消
     const scrollTimeoutsRef = useRef({});
-    useEffect(() => { 
-        return () => Object.values(scrollTimeoutsRef.current).forEach(clearTimeout); 
-    }, []);
+    useEffect(() => { return () => Object.values(scrollTimeoutsRef.current).forEach(clearTimeout); }, []);
 
-    const markUpdateSeen = useCallback(()=>{ if(!isRecentlyUpdated) return; window.SafeStorage.set('tpac_seen_update', seenUpdateRef.current); setIsRecentlyUpdated(false); },[isRecentlyUpdated]);
+    // ⭐️ 修正 4：直接依賴 lastUpdated 來保存已讀狀態，拔除 seenUpdateRef
+    const markUpdateSeen = useCallback(()=>{ 
+        if(!isRecentlyUpdated || !lastUpdated) return; 
+        window.SafeStorage.set('tpac_seen_update', lastUpdated); 
+        setIsRecentlyUpdated(false); 
+    },[isRecentlyUpdated, lastUpdated]);
     
     const visibleDates = useMemo(()=>{ 
         if(!allDates.length) return []; 
@@ -321,6 +318,7 @@ const App = () => {
     const activeModalRef = useRef(activeModal);
     useEffect(()=>{ activeDateIdxRef.current = dateIdx; },[dateIdx]);
     useEffect(()=>{ activeModalRef.current = activeModal; },[activeModal]);
+    
     useEffect(()=>{
         const onStart = e => {
             const nav = document.getElementById('nav-scroll-container');
@@ -341,10 +339,7 @@ const App = () => {
         };
         document.addEventListener('touchstart', onStart, { passive: true });
         document.addEventListener('touchend',   onEnd,   { passive: true });
-        return () => {
-            document.removeEventListener('touchstart', onStart);
-            document.removeEventListener('touchend',   onEnd);
-        };
+        return () => { document.removeEventListener('touchstart', onStart); document.removeEventListener('touchend', onEnd); };
     },[allDates, goDate]);
     
     const handleStaffClick = useCallback(name=>{ setQueryTarget(name); setActiveModal('queryStaff'); },[]);
@@ -378,7 +373,7 @@ const App = () => {
             const data=snap.data(), roster=safeParse(data.roster), statuses=safeParse(data.statuses), shows=safeParse(data.shows), notes=safeParse(data.notes); 
             if(data.lastUpdated){ 
                 const d=new Date(data.lastUpdated), fmtKey=`${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; 
-                setLastUpdated(fmtKey); seenUpdateRef.current = fmtKey; setIsRecentlyUpdated(fmtKey !== (window.SafeStorage.get('tpac_seen_update') || '')); 
+                setLastUpdated(fmtKey); setIsRecentlyUpdated(fmtKey !== (window.SafeStorage.get('tpac_seen_update') || '')); 
             } 
             const keys=Object.keys(roster).sort(), sd=keys.map((k,idx)=>{ const [yy,mm,dd]=k.split('/').map(Number), o=new Date(yy,mm-1,dd); return{d:`${mm}/${dd}`,w:['日','一','二','三','四','五','六'][o.getDay()],fullKey:k,absIdx:idx}; }); 
             setSchedule({roster,statuses,shows,notes}); setAllDates(sd); setIsUnlocked(true); 
@@ -411,7 +406,7 @@ const App = () => {
         return{s}; 
     },[dateIdx,allDates,schedule]);
     
-    if(!isUnlocked) return ( <div className="h-screen flex flex-col items-center justify-center text-white/35 text-[11px] font-medium tracking-[0.22em] gap-4" style={{background:'var(--bg-base)'}}> {errorMsg?<span className="text-rose-500 font-bold px-6 text-center leading-relaxed animate-pulse">{errorMsg}</span>:<span className="animate-pulse">CONNECTING...</span>} </div> );
+    if(!isUnlocked) return ( <div className="h-screen flex flex-col items-center justify-center text-white/35 text-[20px] font-medium tracking-[0.22em] gap-4" style={{background:'var(--bg-base)'}}> {errorMsg?<span className="text-rose-500 font-bold px-6 text-center leading-relaxed animate-pulse">{errorMsg}</span>:<span className="animate-pulse">CONNECTING...</span>} </div> );
     
     const todayK=formatK(new Date()), curFk=allDates.length?allDates[dateIdx]?.fullKey:todayK, todayNote=schedule?.notes?.[curFk], hasNote=!!(todayNote?.trim()), queryStaff = activeModal==='queryStaff' ? queryTarget : null, queryVenue = activeModal==='queryVenue' ? queryTarget : null;
 
@@ -425,7 +420,6 @@ const App = () => {
                 </div>
                 <div className="flex items-center gap-2.5 flex-shrink-0">
                     <ActionBtn onClick={handleBackToday} icon="today" tip="回到今天"/>
-                    {/* ✅ 修正 1: 換回 refresh 專屬 Icon */}
                     <ActionBtn onClick={()=>{ const url = new URL(window.location.href); url.searchParams.set('_r', Date.now()); window.location.replace(url.toString()); }} icon="refresh" tip="刷新資料"/>
                     <ActionBtn onClick={()=>setActiveModal('notes')} icon="bell" tip="重要提醒"/>
                     <ActionBtn onClick={openCal} icon="cal" tip="跳轉日期"/>
