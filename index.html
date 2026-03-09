@@ -317,8 +317,35 @@ const App = () => {
     const openCal = useCallback(()=>{ setPrevModal(activeModal); if(allDates[dateIdx]){ const d = new Date(allDates[dateIdx].fullKey.replace(/\//g,'-')); setCalMonth({y:d.getFullYear(), m:d.getMonth()}); } setActiveModal('calendar'); },[activeModal, allDates, dateIdx]);
     
     const swipeRef = useRef({});
-    const handleTouchStart = useCallback(e=>{ swipeRef.current = { x:e.touches[0].clientX, y:e.touches[0].clientY }; },[]);
-    const handleTouchEnd = useCallback(e=>{ if(activeModal) return; const dx = e.changedTouches[0].clientX - swipeRef.current.x, dy = Math.abs(e.changedTouches[0].clientY - swipeRef.current.y); if(Math.abs(dx)>60 && dy<40){ const dir = dx<0?1:-1, ni = Math.max(0,Math.min(allDates.length-1,dateIdx+dir)); goDate(ni,allDates[ni].fullKey); } },[allDates,dateIdx,goDate,activeModal]);
+    const activeDateIdxRef = useRef(dateIdx);
+    const activeModalRef = useRef(activeModal);
+    useEffect(()=>{ activeDateIdxRef.current = dateIdx; },[dateIdx]);
+    useEffect(()=>{ activeModalRef.current = activeModal; },[activeModal]);
+    useEffect(()=>{
+        const onStart = e => {
+            const nav = document.getElementById('nav-scroll-container');
+            const inNav = nav && nav.contains(e.target);
+            swipeRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, ignore: inNav };
+        };
+        const onEnd = e => {
+            if(swipeRef.current.ignore) return;
+            if(activeModalRef.current) return;
+            const dx = e.changedTouches[0].clientX - swipeRef.current.x;
+            const dy = Math.abs(e.changedTouches[0].clientY - swipeRef.current.y);
+            if(Math.abs(dx) > 60 && dy < 40){
+                const cur = activeDateIdxRef.current;
+                const dir = dx < 0 ? 1 : -1;
+                const ni = Math.max(0, Math.min(allDates.length - 1, cur + dir));
+                goDate(ni, allDates[ni].fullKey);
+            }
+        };
+        document.addEventListener('touchstart', onStart, { passive: true });
+        document.addEventListener('touchend',   onEnd,   { passive: true });
+        return () => {
+            document.removeEventListener('touchstart', onStart);
+            document.removeEventListener('touchend',   onEnd);
+        };
+    },[allDates, goDate]);
     
     const handleStaffClick = useCallback(name=>{ setQueryTarget(name); setActiveModal('queryStaff'); },[]);
     const handleVenueClick = useCallback(id=>{ setQueryTarget(id); setActiveModal('queryVenue'); },[]);
@@ -389,7 +416,7 @@ const App = () => {
     const todayK=formatK(new Date()), curFk=allDates.length?allDates[dateIdx]?.fullKey:todayK, todayNote=schedule?.notes?.[curFk], hasNote=!!(todayNote?.trim()), queryStaff = activeModal==='queryStaff' ? queryTarget : null, queryVenue = activeModal==='queryVenue' ? queryTarget : null;
 
     return (
-        <div className="h-screen flex flex-col overflow-hidden relative text-white bg-[var(--bg-base)]" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+        <div className="h-screen flex flex-col overflow-hidden relative text-white bg-[var(--bg-base)]">
             <div className="aura-bg"/>
             <header className="mac-glass pt-12 pb-4 px-5 flex items-center justify-between shrink-0 z-50">
                 <div className="flex flex-col justify-center">
