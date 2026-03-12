@@ -73,17 +73,18 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .weekend-bg { background: rgba(255,55,95,0.04) !important; }
 
+        /* --- B班 閃爍特效強化版 --- */
         @keyframes b-badge-pulse {
-            0%, 100% { border-color: rgba(255,255,255,0.22); box-shadow: none; }
-            50% { border-color: rgba(255,255,255,0.80); box-shadow: 0 0 8px rgba(255,255,255,0.15); }
+            0%, 100% { border-color: rgba(255,255,255,0.3); box-shadow: 0 0 0 rgba(255,255,255,0); }
+            50% { border-color: #FFFFFF; box-shadow: 0 0 12px rgba(255,255,255,0.6), inset 0 0 4px rgba(255,255,255,0.3); }
         }
-        .b-badge-glow { animation: b-badge-pulse 2s infinite ease-in-out; border-width: 1.5px !important; }
+        .b-badge-glow { animation: b-badge-pulse 1.5s infinite ease-in-out; border-width: 2px !important; }
 
         @keyframes b-row-outline {
-            0%, 100% { outline-color: rgba(255,255,255,0.18); }
-            50% { outline-color: rgba(255,255,255,0.82); }
+            0%, 100% { outline-color: rgba(255,255,255,0.2); box-shadow: none; }
+            50% { outline-color: #FFFFFF; box-shadow: 0 0 10px rgba(255,255,255,0.5); }
         }
-        .b-row-glow { animation: b-row-outline 2s infinite ease-in-out; outline: 1.5px solid rgba(255,255,255,0.18); outline-offset: -1px; }
+        .b-row-glow { animation: b-row-outline 1.5s infinite ease-in-out; outline: 2px solid rgba(255,255,255,0.2); outline-offset: -2px; z-index: 10; position: relative; }
 
         @keyframes window-spring {
             0%   { opacity: 0; transform: scale(0.96) translateY(14px); }
