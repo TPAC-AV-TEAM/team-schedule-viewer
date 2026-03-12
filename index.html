@@ -2,586 +2,502 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>視聽班表系統 | V16.8 (Architect Edition)</title>
-    
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <script>
-        tailwind.config = {
-            future: { hoverOnlyWhenSupported: true },
-            theme: { extend: {} }
-        }
-    </script>
-
-    <script type="module">
-        import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, doc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        window.Firebase = { initializeApp, getApps, getApp, getFirestore, doc, onSnapshot, getDoc, getAuth, signInAnonymously, onAuthStateChanged };
-    </script>
-    
-    <script>
-        window.addEventListener("error", e => console.error("GlobalError:", e.message, "at", e.filename, e.lineno));
-        window.addEventListener("unhandledrejection", e => console.error("PromiseError:", e.reason));
-        
-        window.SafeStorage = {
-            set: (key, value) => { try { localStorage.setItem(key, JSON.stringify(value)); return true; } catch(err) { return false; } },
-            get: (key, def) => { try { const val = localStorage.getItem(key); return val ? JSON.parse(val) : (def !== undefined ? def : null); } catch(err) { return def; } }
-        };
-    </script>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>AV 迴路盒查詢 | V10.0 Omnibox</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#000000">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
+        /* ── 核心色彩系統 ── */
         :root {
-            --bg-base: #0c0c0e; 
-            --glass-nav: rgba(14,14,16,0.88); --glass-modal: rgba(20,20,23,0.97);
-            --glass-card: rgba(255,255,255,0.038); --glass-card-hover: rgba(255,255,255,0.065);
-            --glass-inset: rgba(0,0,0,0.28);
-            --border-dim: rgba(255,255,255,0.07); --border-mid: rgba(255,255,255,0.11);
-            --blue: #0A84FF; --pink: #FF375F; --orange: #FF9F0A; 
-            --women-text: #FFD6E0; --men-text: #D0ECFF; --special-text: #FFF2CC;
-            --women-dot: #FF375F; --men-dot: #5AC8FA; --special-dot:#FFD60A;
-            --font: 'Plus Jakarta Sans','Noto Sans TC',system-ui,sans-serif;
-            --r-xs: 8px; --r-sm: 12px; --r-md: 18px; --r-lg: 24px; --r-xl: 30px; --r-2xl: 36px;
+            --bg:          #000000;
+            --card:        #151517; 
+            --card-border: rgba(255, 255, 255, 0.12); 
+            --blue:        #0A84FF;
+            --blue-glow:   rgba(10, 132, 255, 0.25);
+            --green:       #32D74B;
+            
+            --text-main:   #FFFFFF; 
+            --text-sub:    #A1A1A8; 
+            --text-mute:   #C7C7CC; 
+            
+            --border:      rgba(255,255,255,0.18); 
+            --sep:         rgba(255,255,255,0.08); 
+            --input-bg:    rgba(255,255,255,0.12); 
         }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            font-family: var(--font); height: 100vh; overflow: hidden;
-            background: var(--bg-base); color: rgba(255,255,255,0.92);
-            -webkit-font-smoothing: antialiased; letter-spacing: -0.018em;
+            background: var(--bg); color: var(--text-main);
+            font-family: "SF Pro Display", "Inter", "-apple-system", sans-serif;
+            min-height: 100vh; padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+            display: flex; flex-direction: column; align-items: center;
         }
 
-        .aura-bg {
-            position: fixed; inset: 0; z-index: 0; pointer-events: none;
-            background:
-                radial-gradient(ellipse 55% 40% at 8% -5%, rgba(10,132,255,0.11) 0%, transparent 100%),
-                radial-gradient(ellipse 45% 35% at 92% 105%, rgba(255,55,95,0.07) 0%, transparent 100%),
-                radial-gradient(ellipse 80% 70% at 50% 50%, rgba(16,16,20,0.6) 0%, transparent 100%);
+        /* ── Header (極簡化) ── */
+        .header {
+            width: 100%; padding: 60px 16px 20px; background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border-bottom: 0.5px solid var(--border); position: sticky; top: 0; z-index: 100; text-align: center;
+        }
+        .header h1 {
+            font-size: 28px; font-weight: 700; color: #FFFFFF;
+            margin-bottom: 4px; letter-spacing: 0.02em;
+        }
+        .version-label {
+            font-size: 11px; font-weight: 700; color: var(--blue);
+            letter-spacing: 0.15em; margin-bottom: 24px; opacity: 0.9;
         }
 
-        .mac-glass {
-            background: var(--glass-nav); backdrop-filter: blur(48px) saturate(180%);
-            -webkit-backdrop-filter: blur(48px) saturate(180%); border-bottom: 1px solid var(--border-dim);
-            box-shadow: 0 1px 0 rgba(255,255,255,0.04);
-        }
-
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .weekend-bg { background: rgba(255,55,95,0.04) !important; }
-
-        @keyframes b-badge-pulse {
-            0%, 100% { border-color: rgba(255,255,255,0.22); box-shadow: none; }
-            50% { border-color: rgba(255,255,255,0.80); box-shadow: 0 0 8px rgba(255,255,255,0.15); }
-        }
-        .b-badge-glow { animation: b-badge-pulse 2s infinite ease-in-out; border-width: 1.5px !important; }
-
-        @keyframes b-row-outline {
-            0%, 100% { outline-color: rgba(255,255,255,0.18); }
-            50% { outline-color: rgba(255,255,255,0.82); }
-        }
-        .b-row-glow { animation: b-row-outline 2s infinite ease-in-out; outline: 1.5px solid rgba(255,255,255,0.18); outline-offset: -1px; }
-
-        @keyframes window-spring {
-            0%   { opacity: 0; transform: scale(0.96) translateY(14px); }
-            100% { opacity: 1; transform: scale(1) translateY(0); }
-        }
-        .animate-window { animation: window-spring 0.28s cubic-bezier(0.16,1,0.3,1) forwards; }
-
-        .master-left-col { position: absolute; left: 0; top: 0; bottom: 0; width: 88px; z-index: 50; background: rgba(12,12,14,0.99); border-right: 1px solid var(--border-mid); display: flex; flex-direction: column; }
-        .master-right { margin-left: 88px; overflow-x: auto; overflow-y: hidden; display: block; }
-        .master-cell  { min-width: 82px; flex-shrink: 0; text-align: center; border-left: 1px solid rgba(255,255,255,0.04); }
-        .master-hdr   { height: 52px; }
-        .master-row   { height: 50px; display: flex; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.045); }
-
-        .day-block { background: var(--glass-card); border: 1px solid var(--border-dim); border-radius: var(--r-lg); padding: 14px 15px; margin-bottom: 10px; box-shadow: 0 1px 0 rgba(255,255,255,0.05) inset, 0 3px 14px rgba(0,0,0,0.22); }
+        /* ── Omnibox 萬能搜尋框 ── */
+        .search-group { display: flex; flex-direction: column; gap: 12px; max-width: 540px; margin: 0 auto; }
+        .search-row { display: flex; gap: 8px; align-items: center; width: 100%; }
         
-        /* 跑馬燈優化：首幀停留機制 */
-        .mq-wrap { overflow: hidden; white-space: nowrap; position: relative; width: 100%; }
-        .mq-run { display: inline-block; padding-left: 0; animation: mq 16s linear infinite; }
-        @keyframes mq { 0%, 15% { transform: translateX(0); } 85%, 100% { transform: translateX(-100%); } }
-        @media (hover: hover) { .mq-wrap:hover .mq-run { animation-play-state: paused; } }
-
-        @keyframes reminder-pulse { 0%,100% { border-color: rgba(255,55,95,0.22); } 50% { border-color: rgba(255,55,95,0.75); } }
-        .reminder-glow { animation: reminder-pulse 3s infinite ease-in-out; }
-
-        .wk-GT  { background: rgba(255,69,58,0.07) !important; border-color: rgba(255,69,58,0.20) !important; }
-        .wk-BB  { background: rgba(29,158,255,0.07) !important; border-color: rgba(29,158,255,0.20) !important; }
-        .wk-GP  { background: rgba(50,215,75,0.07) !important; border-color: rgba(50,215,75,0.20) !important; }
-        .wk-off { background: rgba(255,55,95,0.04) !important; border-color: rgba(255,55,95,0.12) !important; }
-
-        .day-block-today { background: rgba(10, 132, 255, 0.16) !important; border: 1px solid #0A84FF !important; box-shadow: 0 0 30px rgba(10, 132, 255, 0.5), 0 1px 0 rgba(255, 255, 255, 0.2) inset !important; position: relative; z-index: 10; }
-        .master-today { background: rgba(10,132,255,0.13) !important; border-left: 1.5px solid rgba(10,132,255,0.55) !important; border-right: 1.5px solid rgba(10,132,255,0.55) !important; z-index: 10; position: relative; }
-
-        [data-tip] { position: relative; }
-        @media (hover: hover) and (pointer: fine) {
-            [data-tip]:hover::after { content: attr(data-tip); position: absolute; top: 120%; left: 50%; transform: translateX(-50%); background: rgba(28,28,32,0.97); color: rgba(255,255,255,0.88); border: 1px solid var(--border-mid); padding: 5px 11px; border-radius: var(--r-xs); font-size: 11px; font-weight: 600; white-space: nowrap; z-index: 10000; pointer-events: none; backdrop-filter: blur(16px); box-shadow: 0 6px 22px rgba(0,0,0,0.55); animation: tip-fade 0.12s ease-out forwards; }
+        .search-wrap { position: relative; flex: 1; }
+        .search-wrap input {
+            width: 100%; background: var(--input-bg); border: 1.5px solid transparent;
+            border-radius: 16px; padding: 16px 18px; color: var(--text-main); font-size: 16px; 
+            outline: none; transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
+            box-shadow: inset 0 0 0 0.5px var(--border);
         }
-        @keyframes tip-fade { from { opacity:0; transform:translateX(-50%) translateY(-4px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
+        .search-wrap input:focus { 
+            background: rgba(255,255,255,0.16); 
+            border-color: var(--blue);
+            box-shadow: 0 0 0 4px var(--blue-glow);
+        }
+        .search-wrap input::placeholder { color: rgba(255,255,255,0.45); font-weight: 400; }
+        
+        .icon-btn {
+            width: 52px; height: 52px; background: var(--input-bg);
+            border: 0.5px solid var(--border); border-radius: 16px;
+            color: var(--text-sub); cursor: pointer; font-size: 18px;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+            transition: all 0.2s;
+        }
+        @media (hover: hover) { 
+            .icon-btn:hover { border-color: var(--text-sub); color: var(--text-main); background: rgba(255,255,255,0.15); } 
+            .sug-item:hover { background: rgba(255,255,255,0.08); } 
+            .id-chip:hover { background: rgba(10, 132, 255, 0.2); border-color: var(--blue); } 
+        }
+        .icon-btn:active { background: rgba(255,255,255,0.25); transform: scale(0.94); }
+
+        /* ── Chips & Results Wall ── */
+        .id-chip { 
+            background: rgba(255,255,255,0.08); border: 1px solid var(--border); 
+            border-radius: 10px; padding: 10px 16px; font-size: 15px; font-weight: 600; 
+            color: var(--text-main); cursor: pointer; transition: all 0.2s; 
+            animation: fadeInScale 0.3s ease-out forwards; opacity: 0; transform: scale(0.95); 
+        }
+        .id-chip:active { transform: scale(0.92); background: var(--blue); color: var(--text-main); border-color: var(--blue); }
+        @keyframes fadeInScale { to { opacity: 1; transform: scale(1); } }
+        
+        .result-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+        .result-meta { font-size: 13px; color: var(--text-sub); margin-top: 6px; font-weight: 500; }
+
+        /* ── Suggestions ── */
+        .suggestions { position: absolute; top: calc(100% + 8px); left: 0; right: 0; background: rgba(28,28,30,0.98); border: 1px solid var(--card-border); border-radius: 16px; overflow-y: auto; max-height: 45vh; box-shadow: 0 12px 48px rgba(0,0,0,0.8); z-index: 200; display: none; }
+        .sug-item { padding: 14px 16px; cursor: pointer; border-bottom: 0.5px solid var(--sep); display: flex; flex-direction: column; gap: 6px; }
+        .sug-header { display: flex; justify-content: space-between; align-items: center; font-size: 16px; letter-spacing: 0.02em; }
+        .sug-hall { font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 8px; }
+        .sug-loc { font-size: 13px; color: var(--text-mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 4px; }
+
+        /* ── Content & Card ── */
+        .content { width: 100%; max-width: 540px; padding: 24px 16px 0; }
+        .card { 
+            background: var(--card); border: 1px solid var(--card-border); 
+            border-radius: 20px; padding: 24px; margin-bottom: 16px; 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4); animation: fadeIn 0.3s ease-out; 
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .tag { font-size: 11px; font-weight: 700; letter-spacing: 0.15em; color: var(--blue); margin-bottom: 10px; }
+        .id-label { font-size: 32px; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-main); }
+        .divider { border: none; border-top: 1px solid var(--sep); margin: 18px 0; }
+        
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .info-item .label { font-size: 13px; color: var(--text-sub); margin-bottom: 6px; font-weight: 500; }
+        .info-item .value { font-size: 17px; font-weight: 600; line-height: 1.4; color: var(--text-main); }
+        .hall-badge { display: inline-flex; align-items: center; padding: 4px 12px; border-radius: 999px; font-size: 16px; font-weight: 700; margin-right: 8px; }
+
+        /* ── Table ── */
+        .section-title { font-size: 12px; color: var(--text-sub); font-weight: 700; letter-spacing: 0.12em; margin-bottom: 12px; }
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        thead th { 
+            text-align: left; font-size: 13px; color: var(--text-sub); font-weight: 600; 
+            padding: 0 4px 10px; border-bottom: 1px solid var(--border); letter-spacing: 0.05em; 
+        }
+        thead th:nth-child(1) { width: 55%; }
+        thead th:nth-child(2) { width: 30%; }
+        thead th:nth-child(3) { width: 15%; text-align: right; }
+        
+        tbody tr { border-bottom: 1px solid var(--sep); }
+        tbody td { padding: 14px 4px; font-size: 16px; font-weight: 500; color: var(--text-main); vertical-align: top; word-wrap: break-word; }
+        tbody td:last-child { text-align: right; font-size: 18px; font-weight: 600; color: var(--text-main); }
+        
+        .sys-name { font-weight: 600; color: var(--text-main); letter-spacing: 0.01em; line-height: 1.4; }
+        .dest-info { font-size: 13px; color: var(--text-mute); margin-top: 6px; line-height: 1.4; display: flex; gap: 6px; }
+        .dest-icon { color: var(--blue); flex-shrink: 0; font-weight: bold; }
+
+        /* ── Settings & Placeholder ── */
+        .settings-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .save-btn { background: var(--blue); color: var(--text-main); border: none; border-radius: 10px; padding: 8px 18px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+        .close-settings { background: rgba(255,255,255,0.1); color: var(--text-main); border: none; border-radius: 10px; width: 34px; height: 34px; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .alias-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--sep); }
+        .alias-orig { font-size: 14px; color: var(--text-mute); flex: 1; word-break: break-all; min-width: 0; line-height: 1.3; }
+        .alias-row input { flex: 1; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text-main); outline: none; font-size: 15px; min-width: 0; transition: border-color 0.2s; }
+        .alias-row input:focus { border-color: var(--blue); }
+        
+        .placeholder { 
+            text-align: center; padding: 100px 20px; color: var(--text-sub); 
+            font-size: 15px; font-weight: 500; letter-spacing: 0.05em; line-height: 1.6;
+        }
+        .placeholder span { display: block; margin-top: 8px; font-size: 13px; opacity: 0.6; }
     </style>
 </head>
 <body>
-<div id="root"></div>
-<script type="text/babel">
-const { useState, useEffect, useMemo, memo, useCallback, useRef } = React;
 
-/* =========================================================================
-   1. CENTRAL CONFIG (整合所有硬編碼與正則表達式)
-   ========================================================================= */
+<div class="header">
+    <h1>音視訊迴路盒</h1>
+    <div class="version-label">V10.0 OMNIBOX</div>
+    
+    <div class="search-group">
+        <div class="search-row">
+            <div class="search-wrap">
+                <input type="text" id="searchInput" placeholder="輸入編號、廳院、線材 (如: GT 4F Twist)" autocomplete="off">
+                <div id="suggestions" class="suggestions"></div>
+            </div>
+            <button class="icon-btn" id="clearBtn" title="清除">✕</button>
+            <button class="icon-btn" id="settingBtn" title="設定">⚙️</button>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div id="settingsArea" class="card" style="display:none; margin-bottom:16px;">
+        <div class="settings-header">
+            <span style="font-size:15px; font-weight:600; color:var(--blue);">🛠️ 自訂系統名稱 (Alias)</span>
+            <div style="display:flex; gap:10px;">
+                <button class="save-btn" id="saveBtn">儲存</button>
+                <button class="close-settings" id="closeSettingBtn">✕</button>
+            </div>
+        </div>
+        <div id="aliasList" style="max-height:400px; overflow-y:auto; padding-right:4px;"></div>
+    </div>
+
+    <div id="resultArea" style="display:none"></div>
+    <div id="placeholder" class="placeholder">
+        準備掃描 / 查詢
+        <span>支援全域模糊搜尋與精準 ID 對接</span>
+    </div>
+</div>
+
+<script>
 const CONFIG = {
-    APP_VERSION: 'V16.8',
-    APP_ID: "team-schedule-viewer",
-    FIREBASE: { apiKey: "AIzaSyA7tgFRxDCnZpOzEvfT978wIAcqcXNZXVQ", authDomain: "team-schedule-viewer.firebaseapp.com", projectId: "team-schedule-viewer", storageBucket: "team-schedule-viewer.firebasestorage.app", messagingSenderId: "202883367260", appId: "1:202883367260:web:b31e495084a4ea8af20199" },
-    VENUES: [ 
-        { id:'GT', color:'#FF453A', masterBg:'255,69,58' }, 
-        { id:'BB', color:'#1D9EFF', masterBg:'29,158,255' }, 
-        { id:'GP', color:'#32D74B', masterBg:'50,215,75' } 
-    ],
-    SHIFTS: ['A', 'B'],
-    STAFF_ORDER: ["王志剛","張國飛","張劭如","謝祥玄","張懷德","楊淯舒","黎祐甄","廖俊龍","曾健洋","劉智敏"],
-    STAFF_INFO: { 
-        "王志剛":{ gender:"M", type:"Normal" }, "張國飛":{ gender:"M", type:"Normal" }, 
-        "張劭如":{ gender:"F", type:"Normal" }, "謝祥玄":{ gender:"M", type:"Normal" }, 
-        "張懷德":{ gender:"M", type:"Normal" }, "楊淯舒":{ gender:"F", type:"Normal" }, 
-        "黎祐甄":{ gender:"F", type:"Normal" }, "廖俊龍":{ gender:"M", type:"Normal", defaultAlias: "阿龍" },
-        "曾健洋":{ gender:"M", type:"Special" }, "劉智敏":{ gender:"M", type:"Special" } 
-    },
-    SYNC_FEEDBACK_MS: 700,
-    REGEX: {
-        LEAVE: /休|例|假/,
-        OFFICE: /辦公|支援|居家|其他|其它/
+    DATA_URL: './data.json',
+    STORAGE_KEY: 'avAliases',
+    MAX_SUGGESTIONS: 15,
+    HALL_MAP: {
+        '大劇院':           { name: 'GT 大劇院',   short: 'GT', color: '#FF3B30' },
+        '多形式中劇院':     { name: 'BB 藍盒子',   short: 'BB', color: '#5AC8FA' },
+        '鏡框式中劇院':     { name: 'GP 球劇場',   short: 'GP', color: '#34C759' },
+        '偶劇院':           { name: 'PT 偶劇院',   short: 'PT', color: '#FF9F0A' },
+        '排練室':           { name: '排練室',      short: '練', color: '#64D2FF' },
+        '屋頂劇場':         { name: 'RT 屋頂劇場', short: 'RT', color: '#BF5AF2' },
+        '公共區域':         { name: '公共區域',    short: '公共', color: '#8E8E93' },
+        '卸貨口與外部空間': { name: '外部空間',    short: '外部', color: '#636366' },
     }
 };
-const VENUE_IDS = CONFIG.VENUES.map(v => v.id);
-const VENUE_MAP = Object.fromEntries(CONFIG.VENUES.map(v => [v.id, v]));
 
-/* =========================================================================
-   2. HELPER FUNCTIONS (防禦性工具函式)
-   ========================================================================= */
-const safeParse = (v, def = {}) => { try { return JSON.parse(v ?? JSON.stringify(def)); } catch(e) { return def; } };
-const formatK = d => `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
-// 安全解析日期字串，避免瀏覽器相容性與時區問題
-const parseK = k => { 
-    if(!k || typeof k !== 'string') return new Date();
-    const [y,m,d] = k.split('/').map(Number); 
-    return new Date(y, m-1, d); 
-};
-const getStaffColors = info => info?.type==="Special" ? { text:"text-[var(--special-text)]", dot:"bg-[var(--special-dot)]" } : info?.gender==="F" ? { text:"text-[var(--women-text)]", dot:"bg-[var(--women-dot)]" } : { text:"text-[var(--men-text)]", dot:"bg-[var(--men-dot)]" };
+let db = [];
+let uniqueBoxes = []; 
+let aliases = {};
+let currentId = null;
+let idSearchIndex = new Map();
 
-/* =========================================================================
-   2.1 AUTO DAY ROLLOVER (跨日自動刷新)
-   ========================================================================= */
-(() => {
-    const getDayKey = () => formatK(new Date());
-    let loadedKey = getDayKey();
+const escHtml = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+const safeParse = (str, fb) => { try { return JSON.parse(str) || fb; } catch(e) { return fb; } };
+const getEle = id => document.getElementById(id);
+const escapeRegExp = s => String(s ?? '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const normalizeForMatch = s => String(s ?? '').toUpperCase().replace(/[^A-Z0-9\u4E00-\u9FFF]/g, '');
+const tokenizeQuery = q => String(q ?? '')
+    .split(/[\s,，、;:\/\\|]+/)
+    .map(t => normalizeForMatch(t))
+    .filter(Boolean);
 
-    const checkAndReload = () => {
-        const currentKey = getDayKey();
-        if (currentKey !== loadedKey) {
-            console.log("偵測到跨日，系統自動重新整理...");
-            loadedKey = currentKey; // 防止重複觸發
-            window.location.reload();
-        }
-    };
+window.addEventListener('DOMContentLoaded', async () => {
+    aliases = safeParse(localStorage.getItem(CONFIG.STORAGE_KEY), {});
+    bindEvents();
+    await loadData();
+});
 
-    // 防線一：每 1 小時背景檢查一次
-    setInterval(checkAndReload, 3600000);
+function normalizeSearchInput(rawVal) {
+    let val = rawVal.trim().toUpperCase();
+    if (!val) return '';
+    if (/^\d{4}$/.test(val)) return `AV ${val.substring(0, 2)}-${val.substring(2)}`;
+    if (/^\d{2}-\d{2}/.test(val)) return `AV ${val}`;
+    val = val.replace(/^AV\s*/, 'AV ');
+    val = val.replace(/^AV\s*(\d{2})(\d{2})/, 'AV $1-$2');
+    return val;
+}
 
-    // 防線二：回到前景時檢查
-    document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') {
-            checkAndReload();
+function isIdLike(val) {
+    return /^#\d+$/i.test(val) || /^AV\s*\d{2}-\d{2}(?:\.\d+)?$/i.test(val);
+}
+
+function buildSearchIndex() {
+    const map = new Map();
+    db.forEach(d => {
+        const id = d.id;
+        if (!id) return;
+        const hall = d.hall || '';
+        const hallShort = CONFIG.HALL_MAP[hall]?.short || '';
+        const fields = [
+            id, hall, hallShort,
+            d._floor || '',
+            d._exactLoc || d.loc || '',
+            d.sys || '',
+            aliases[d.sys] || '',
+            d.dest || '',
+            d.room || '',
+            d.conn || '',
+            d.rack || '',
+            d.dev || ''
+        ];
+        const norm = normalizeForMatch(fields.join(' '));
+        map.set(id, (map.get(id) || '') + norm);
+    });
+    idSearchIndex = map;
+}
+
+function fuzzyMatchIds(query) {
+    const tokens = tokenizeQuery(query);
+    if (!tokens.length) return [];
+    return uniqueBoxes.filter(d => {
+        const idx = idSearchIndex.get(d.id) || '';
+        return tokens.every(t => idx.includes(t));
+    });
+}
+
+function renderListResults(list, query) {
+    currentId = null;
+    const ids = list.map(d => d.id).sort((a,b) => a.localeCompare(b));
+    if (!ids.length) return showPlaceholder('查無符合條件的迴路盒');
+    const chips = ids.map((id, i) => 
+        `<div class="id-chip" data-id="${escHtml(id)}" style="animation-delay:${i*0.015}s">${escHtml(id)}</div>`
+    ).join('');
+    getEle('resultArea').innerHTML = `
+        <div class="card">
+            <div class="tag">FUZZY MATCH / 全域搜尋結果</div>
+            <div class="id-label" style="font-size:24px; color:var(--text-main);">${escHtml(query)}</div>
+            <div class="result-meta">找到 ${ids.length} 筆相符資料（點選按鈕進入詳情）</div>
+            <div class="result-chips">${chips}</div>
+        </div>`;
+    getEle('resultArea').style.display = 'block';
+    getEle('placeholder').style.display = 'none';
+}
+
+function bindEvents() {
+    const searchInput = getEle('searchInput');
+    searchInput.addEventListener('input', handleMainInput);
+    
+    searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const raw = searchInput.value.trim();
+            if (!raw) return;
+
+            getEle('suggestions').style.display = 'none';
+            
+            // 判斷是否為明確的 ID 導向
+            const val = normalizeSearchInput(raw);
+            if (isIdLike(val)) {
+                // 確認資料庫真的有這個 ID，有的話直接打開
+                const exists = uniqueBoxes.some(d => d.id === val);
+                if (exists) return triggerSearch(val);
+            }
+            
+            // 如果不是精準 ID，或者 ID 不存在，一律展開「搜尋結果牆」
+            renderListResults(fuzzyMatchIds(raw), raw);
         }
     });
 
-    // 防線三：視窗聚焦時檢查（含部分舊版平板）
-    window.addEventListener('focus', checkAndReload);
-})();
-
-/* =========================================================================
-   3. COMPONENTS
-   ========================================================================= */
-const Icon = memo(({ name, className="w-4 h-4" }) => {
-    const icons = {
-        info:    <><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></>,
-        sun:     <path d="M12 2v2m0 16v2m10-10h-2M4 12H2m15.364-7.364-1.414 1.414M7.05 16.95l-1.414 1.414M16.95 16.95l1.414 1.414M5.636 5.636l1.414 1.414M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/>,
-        brief:   <><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></>,
-        cal:     <><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></>,
-        today:   <><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="12" cy="16" r="1.2"/></>,
-    };
-    return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{icons[name]}</svg>;
-});
-
-const ActionBtn = memo(({ onClick, tip, icon, active = false }) => (
-    <button onClick={onClick} data-tip={tip} className={`w-8 h-8 rounded-full border flex items-center justify-center transition-all shrink-0 ${active ? 'bg-[var(--blue)] border-blue-400 text-white' : 'bg-white/[0.05] border-[var(--border-dim)] text-white/50 hover:bg-white/10 hover:text-white/80'}`}>
-        <Icon name={icon} />
-    </button>
-));
-
-const StaffBtn = memo(({ name, aliasMap={}, onClick, mode="normal" }) => {
-    const info = CONFIG.STAFF_INFO[name] || { gender:'M', type:'Normal' };
-    const { text, dot } = getStaffColors(info);
-    const disp = aliasMap[name] || info.defaultAlias || name;
-    const isLong = disp.length >= 3;
+    getEle('clearBtn').addEventListener('click', () => { 
+        getEle('searchInput').value = ''; 
+        getEle('suggestions').style.display = 'none'; 
+        showPlaceholder('準備掃描 / 查詢\\n<span>支援全域模糊搜尋與精準 ID 對接</span>'); 
+    });
     
-    const sz = mode==="tiny" ? "text-[14px] h-9" : 
-               mode==="small" ? `${isLong?"text-[14px]":"text-[16px]"} h-9` : 
-               mode==="master" ? "text-[16px] h-9" : 
-               `${isLong?"text-[20px]":"text-[22px]"} h-12`;
-               
-    return ( 
-        <button onClick={e=>{e.stopPropagation();onClick?.(name);}} className={`w-full ${sz} rounded-[var(--r-sm)] font-semibold border border-[var(--border-dim)] bg-[var(--glass-card)] flex items-center justify-center gap-1.5 ${text} truncate shrink-0 transition-all duration-150 hover:bg-[var(--glass-card-hover)] hover:border-[var(--border-mid)] active:scale-[0.97]`}> 
-            <span className={`w-1.5 h-1.5 rounded-full ${dot}`}></span>{disp} 
-        </button> 
-    );
-});
+    getEle('settingBtn').addEventListener('click', () => getEle('settingsArea').style.display = getEle('settingsArea').style.display==='none'?'block':'none');
+    getEle('closeSettingBtn').addEventListener('click', () => getEle('settingsArea').style.display = 'none');
+    getEle('saveBtn').addEventListener('click', saveAliases);
 
-/* --- Modals --- */
-const CalendarPicker = memo(({ allDates, onSelect, onClose, calMonth, setCalMonth }) => {
-    const dateSet = useMemo(()=>new Set(allDates.map(d=>d.fullKey)),[allDates]);
-    const {y,m} = calMonth, firstDay = new Date(y,m,1).getDay(), daysInMonth = new Date(y,m+1,0).getDate(), todayK = formatK(new Date()), cells = []; 
-    for(let i=0;i<firstDay;i++) cells.push(null); for(let d=1;d<=daysInMonth;d++) cells.push(d);
-    return ( <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-md" onClick={onClose}> <div className="animate-window bg-[rgba(18,18,22,0.96)] border border-[var(--border-mid)] rounded-[var(--r-xl)] shadow-2xl w-full max-w-[280px] p-5" onClick={e=>e.stopPropagation()}> <div className="flex items-center justify-between mb-4"> <button onClick={()=>setCalMonth(p=>p.m===0?{y:p.y-1,m:11}:{y:p.y,m:p.m-1})} className="text-xl px-2 py-1">‹</button> <span className="text-[15px] font-bold">{y} 年 {m+1} 月</span> <button onClick={()=>setCalMonth(p=>p.m===11?{y:p.y+1,m:0}:{y:p.y,m:p.m+1})} className="text-xl px-2 py-1">›</button> </div> <div className="grid grid-cols-7 gap-y-1.5 gap-x-1"> {['日','一','二','三','四','五','六'].map(w=>(<div key={w} className="text-center text-[10.5px] font-semibold text-white/28 tracking-wide">{w}</div>))} {cells.map((d,i)=>{ if(!d) return <div key={"e"+i}/>; const fk=`${y}/${String(m+1).padStart(2,'0')}/${String(d).padStart(2,'0')}`, has=dateSet.has(fk), isToday=fk===todayK, isWk=(firstDay+d-1)%7===0||(firstDay+d-1)%7===6; return ( <button key={fk} disabled={!has} onClick={()=>onSelect(fk)} className={`h-8 w-full rounded-full text-[13px] flex items-center justify-center transition-all ${isToday?'bg-[var(--blue)] text-white':has?(isWk?'text-rose-400 hover:bg-white/10':'text-white hover:bg-white/10'):'text-white/12 cursor-default'}`}>{d}</button> ); })} </div> </div> </div> );
-});
-
-const NotesModal = memo(({ onClose, visibleDates, schedule, goDate, handleBackToday }) => {
-    const today = new Date(); today.setHours(0,0,0,0);
-    const notesList = visibleDates.filter(d => schedule?.notes?.[d.fullKey]?.trim());
-    return ( <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={onClose}> <div className="animate-window bg-[var(--glass-modal)] border border-[var(--border-mid)] w-full max-w-md rounded-[var(--r-2xl)] flex flex-col max-h-[85vh] overflow-hidden" onClick={e=>e.stopPropagation()}> <div className="p-3 border-b border-[var(--border-dim)] bg-white/[0.03] flex items-center justify-between"> <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/[0.07] border border-[var(--border-mid)] text-white/55 hover:bg-white/15 hover:text-white/90 transition-all flex items-center justify-center text-[18px] leading-none">×</button> <h3 className="text-[16px] font-bold text-[var(--pink)]">重要提醒</h3> <ActionBtn onClick={handleBackToday} icon="today" tip="回到今天"/> </div> <div id="notes-scroll-container" className="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar scroll-smooth"> {notesList.length===0 ? ( <div className="text-center text-white/40 py-10">無任何提醒事項</div> ) : notesList.map(d=>( <button key={d.fullKey} id={`note-${d.fullKey}`} onClick={() => { onClose(); setTimeout(() => requestAnimationFrame(() => goDate(d.absIdx, d.fullKey)), 100); }} className={`w-full text-left p-3.5 rounded-2xl border transition-all ${parseK(d.fullKey)<today?'bg-white/[0.02] border-white/5 opacity-60':'bg-[rgba(255,55,95,0.08)] border-[rgba(255,55,95,0.2)]'}`}> <div className="text-[12px] font-bold">{d.fullKey} (週{d.w})</div> <div className="text-[14.5px] font-medium leading-relaxed">{schedule?.notes?.[d.fullKey]?.split(/(?=\d+[,，])/).filter(Boolean).map((line,i)=>( <span key={i} className="block">{line.trim()}</span> ))}</div> </button> ))} </div> </div> </div> );
-});
-
-const MasterRosterModal = memo(({ onClose, visibleDates, schedule, aliasMap, todayK, handleStaffClick, handleBackToday, openCal }) => {
-    const [detail, setDetail] = useState(null);
-    useEffect(() => {
-        if(!detail) return;
-        const onKeyDown = e => {
-            if(e.key === 'Escape'){
-                e.stopPropagation();
-                setDetail(null);
-            }
-        };
-        document.addEventListener('keydown', onKeyDown);
-        return () => document.removeEventListener('keydown', onKeyDown);
-    }, [detail]);
-    return ( <div className="fixed inset-0 z-[1000] flex items-center justify-center p-3 bg-black/70" onClick={onClose}> <div className="animate-window bg-[var(--glass-modal)] border border-[var(--border-mid)] w-full max-w-4xl rounded-[var(--r-2xl)] flex flex-col max-h-[90vh] overflow-hidden" onClick={e=>e.stopPropagation()}> <div className="p-3.5 border-b border-[var(--border-dim)] flex items-center justify-between"> <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/[0.07] border border-[var(--border-mid)] text-white/55 hover:bg-white/15 hover:text-white/90 transition-all flex items-center justify-center text-[18px] leading-none">×</button> <h3 className="text-[15px] font-bold tracking-wide">Master Roster</h3> <div className="flex gap-2"> <ActionBtn onClick={handleBackToday} icon="today" tip="回到今天"/> <ActionBtn onClick={openCal} icon="cal" tip="跳轉日期"/> </div> </div> <div className="flex-1 overflow-hidden relative"> <div className="master-left-col"> <div className="master-hdr flex items-center justify-center border-b border-[var(--border-mid)] text-[9.5px] font-bold text-white/25 tracking-[0.18em] uppercase">STAFF</div> {CONFIG.STAFF_ORDER.map(s=>( <div key={s} className="master-row px-2"> <StaffBtn name={s} aliasMap={aliasMap} mode="master" onClick={handleStaffClick}/> </div> ))} </div> <div id="master-scroll-container" className="master-right h-full overflow-y-auto no-scrollbar scroll-smooth"> <div style={{width:'fit-content'}}> <div className="flex bg-[rgba(12,12,14,0.96)] border-b border-[var(--border-mid)] sticky top-0 z-40 master-hdr"> {visibleDates.map(d=>( <div key={d.fullKey} id={`mnav-${d.fullKey}`} className={`master-cell p-1.5 flex flex-col justify-center ${d.fullKey===todayK?'master-today':''} ${d.w==='六'||d.w==='日'?'weekend-bg':''}`}> <div className="text-[9.5px] text-white/28 tracking-wide">週{d.w}</div> <div className="text-[14px] font-extrabold tabular-nums">{d.d}</div> </div> ))} </div> {CONFIG.STAFF_ORDER.map(staff=>( <div key={staff} className="master-row"> {visibleDates.map(d=>{ 
-        let labels=[], bgStyle={backgroundColor:'rgba(255,255,255,0.03)'}, hasS=false, isB=false; 
-        VENUE_IDS.forEach(vid=>{ 
-            const entry = schedule?.roster?.[d.fullKey]?.[vid]?.[staff];
-            if(entry){ 
-                const sh = entry.shift; 
-                labels.push(`${vid}-${sh}`); 
-                if(!hasS){ bgStyle={backgroundColor:`rgba(${VENUE_MAP[vid].masterBg},0.35)`}; } 
-                else { bgStyle={background:`linear-gradient(90deg, rgba(${VENUE_MAP[labels[0].split('-')[0]].masterBg},0.5) 0%, rgba(${VENUE_MAP[vid].masterBg},0.5) 100%)`}; } 
-                if(sh==='B') isB=true; hasS=true; 
-            } 
-        }); 
-        
-        let label = "—", textStyle = {};
-        if (labels.length > 1) {
-            label = `ST-${labels[0].split('-')[1]}`;
-            textStyle = { color: '#FFFFFF', fontWeight: '800', letterSpacing: '0.02em' };
-        } else if (labels.length === 1) {
-            label = labels[0]; textStyle = { color: '#FFFFFF' };
-        } else {
-            const status = schedule?.statuses?.[d.fullKey]?.[staff] || "";
-            if (CONFIG.REGEX.OFFICE.test(status)) { label = "辦公"; bgStyle = { backgroundColor: 'transparent' }; textStyle = { color: 'rgba(255,255,255,0.35)', fontWeight: '600' }; } 
-            else { textStyle = { color: 'rgba(255,255,255,0.15)' }; }
+    // 委派點擊事件 (處理選單點擊與結果牆按鈕點擊)
+    document.addEventListener('click', e => {
+        const sug = e.target.closest('.sug-item');
+        if (sug && sug.dataset.id) {
+            getEle('searchInput').value = sug.dataset.id;
+            getEle('suggestions').style.display = 'none';
+            return triggerSearch(sug.dataset.id);
         }
 
-        return ( <div key={d.fullKey} className={`master-cell p-1 ${d.fullKey===todayK?'master-today':''} ${d.w==='六'||d.w==='日'?'weekend-bg':''}`}> <div className={`w-full h-8 flex items-center justify-center rounded-lg text-[11px] font-bold ${isB?'b-row-glow':''} ${hasS?'cursor-pointer hover:brightness-125':''}`} style={bgStyle} onClick={()=>{ if(hasS){ const showParts=labels.map(l=>{ const v=l.split("-")[0]; const sh=schedule?.shows?.[d.fullKey]?.[v]; return sh?`${v}:${sh}`:null; }).filter(Boolean); setDetail({date:d.fullKey,venue:labels.join("/"),show:showParts.join(" | ")||"無演出"}); } }}> <span style={textStyle}>{label}</span> </div> </div> ); 
-    })} </div> ))} </div> </div> </div> </div> {detail&&( <div className="fixed inset-0 z-[5000] flex items-center justify-center p-4 bg-black/40" onClick={e=>{e.stopPropagation();setDetail(null);}}> <div className="animate-window bg-[var(--glass-modal)] border border-[var(--border-mid)] p-6 rounded-[var(--r-xl)] w-full max-w-xs text-center" onClick={e=>e.stopPropagation()}> <h4 className="text-[17px] font-extrabold">{detail.venue} <span className="text-[13px] opacity-50">{detail.date}</span></h4> <p className="mt-4">{detail.show}</p> <button onClick={()=>setDetail(null)} className="mt-6 w-full py-2.5 bg-white/[0.08] hover:bg-white/14 rounded-[var(--r-sm)] font-semibold transition-all">關閉</button> </div> </div> )} </div> );
-});
+        const chip = e.target.closest('.id-chip');
+        if (chip && chip.dataset.id) return triggerSearch(chip.dataset.id);
 
-const QueryModal = memo(({ queryStaff, queryVenue, onClose, setQueryStaff, setQueryVenue, visibleDates, schedule, aliasMap, curFk, handleStaffClick, handleBackToday, openCal }) => {
-    const [prevStaff, setPrevStaff] = useState(null), [filterMode, setFilterMode] = useState(false);
-    useEffect(() => {
-        if(queryStaff) setPrevStaff(null);
-    }, [queryStaff]);
-    if(!queryStaff && !queryVenue) return null;
-    
-    return ( <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/70" onClick={onClose}> <div className="animate-window bg-[var(--glass-modal)] border border-[var(--border-mid)] w-full max-w-lg rounded-[var(--r-2xl)] flex flex-col max-h-[85vh] overflow-hidden" onClick={e=>e.stopPropagation()}> <div className="p-3 border-b border-[var(--border-dim)] bg-white/[0.03] flex items-center justify-between gap-2"> <div className="flex items-center gap-1.5"> {prevStaff&&queryVenue&&( <button onClick={()=>{ setQueryStaff(prevStaff); setPrevStaff(null); }} className="w-8 h-8 rounded-full bg-white/10 text-white/70 flex items-center justify-center text-lg hover:bg-white/20 transition-all">‹</button> )} <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/[0.07] border border-[var(--border-mid)] text-white/55 hover:bg-white/15 hover:text-white/90 transition-all flex items-center justify-center text-[18px] leading-none">×</button> </div> <div className="flex-1 flex justify-center"> {queryVenue?( <div className="flex bg-black/30 rounded-[var(--r-md)] p-1 border border-[var(--border-mid)]"> {CONFIG.VENUES.map(v=>( <button key={v.id} onClick={()=>{ if(queryStaff){ setPrevStaff(queryStaff); } setQueryVenue(v.id); }} className={`px-4 py-1.5 rounded-[10px] text-[13.5px] font-bold transition-all ${queryVenue===v.id?'bg-white/14 text-white':'text-white/28 hover:text-white/55'}`} style={{color:queryVenue===v.id?v.color:undefined}}>{v.id}</button> ))} </div> ):( <h3 className="text-[17px] font-bold">{aliasMap[queryStaff]||queryStaff}</h3> )} </div> <div className="flex items-center gap-2"> {queryStaff&&( <button onClick={()=>setFilterMode(f=>!f)} data-tip={filterMode?"顯示全部":"B班/六日篩選"} className={`w-8 h-8 rounded-full border flex items-center justify-center text-[13px] font-black transition-all shrink-0 ${filterMode?'bg-[var(--pink)] border-[var(--pink)] text-white':`bg-white/[0.05] border-[var(--border-dim)] text-white/50 hover:bg-white/10`}`}>B</button> )} <ActionBtn onClick={handleBackToday} icon="today" tip="回到今天"/> <ActionBtn onClick={openCal} icon="cal" tip="跳轉日期"/> </div> </div> <div id={queryVenue?"venue-scroll-container":"staff-scroll-container"} className="flex-1 overflow-y-auto p-4 space-y-3.5 no-scrollbar scroll-smooth"> {visibleDates.map(d=>{ const isS=d.fullKey===curFk, isW=d.w==='六'||d.w==='日'; if(queryVenue){ const vn=schedule?.shows?.[d.fullKey]?.[queryVenue]||"—"; return ( <div key={d.fullKey} id={`mrow-${d.fullKey}`} className={`day-block ${isS?'day-block-today':''}`}> <div className="mb-2 text-[13px] opacity-50 text-right truncate italic">{vn}</div> <div className="flex items-center gap-4"> <div className="flex flex-col border-r border-white/10 pr-3 w-[72px]"> <span className={`text-[10px] font-semibold tracking-wide ${isW?'text-[var(--pink)]':'text-white/30'}`}>週{d.w}</span> <span className={`text-[21px] font-extrabold tabular-nums ${isW?'text-[var(--pink)]':'text-white/88'}`}>{d.d}</span> </div> <div className="flex-1 grid grid-cols-2 gap-2.5"> {CONFIG.SHIFTS.map(sh=>( <div key={sh} className="bg-[var(--glass-inset)] rounded-[var(--r-sm)] p-1.5 min-h-[44px]"> {Object.entries(schedule?.roster?.[d.fullKey]?.[queryVenue]||{}).filter(([,v])=>v.shift===sh).map(([n])=><StaffBtn key={n} name={n} aliasMap={aliasMap} onClick={handleStaffClick} mode="small"/>)} </div> ))} </div> </div> </div> ); } let stLabels=[], stColors=[], co="#FF9500", hasS=false, activeV="", activeSh=""; VENUE_IDS.forEach(vid=>{ const entry = schedule?.roster?.[d.fullKey]?.[vid]?.[queryStaff]; if(entry){ const sh=entry.shift; stLabels.push(`${vid}-${sh}`); stColors.push(VENUE_MAP[vid]?.color || '#FFFFFF'); if(!hasS){ co=VENUE_MAP[vid]?.color||'#0A84FF'; activeV=vid; activeSh=sh; } hasS=true; if(sh==='B') activeSh='B'; } }); 
+        if (!e.target.closest('.search-wrap')) getEle('suggestions').style.display = 'none';
+    });
+}
+
+async function loadData() {
+    try {
+        const res = await fetch(`${CONFIG.DATA_URL}?v=${Date.now()}`);
+        const rawDb = await res.json();
         
-        let st = "辦公"; 
-        if (stLabels.length > 1) { st = `ST-${activeSh}`; } else if (stLabels.length === 1) { st = stLabels[0]; }
-        if (CONFIG.REGEX.LEAVE.test(schedule?.statuses?.[d.fullKey]?.[queryStaff] || "")){st="休假";co="#636366";} 
-        
-        const sn=hasS?(schedule?.shows?.[d.fullKey]?.[activeV]||""):""; 
-        const isBShift=activeSh==='B'; 
-        
-        if (filterMode && !(isBShift || (hasS && isW))) return null; 
-        
-        return ( <div key={d.fullKey} id={`mrow-${d.fullKey}`} className={`flex items-center gap-4 day-block ${isS?'day-block-today':''} ${isW?(hasS?`wk-${activeV}`:'wk-off'):''}`}> <div className="flex flex-col border-r border-white/10 pr-3 w-[72px]"> <span className={`text-[10px] font-semibold tracking-wide ${isW?'text-[var(--pink)]':'text-white/30'}`}>週{d.w}</span> <span className={`text-[21px] font-extrabold tabular-nums ${isW?'text-[var(--pink)]':'text-white/88'}`}>{d.d}</span> </div> <div className="flex-1 mq-wrap text-[16px] font-medium opacity-60 italic"> <span className={sn.length>10?"mq-run":""}>{sn}</span> </div> <button onClick={()=>{ if(hasS){ setPrevStaff(queryStaff); setQueryStaff(null); setQueryVenue(activeV); } }} className={`text-[15px] font-bold px-3.5 py-1.5 rounded-xl shrink-0 transition-all ${isBShift?'b-badge-glow':''} ${hasS?'cursor-pointer hover:opacity-80 active:scale-95':'cursor-default'}`} style={{background:stColors.length>1?`linear-gradient(90deg, ${VENUE_MAP[stLabels[0].split('-')[0]]?.color}55 0%, ${VENUE_MAP[stLabels[stLabels.length-1].split('-')[0]]?.color}55 100%)`:undefined,backgroundColor:stColors.length>1?undefined:`${co}45`,border:stColors.length>1?'1.5px solid rgba(255,255,255,0.3)':`1.5px solid ${co}99`}}> {stColors.length>1 ? <span style={{color:'#FFF', letterSpacing:'0.03em'}}>{st}</span> : st} </button> </div> ); })} </div> </div> </div> ); });
-
-/* =========================================================================
-   4. MAIN APP ENTRY
-   ========================================================================= */
-const App = () => {
-    const [allDates,setAllDates] = useState([]), [schedule,setSchedule] = useState({roster:{},statuses:{},shows:{},notes:{}});
-    const [aliasMap,setAliasMap] = useState({}), [lastUpdated,setLastUpdated] = useState(""), [isRecentlyUpdated,setIsRecentlyUpdated] = useState(false);
-    const [isUnlocked,setIsUnlocked] = useState(false), [errorMsg,setErrorMsg] = useState(null), [isRefreshing,setIsRefreshing] = useState(false);
-    const [user,setUser] = useState(null), [dateIdx,setDateIdx] = useState(0), [activeModal,setActiveModal] = useState(null), [prevModal, setPrevModal] = useState(null), [queryTarget,setQueryTarget] = useState(null);
-    const [calMonth,setCalMonth] = useState(()=>{const n=new Date();return{y:n.getFullYear(),m:n.getMonth()};});
-    
-    // 防禦性：確保在組件卸載時清除所有還在執行的 setTimeout，防止內存洩漏
-    const scrollTimeoutsRef = useRef({});
-    useEffect(() => { return () => Object.values(scrollTimeoutsRef.current).forEach(clearTimeout); }, []);
-
-    const markUpdateSeen = useCallback(()=>{ 
-        if(!isRecentlyUpdated || !lastUpdated) return; 
-        window.SafeStorage.set('tpac_seen_update', lastUpdated); 
-        setIsRecentlyUpdated(false); 
-    },[isRecentlyUpdated, lastUpdated]);
-    const formatLastUpdated = useCallback(v => {
-        const d = new Date(v);
-        if(Number.isNaN(d.getTime())) return "";
-        return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-    }, []);
-    
-    const visibleDates = useMemo(()=>{ 
-        if(!allDates.length) return []; 
-        const start=Math.max(0,dateIdx-7), end=Math.min(allDates.length,dateIdx+61); 
-        return allDates.slice(start,end); 
-    },[allDates,dateIdx]);
-
-    const scrollTo = useCallback((fk,cid)=>{ 
-        if(scrollTimeoutsRef.current[cid]) clearTimeout(scrollTimeoutsRef.current[cid]);
-        // 給予瀏覽器足夠的渲染時間 (使用 rAF 嵌套確保 Paint 完成)
-        scrollTimeoutsRef.current[cid] = setTimeout(() => {
-            requestAnimationFrame(()=>{ 
-                const container = document.getElementById(cid); if(!container) return; 
-                const idMap={ "nav-scroll-container":`nav-${fk}`, "master-scroll-container":`mnav-${fk}`, "notes-scroll-container":`note-${fk}` }; 
-                const el=document.getElementById(idMap[cid]||`mrow-${fk}`); if(!el) return; 
-                
-                if(cid==="nav-scroll-container" || cid==="master-scroll-container"){ 
-                    const left = cid==="master-scroll-container" ? el.offsetLeft : el.offsetLeft - container.offsetWidth/2 + el.offsetWidth/2; 
-                    container.scrollTo({ left, behavior:'smooth' }); 
-                } else { 
-                    container.scrollTo({ top: el.offsetTop - container.offsetHeight/2 + el.offsetHeight/2, behavior:'smooth' }); 
-                } 
-            });
-        }, 100); 
-    },[]);
-
-    const allScrollTo = useCallback(fk=>{ ["nav-scroll-container","master-scroll-container","venue-scroll-container","staff-scroll-container","notes-scroll-container"].forEach(id=>scrollTo(fk,id)); },[scrollTo]);
-    const goDate = useCallback((absIdx,fk)=>{ setDateIdx(absIdx); allScrollTo(fk); },[allScrollTo]);
-    const handleBackToday = useCallback(()=>{ const tK=formatK(new Date()), i=allDates.findIndex(d=>d.fullKey===tK); if(i!==-1) goDate(i,tK); },[allDates,goDate]);
-    const openCal = useCallback(()=>{ setPrevModal(activeModal); if(allDates[dateIdx]){ const d = parseK(allDates[dateIdx].fullKey); setCalMonth({y:d.getFullYear(), m:d.getMonth()}); } setActiveModal('calendar'); },[activeModal, allDates, dateIdx]);
-    
-    const swipeRef = useRef({});
-    const activeDateIdxRef = useRef(dateIdx);
-    const activeModalRef = useRef(activeModal);
-    const selectedDateKeyRef = useRef(null);
-    const hasInitializedSnapshotRef = useRef(false);
-    useEffect(()=>{ activeDateIdxRef.current = dateIdx; },[dateIdx]);
-    useEffect(()=>{ activeModalRef.current = activeModal; },[activeModal]);
-    useEffect(()=>{ selectedDateKeyRef.current = allDates[dateIdx]?.fullKey || null; },[allDates, dateIdx]);
-    
-    useEffect(()=>{
-        const onStart = e => {
-            const nav = document.getElementById('nav-scroll-container');
-            const inNav = nav && nav.contains(e.target);
-            swipeRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, ignore: inNav };
-        };
-        const onEnd = e => {
-            if(swipeRef.current.ignore) return;
-            if(activeModalRef.current) return;
-            if(!allDates.length) return;
-            const dx = e.changedTouches[0].clientX - swipeRef.current.x;
-            const dy = Math.abs(e.changedTouches[0].clientY - swipeRef.current.y);
-            if(Math.abs(dx) > 60 && dy < 40){
-                const cur = activeDateIdxRef.current;
-                const dir = dx < 0 ? 1 : -1;
-                const ni = Math.max(0, Math.min(allDates.length - 1, cur + dir));
-                const nextDate = allDates[ni];
-                if(nextDate) goDate(ni, nextDate.fullKey);
-            }
-        };
-        document.addEventListener('touchstart', onStart, { passive: true });
-        document.addEventListener('touchend',   onEnd,   { passive: true });
-        return () => { document.removeEventListener('touchstart', onStart); document.removeEventListener('touchend', onEnd); };
-    },[allDates, goDate]);
-    
-    const handleStaffClick = useCallback(name=>{ setQueryTarget(name); setActiveModal('queryStaff'); },[]);
-    const handleVenueClick = useCallback(id=>{ setQueryTarget(id); setActiveModal('queryVenue'); },[]);
-    const closeModal = useCallback(()=>{ setActiveModal(null); setPrevModal(null); },[]);
-    const handleModalDismiss = useCallback(()=>{
-        if(activeModal === 'calendar' && prevModal){
-            setActiveModal(prevModal);
-            setPrevModal(null);
-            return;
-        }
-        closeModal();
-    },[activeModal, prevModal, closeModal]);
-
-    useEffect(() => {
-        if(!activeModal) return;
-        const onKeyDown = e => {
-            if(e.key === 'Escape') handleModalDismiss();
-        };
-        document.addEventListener('keydown', onKeyDown);
-        return () => document.removeEventListener('keydown', onKeyDown);
-    }, [activeModal, handleModalDismiss]);
-
-    useEffect(() => {
-        document.body.style.cursor = isRefreshing ? 'wait' : '';
-        return () => { document.body.style.cursor = ''; };
-    }, [isRefreshing]);
-
-    const applyRosterSnapshot = useCallback((snap)=>{
-        if(!snap.exists()){ setErrorMsg("找不到班表資料庫，請聯絡管理員"); return; }
-        setErrorMsg(null);
-        const data=snap.data(), roster=safeParse(data.roster), statuses=safeParse(data.statuses), shows=safeParse(data.shows), notes=safeParse(data.notes);
-        if(data.lastUpdated){
-            const fmtKey = formatLastUpdated(data.lastUpdated);
-            if(fmtKey){
-                setLastUpdated(fmtKey);
-                setIsRecentlyUpdated(fmtKey !== (window.SafeStorage.get('tpac_seen_update') || ''));
-            }
-        }
-        const keys=Object.keys(roster).sort(), sd=keys.map((k,idx)=>{ const [yy,mm,dd]=k.split('/').map(Number), o=new Date(yy,mm-1,dd); return{d:`${mm}/${dd}`,w:['日','一','二','三','四','五','六'][o.getDay()],fullKey:k,absIdx:idx}; });
-        setSchedule({roster,statuses,shows,notes}); setAllDates(sd); setIsUnlocked(true);
-
-        if(!keys.length) return;
-
-        const todayKey = formatK(new Date());
-        const preferredKey = hasInitializedSnapshotRef.current ? selectedDateKeyRef.current : todayKey;
-        const targetKey = keys.includes(preferredKey) ? preferredKey : (keys.includes(todayKey) ? todayKey : keys[0]);
-        const targetIdx = keys.indexOf(targetKey);
-
-        hasInitializedSnapshotRef.current = true;
-        if(targetIdx !== -1){
-            setDateIdx(targetIdx);
-            setTimeout(()=>scrollTo(targetKey,"nav-scroll-container"), 300);
-        }
-    },[formatLastUpdated, scrollTo]);
-
-    const handleRefresh = useCallback(async ()=>{
-        if(isRefreshing) return;
-        markUpdateSeen();
-        if(!user || !window.Firebase) return;
-        setIsRefreshing(true);
-        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-        const refreshStartedAt = performance.now();
-        try {
-            const db = Firebase.getFirestore(Firebase.getApp());
-            const snap = await Firebase.getDoc(Firebase.doc(db,'artifacts',CONFIG.APP_ID,'public','data','rosters','master'));
-            applyRosterSnapshot(snap);
-        } catch(e) {
-            console.error(e);
-            setErrorMsg("資料刷新失敗，請稍後再試");
-        } finally {
-            const elapsed = performance.now() - refreshStartedAt;
-            if(elapsed < CONFIG.SYNC_FEEDBACK_MS){
-                await new Promise(resolve => setTimeout(resolve, CONFIG.SYNC_FEEDBACK_MS - elapsed));
-            }
-            setIsRefreshing(false);
-        }
-    },[applyRosterSnapshot, isRefreshing, markUpdateSeen, user]);
-
-    useEffect(() => {
-        let unsubscribeAuth = null;
-        const initFirebase = async () => {
-            let waited = 0;
-            while(!window.Firebase && waited < 50) { await new Promise(r => setTimeout(r, 100)); waited++; }
-            if(!window.Firebase) { setErrorMsg("Firebase 載入逾時，請重新整理"); return; }
-            try {
-                const app = Firebase.getApps().length === 0 ? Firebase.initializeApp(CONFIG.FIREBASE) : Firebase.getApp();
-                const auth = Firebase.getAuth(app); await Firebase.signInAnonymously(auth);
-                unsubscribeAuth = Firebase.onAuthStateChanged(auth, async (u) => {
-                    if(!u) return; setUser(u);
-                    const db = Firebase.getFirestore(app), snap = await Firebase.getDoc(Firebase.doc(db,'artifacts',CONFIG.APP_ID,'public','data','configs','name_mapping'));
-                    if(snap.exists()) setAliasMap(snap.data().maps || {});
-                });
-            } catch(e) { console.error(e); setErrorMsg("Firebase 初始化失敗，請重新整理"); }
-        }; initFirebase();
-        return () => { if (unsubscribeAuth) unsubscribeAuth(); };
-    }, []);
-
-    useEffect(()=>{
-        if(!user) return; 
-        const db=Firebase.getFirestore(Firebase.getApp());
-        // 確保 onSnapshot 返回的 unsubscribe 函式會在此 Effect 清理時被正確執行
-        return Firebase.onSnapshot( Firebase.doc(db,'artifacts',CONFIG.APP_ID,'public','data','rosters','master'), applyRosterSnapshot, ()=>setErrorMsg("資料同步失敗，請重新整理") );
-    },[applyRosterSnapshot, user]);
-
-    useEffect(()=>{
-        if(!allDates.length||!allDates[dateIdx])return;
-        const fk=allDates[dateIdx].fullKey;
-        if(activeModal==='master')     scrollTo(fk,"master-scroll-container");
-        if(activeModal==='queryVenue') scrollTo(fk,"venue-scroll-container");
-        if(activeModal==='queryStaff') scrollTo(fk,"staff-scroll-container");
-        if(activeModal==='notes')      scrollTo(fk,"notes-scroll-container");
-    },[activeModal, queryTarget, allDates, dateIdx, scrollTo]);
-
-    const dData = useMemo(()=>{ 
-        if(!allDates.length||!allDates[dateIdx]) return null; 
-        const fk=allDates[dateIdx].fullKey, rawR=schedule?.roster?.[fk]||{}, rawS=schedule?.statuses?.[fk]||{}; 
-        const s={ ...Object.fromEntries(VENUE_IDS.map(vid=>[vid,Object.fromEntries(CONFIG.SHIFTS.map(sh=>[sh,[]]))])), "辦公":[], "休假":[] }; 
-        CONFIG.STAFF_ORDER.forEach(n=>{ 
-            let on=false; 
-            VENUE_IDS.forEach(vid=>{ 
-                if(rawR[vid]?.[n]){ const sh=(rawR[vid][n].shift||CONFIG.SHIFTS[0]).toUpperCase(); if(s[vid][sh]){s[vid][sh].push(n);on=true;} } 
-            }); 
-            if(!on){ CONFIG.REGEX.OFFICE.test(rawS[n]||"")?s["辦公"].push(n):s["休假"].push(n); } 
-        }); 
-        return{s}; 
-    },[dateIdx,allDates,schedule]);
-    
-    if(!isUnlocked) return ( <div className="h-screen flex flex-col items-center justify-center text-white/35 text-[16px] font-medium tracking-[0.22em] gap-4" style={{background:'var(--bg-base)'}}> {errorMsg?<span className="text-rose-500 font-bold px-6 text-center leading-relaxed animate-pulse">{errorMsg}</span>:<span className="animate-pulse">CONNECTING...</span>} </div> );
-    
-    const todayK=formatK(new Date()), curFk=allDates.length?allDates[dateIdx]?.fullKey:todayK, todayNote=schedule?.notes?.[curFk], hasNote=!!(todayNote?.trim()), queryStaff = activeModal==='queryStaff' ? queryTarget : null, queryVenue = activeModal==='queryVenue' ? queryTarget : null;
-
-    return (
-        <div className="h-screen flex flex-col overflow-hidden relative text-white bg-[var(--bg-base)]">
-            <div className="aura-bg"/>
-            <header className="mac-glass pt-12 pb-4 px-5 flex items-center justify-between shrink-0 z-50">
-                <div className="flex flex-col justify-center">
-                    <h1 className="text-[19px] font-extrabold tracking-[-0.03em] cursor-pointer text-white/90 hover:text-white transition-colors leading-none" onClick={()=>setActiveModal('master')}>視 聽 班 表 系 統</h1>
-                    {lastUpdated&&( <button type="button" className={`flex items-center mt-1.5 text-left transition-colors ${isRefreshing?'cursor-wait text-white/78 animate-pulse':`cursor-pointer ${isRecentlyUpdated?'text-white/60':'text-white/32 hover:text-white/58'}`}`} onClick={handleRefresh} title="點擊同步並標記已讀"> {isRecentlyUpdated&&<span className="w-1.5 h-1.5 rounded-full bg-[var(--pink)] mr-1.5 animate-pulse shrink-0"/>} <span className="text-[10px] font-semibold tracking-[0.12em]">{isRefreshing?'SYNCING...':`SYNC: ${lastUpdated}`}</span> </button> )}
-                </div>
-                <div className="flex items-center gap-2.5 flex-shrink-0">
-                    <ActionBtn onClick={handleBackToday} icon="today" tip="回到今天"/>
-                    <ActionBtn onClick={openCal} icon="cal" tip="跳轉日期"/>
-                </div>
-            </header>
+        db = rawDb.map(d => {
+            let rawId = (d.id || '').trim().toUpperCase();
+            let stdId = rawId.replace(/^AV\s*/, 'AV ');
+            let floor = '';
+            let exactLoc = (d.loc || '').trim();
             
-            <main className="flex-1 overflow-y-auto px-3.5 py-4 no-scrollbar z-10 text-left" style={{paddingBottom:'calc(7rem + env(safe-area-inset-bottom, 0px))'}}>
-                <div className="mac-glass sticky top-0 -mx-3 px-3 py-3 flex flex-col mb-4 z-20 shadow-[0_8px_32px_rgba(0,0,0,0.4)] rounded-b-[20px]">
-                    <div id="nav-scroll-container" className="flex gap-2.5 overflow-x-auto no-scrollbar pb-2 px-1"> {allDates.map(d=>(<button key={d.fullKey} id={`nav-${d.fullKey}`} onClick={()=>goDate(d.absIdx,d.fullKey)} className={`flex-none w-[58px] py-2.5 rounded-2xl border flex flex-col items-center justify-center transition-all duration-300 ${dateIdx===d.absIdx?'border-blue-500/50 bg-[var(--blue)] shadow-[0_4px_12px_rgba(10,132,255,0.3)] scale-105':'border-white/5 bg-white/[0.03] hover:bg-white/[0.08]'}`}> <span className={`font-bold text-[10px] mb-0.5 ${dateIdx===d.absIdx?'text-white/80':d.w==='六'||d.w==='日'?'text-[var(--pink)]':'text-white/40'}`}>週{d.w}</span> <span className={`text-[17px] font-black leading-none ${dateIdx===d.absIdx?'text-white':d.w==='六'||d.w==='日'?'text-[var(--pink)]':'text-white/70'}`}>{d.d}</span> </button>))} </div>
-                </div>
-
-                <button type="button" className={`w-full mb-5 text-left rounded-[var(--r-md)] px-4 py-3.5 flex items-start gap-3 border transition-colors ${hasNote?'bg-[rgba(255,55,95,0.07)] border-[rgba(255,55,95,0.22)] reminder-glow hover:bg-[rgba(255,55,95,0.11)]':'bg-white/[0.03] border-[var(--border-mid)] hover:bg-white/[0.06]'}`} onClick={()=>setActiveModal('notes')}>
-                    <span className={`mt-0.5 shrink-0 ${hasNote?'text-[var(--pink)]':'text-white/45'}`}><Icon name="info"/></span>
-                    <div className="min-w-0">
-                        <p className={`text-[9.5px] font-bold uppercase tracking-[0.14em] mb-1 ${hasNote?'text-[var(--pink)]':'text-white/38'}`}>{hasNote?'重要提醒':'提醒中心'}</p>
-                        <p className={`text-[13.5px] font-medium leading-relaxed ${hasNote?'text-white/88':'text-white/58'}`}>{hasNote ? todayNote?.split(/(?=\d+[,，])/).filter(Boolean).map((line,i)=>( <span key={i} className="block">{line.trim()}</span> )) : '今日無提醒，點擊查看提醒總表'}</p>
-                    </div>
-                </button>
-                
-                <div className="grid gap-2.5 mb-5" style={{gridTemplateColumns:`repeat(${CONFIG.VENUES.length},1fr)`}}>
-                    {CONFIG.VENUES.map(venue=>{ const sName=schedule?.shows?.[curFk]?.[venue.id]||""; return ( <div key={venue.id} className="bg-[var(--glass-card)] rounded-[var(--r-lg)] overflow-hidden flex flex-col relative" style={{border:`2px solid ${venue.color}88`}}> <div className="absolute inset-0 opacity-10 pointer-events-none" style={{background:`radial-gradient(ellipse 100% 60% at 50% 0%, ${venue.color}22 0%, transparent 100%)`}}/> <button onClick={()=>handleVenueClick(venue.id)} className="py-3 font-extrabold text-[18px] tracking-tight bg-transparent border-b border-[var(--border-dim)] z-10 transition-all hover:bg-white/[0.04] active:scale-[0.98]" style={{color:venue.color}}>{venue.id}</button> <div className="px-2 py-1.5 min-h-[30px] flex items-center justify-center border-b border-[var(--border-dim)] bg-[var(--glass-inset)] text-center overflow-hidden text-[11px] font-medium text-white/50 z-10"> <div className="mq-wrap"><span className={sName.length>8?"mq-run":"truncate"}>{sName}</span></div> </div> <div className="p-1.5 space-y-1.5 z-10"> {CONFIG.SHIFTS.map(sh=>( <div key={sh} className="bg-[var(--glass-inset)] rounded-[var(--r-sm)] p-1.5 flex flex-col gap-1.5 min-h-[68px]" style={{border:`1.5px solid ${venue.color}44`}}> {dData?.s[venue.id][sh]?.map(n=><StaffBtn key={n} name={n} aliasMap={aliasMap} mode="small" onClick={handleStaffClick}/>)} </div> ))} </div> </div> ); })}
-                </div>
-                
-                <div className="space-y-4">
-                    <section className="bg-[var(--glass-card)] border border-[var(--border-dim)] rounded-[var(--r-lg)] p-4"> <h4 className="text-[var(--orange)]/80 text-[11px] font-bold uppercase tracking-[0.14em] mb-3 flex items-center gap-2"><Icon name="brief"/> 辦公人員</h4> <div className="grid grid-cols-4 gap-2.5">{dData?.s["辦公"]?.map(n=><StaffBtn key={n} name={n} aliasMap={aliasMap} mode="tiny" onClick={handleStaffClick}/>)}</div> </section>
-                    <section className="bg-[var(--glass-card)] border border-[var(--border-dim)] rounded-[var(--r-lg)] p-4"> <h4 className="text-white/30 text-[11px] font-bold uppercase tracking-[0.14em] mb-3 flex items-center gap-2"><Icon name="sun"/> 今日休假</h4> <div className="grid grid-cols-4 gap-2.5">{dData?.s["休假"]?.map(n=><StaffBtn key={n} name={n} aliasMap={aliasMap} mode="tiny" onClick={handleStaffClick}/>)}</div> </section>
-                </div>
-            </main>
-
-            {activeModal==='notes'&&( <NotesModal onClose={closeModal} visibleDates={visibleDates} schedule={schedule} goDate={goDate} handleBackToday={handleBackToday}/> )}
-            {activeModal==='master'&&( <MasterRosterModal onClose={closeModal} visibleDates={visibleDates} schedule={schedule} aliasMap={aliasMap} todayK={todayK} handleStaffClick={handleStaffClick} handleBackToday={handleBackToday} openCal={openCal}/> )}
-            {(activeModal==='queryStaff'||activeModal==='queryVenue')&&( <QueryModal queryStaff={queryStaff} queryVenue={queryVenue} onClose={closeModal} setQueryStaff={name=>{ if(name){setQueryTarget(name);setActiveModal('queryStaff');} else closeModal(); }} setQueryVenue={id=>{ if(id){setQueryTarget(id);setActiveModal('queryVenue');} else closeModal(); }} visibleDates={visibleDates} schedule={schedule} aliasMap={aliasMap} curFk={curFk} handleStaffClick={handleStaffClick} handleBackToday={handleBackToday} openCal={openCal} /> )}
-            {activeModal==='calendar'&&( <CalendarPicker allDates={allDates} onSelect={fk=>{ const i=allDates.findIndex(d=>d.fullKey===fk); if(i!==-1)goDate(i,fk); if(prevModal){ setActiveModal(prevModal); setPrevModal(null); } else closeModal(); }} onClose={()=>{ if(prevModal){setActiveModal(prevModal);setPrevModal(null);} else closeModal(); }} calMonth={calMonth} setCalMonth={setCalMonth} /> )}
+            const floorMatch = exactLoc.match(/(?:^|[^a-zA-Z0-9])([B]?\d{1,2}[M]?F|RF)(?![a-zA-Z0-9])/i);
             
-            <footer className="fixed bottom-0 left-0 right-0 py-2.5 flex items-center justify-center pointer-events-none text-[9px] font-semibold tracking-[0.28em] text-white/14"> <span>TPAC SCHEDULE SYSTEM | {CONFIG.APP_VERSION}</span> </footer>
+            if (floorMatch) {
+                floor = floorMatch[1].toUpperCase();
+                exactLoc = exactLoc.replace(floorMatch[1], '').replace(/^[-\s]+/, '').trim(); 
+            } else {
+                const roomMatch = exactLoc.match(/^0?(\d{1,2})\.\d{2}/);
+                if (roomMatch) {
+                    floor = roomMatch[1] + 'F';
+                } else {
+                    const idMatch = stdId.match(/^AV\s*(\d{1,2})([M]?)/i);
+                    if (idMatch) floor = idMatch[1] + (idMatch[2].toUpperCase() === 'M' ? 'MF' : 'F');
+                }
+            }
+
+            if (/0?5\s*[-_.]\s*6[1-6]/i.test(stdId)) floor = '5MF';
+            if (floor) floor = floor.replace(/^(B?)0+(\d+.*)/, '$1$2');
+
+            return { ...d, id: stdId, _floor: floor || '未知樓層', _exactLoc: exactLoc || '一般區域' };
+        });
+
+        const seenIds = new Set();
+        uniqueBoxes = db.filter(d => {
+            if (!d.id || seenIds.has(d.id)) return false;
+            seenIds.add(d.id); return true;
+        });
+
+        buildAliasEditor();
+        buildSearchIndex();
+    } catch(e) { showPlaceholder('⚠️ 無法載入資料，請確認網路連線'); }
+}
+
+// 【V10 核心：智慧排序引擎】解決搜尋汙染，確保編號符合的排在最前面
+function handleMainInput() {
+    const raw = getEle('searchInput').value;
+    if (!raw.trim()) return getEle('suggestions').style.display = 'none';
+
+    let sugs = fuzzyMatchIds(raw);
+    const cleanRaw = raw.replace(/[^A-Z0-9]/ig, '').toUpperCase();
+
+    // 權重排序：編號本身包含關鍵字者優先
+    sugs.sort((a, b) => {
+        const aIdClean = a.id.replace(/[^A-Z0-9]/ig, '');
+        const bIdClean = b.id.replace(/[^A-Z0-9]/ig, '');
+        const aMatch = aIdClean.includes(cleanRaw);
+        const bMatch = bIdClean.includes(cleanRaw);
+
+        if (aMatch && !bMatch) return -1;
+        if (!aMatch && bMatch) return 1;
+        return a.id.localeCompare(b.id);
+    });
+
+    sugs = sugs.slice(0, CONFIG.MAX_SUGGESTIONS);
+    
+    if(!sugs.length) { getEle('suggestions').style.display = 'none'; return; }
+    
+    getEle('suggestions').innerHTML = sugs.map(d => {
+        const hallInfo = CONFIG.HALL_MAP[d.hall] || { short: d.hall||'?', color: '#8E8E93' };
+        const matches = db.filter(m => m.id === d.id);
+        const uniqueLocs = [...new Set(matches.map(m => m.loc?.trim()).filter(Boolean))].join(' / ') || '未標示位置';
+
+        return `<div class="sug-item" data-id="${escHtml(d.id)}">
+            <div class="sug-header"><span style="font-weight:600; color:var(--text-main);">${escHtml(d.id)}</span><span class="sug-hall" style="background:${hallInfo.color}25; color:${hallInfo.color}">${escHtml(hallInfo.short)}</span></div>
+            <div class="sug-loc">📍 ${escHtml(uniqueLocs)}</div>
+        </div>`;
+    }).join('');
+    getEle('suggestions').style.display = 'block';
+}
+
+function renderResult(id) {
+    if (!id) return;
+    const matches = db.filter(d => d.id === id);
+    if (!matches.length) return showPlaceholder('查無此編號');
+    
+    currentId = id; 
+    const first = matches[0];
+    const hallInfo = CONFIG.HALL_MAP[first.hall] || { name: first.hall || '—', short: '?', color: '#8E8E93' };
+
+    const uniqueLocs = [...new Set(matches.map(d => d.loc?.trim()).filter(Boolean))].join(' / ') || '—';
+
+    const groups = new Map();
+    matches.forEach(d => {
+        const sys = (d.sys && (aliases[d.sys] || d.sys)) || '未命名系統';
+        const destInfo = [d.dest?.trim(), d.room?.trim()].filter(Boolean).join(' ') || '未標示目的地';
+        const key = `${sys}§${d.conn||'—'}§${destInfo}`;
+        if (!groups.has(key)) groups.set(key, { sys, conn: d.conn||'—', destInfo, qty: 0 });
+        groups.get(key).qty += parseInt(d.qty, 10) || 0;
+    });
+
+    const rows = [...groups.values()].sort((a,b) => a.sys.localeCompare(b.sys,'zh-TW')).map(g => 
+        `<tr><td><div class="sys-name">${escHtml(g.sys)}</div><div class="dest-info"><span class="dest-icon">↳</span> <span>${escHtml(g.destInfo)}</span></div></td>
+        <td>${escHtml(g.conn)}</td><td>${g.qty||'0'}</td></tr>` 
+    ).join('');
+
+    getEle('resultArea').innerHTML = `
+        <div class="card">
+            <div class="tag">SYSTEM SCAN OK</div>
+            <div class="id-label">${escHtml(first.id)}</div><hr class="divider">
+            <div class="info-grid">
+                <div class="info-item"><div class="label">廳別</div><div class="value"><span class="hall-badge" style="background:${hallInfo.color}25;color:${hallInfo.color}">${escHtml(hallInfo.short)}</span><span style="font-size:16px;font-weight:500; color:var(--text-main);">${escHtml(hallInfo.name)}</span></div></div>
+                <div class="info-item"><div class="label">位置</div><div class="value" style="font-size:16px; word-break:break-word; color:var(--text-main);">${escHtml(uniqueLocs)}</div></div>
+            </div>
         </div>
-    );
-};
+        <div class="card"><p class="section-title">接口清單 / INTERFACE LIST</p>
+        <table><thead><tr><th>系統 / 目的地</th><th>接頭</th><th>數量</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+        
+    getEle('resultArea').style.display = 'block'; getEle('placeholder').style.display = 'none';
+}
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+function showPlaceholder(msg) { currentId = null; getEle('resultArea').style.display = 'none'; getEle('placeholder').style.display = 'block'; getEle('placeholder').innerHTML = msg; }
+
+function buildAliasEditor() {
+    const sysNames = [...new Set(db.map(d => d.sys).filter(Boolean))].sort();
+    getEle('aliasList').innerHTML = sysNames.map(s => `
+        <div class="alias-row">
+            <span class="alias-orig">${escHtml(s)}</span>
+            <input class="alias-input" data-orig="${encodeURIComponent(s)}" value="${escHtml(aliases[s]||'')}" placeholder="自訂">
+        </div>`).join('');
+}
+
+function saveAliases() {
+    const btn = getEle('saveBtn');
+    document.querySelectorAll('.alias-input').forEach(el => { 
+        const v = el.value.trim(); 
+        const orig = decodeURIComponent(el.dataset.orig); 
+        if(v) aliases[orig] = v; else delete aliases[orig]; 
+    });
+    
+    try {
+        localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(aliases));
+        buildSearchIndex();
+        btn.innerText = '✅ 已儲存'; 
+        btn.style.background = 'var(--green)';
+        setTimeout(() => { btn.innerText = '儲存'; btn.style.background = 'var(--blue)'; getEle('settingsArea').style.display = 'none'; }, 800);
+        if(currentId) renderResult(currentId); 
+    } catch(e) { alert('儲存失敗：請確認是否開啟了無痕模式，或裝置儲存空間已滿。'); }
+}
 </script>
 </body>
 </html>
