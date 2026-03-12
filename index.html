@@ -80,11 +80,18 @@
         .b-badge-glow { animation: b-badge-pulse 1.5s infinite ease-in-out; border-width: 2px !important; }
 
         /* --- 修正：Master Roster B班 改為實體邊框，防止被切掉 --- */
+        /* --- 修正：Master Roster B班 解除 !important 封印，確保純白閃爍 --- */
         @keyframes b-row-glow-anim {
-            0%, 100% { border-color: rgba(255,255,255,0.2); box-shadow: 0 0 0 rgba(255,255,255,0); }
-            50% { border-color: #FFFFFF; box-shadow: 0 0 12px rgba(255,255,255,0.8); }
+            0%, 100% { border-color: rgba(255,255,255,0.15); box-shadow: 0 0 0 rgba(255,255,255,0); }
+            50% { border-color: #FFFFFF; box-shadow: 0 0 14px rgba(255,255,255,0.9), inset 0 0 4px rgba(255,255,255,0.5); }
         }
-        .b-row-glow { border: 2px solid rgba(255,255,255,0.2) !important; animation: b-row-glow-anim 1.5s infinite ease-in-out; position: relative; z-index: 10; }
+        .b-row-glow { 
+            border-width: 2.5px !important; 
+            border-style: solid !important; 
+            animation: b-row-glow-anim 1.2s infinite ease-in-out; 
+            position: relative; 
+            z-index: 10; 
+        }
 
         @keyframes window-spring {
             0%   { opacity: 0; transform: scale(0.96) translateY(14px); }
