@@ -187,8 +187,8 @@ const formatNoteText = (text, isMobile = false) => {
         const badge = (n > 0 && n <= 20) ? circles[n] : p2 + '.';
         return `${p1}${badge} `;
     });
-    // Step 2: 將獨立的時間 HH:MM 加上【】
-    formatted = formatted.replace(/(\d{1,2}:\d{2})/g, '【$1】');
+    // Step 2: 將時間 HH:MM 統一加上【】，同時吞掉前面已存在的 [ 或 【，防止雙重括號
+    formatted = formatted.replace(/[\[【]?(\d{1,2}:\d{2})[\]】]?/g, '【$1】');
     // Step 3 (手機): 在每個圓圈數字前插入換行（避免用 lookbehind，相容舊版 Safari）
     if (isMobile) formatted = formatted.replace(/\s+([➊-➓⓫-⓴])/g, '\n$1');
     return formatted;
@@ -491,6 +491,15 @@ const App = () => {
         const db=Firebase.getFirestore(Firebase.getApp());
         return Firebase.onSnapshot( Firebase.doc(db,'artifacts',CONFIG.APP_ID,'public','data','rosters','master'), applyRosterSnapshot, (e)=>{ console.error("Firebase Sync Error:", e); setErrorMsg("資料同步失敗，請重新整理"); } );
     },[applyRosterSnapshot, user]);
+
+    useEffect(()=>{
+        if(!allDates.length||!allDates[dateIdx]) return;
+        const fk=allDates[dateIdx].fullKey;
+        if(activeModal==='master')     scrollTo(fk,"master-scroll-container");
+        if(activeModal==='queryVenue') scrollTo(fk,"venue-scroll-container");
+        if(activeModal==='queryStaff') scrollTo(fk,"staff-scroll-container");
+        if(activeModal==='notes')      scrollTo(fk,"notes-scroll-container");
+    },[activeModal, queryTarget, allDates, dateIdx, scrollTo]);
 
     const dData = useMemo(()=>{ 
         if(!allDates.length||!allDates[dateIdx]) return null; 
