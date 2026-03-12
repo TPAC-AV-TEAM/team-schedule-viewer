@@ -79,7 +79,6 @@
         }
         .b-badge-glow { animation: b-badge-pulse 3s infinite ease-in-out; border-width: 2px !important; }
 
-        /* --- 修正：Master Roster B班 解除 !important 封印，確保純白閃爍 --- */
         @keyframes b-row-glow-anim {
             0%, 100% { border-color: rgba(255,255,255,0.15); box-shadow: 0 0 0 rgba(255,255,255,0); }
             50% { border-color: #FFFFFF; box-shadow: 0 0 14px rgba(255,255,255,0.9), inset 0 0 4px rgba(255,255,255,0.5); }
@@ -283,7 +282,7 @@ const MasterRosterModal = memo(({ onClose, visibleDates, schedule, aliasMap, tod
                 labels.push(`${vid}-${sh}`); 
                 if(!hasS){ bgStyle={backgroundColor:`rgba(${VENUE_MAP[vid].masterBg},0.35)`}; } 
                 else { bgStyle={background:`linear-gradient(90deg, rgba(${VENUE_MAP[labels[0].split('-')[0]]?.masterBg||'255,255,255'},0.5) 0%, rgba(${VENUE_MAP[vid]?.masterBg||'255,255,255'},0.5) 100%)`}; } 
-                if(sh==='B') isB=true; hasS=true; 
+                if(sh?.toUpperCase()==='B') isB=true; hasS=true; 
             } 
         }); 
         
@@ -322,7 +321,7 @@ const QueryModal = memo(({ queryStaff, queryVenue, onClose, setQueryStaff, setQu
         
         if (filterMode && !(isBShift || (hasS && isW))) return null; 
         
-        return ( <div key={d.fullKey} id={`mrow-${d.fullKey}`} className={`flex items-center gap-4 day-block ${isS?'day-block-today':''} ${isW?(hasS?`wk-${activeV}`:'wk-off'):''}`}> <div className="flex flex-col border-r border-white/10 pr-3 w-[72px]"> <span className={`text-[10px] font-semibold tracking-wide ${isW?'text-[var(--pink)]':'text-white/30'}`}>週{d.w}</span> <span className={`text-[21px] font-extrabold tabular-nums ${isW?'text-[var(--pink)]':'text-white/88'}`}>{d.d}</span> </div> <div className="flex-1 mq-wrap text-[16px] font-medium opacity-60 italic"> <span className={sn.length>10?"mq-run":""}>{sn}</span> </div> <button onClick={()=>{ if(hasS){ setPrevStaff(queryStaff); setQueryStaff(null); setQueryVenue(activeV); } }} className={`text-[15px] font-bold px-3.5 py-1.5 rounded-xl shrink-0 transition-all ${isBShift?'b-badge-glow':''} ${hasS?'cursor-pointer hover:opacity-80 active:scale-95':'cursor-default'}`} style={{background:stColors.length>1?`linear-gradient(90deg, ${VENUE_MAP[stLabels[0].split('-')[0]]?.color}55 0%, ${VENUE_MAP[stLabels[stLabels.length-1].split('-')[0]]?.color}55 100%)`:undefined,backgroundColor:stColors.length>1?undefined:`${co}45`,border:stColors.length>1?'1.5px solid rgba(255,255,255,0.3)':`1.5px solid ${co}99`}}> {stColors.length>1 ? <span style={{color:'#FFF', letterSpacing:'0.03em'}}>{st}</span> : st} </button> </div> ); })} </div> </div> </div> ); });
+        return ( <div key={d.fullKey} id={`mrow-${d.fullKey}`} className={`flex items-center gap-4 day-block ${isS?'day-block-today':''} ${isW?(hasS?`wk-${activeV}`:'wk-off'):''}`}> <div className="flex flex-col border-r border-white/10 pr-3 w-[72px]"> <span className={`text-[10px] font-semibold tracking-wide ${isW?'text-[var(--pink)]':'text-white/30'}`}>週{d.w}</span> <span className={`text-[21px] font-extrabold tabular-nums ${isW?'text-[var(--pink)]':'text-white/88'}`}>{d.d}</span> </div> <div className="flex-1 mq-wrap text-[16px] font-medium opacity-60 italic"> <span className={sn.length>10?"mq-run":""}>{sn}</span> </div> <button onClick={()=>{ if(hasS){ setPrevStaff(queryStaff); setQueryVenue(activeV); } }} className={`text-[15px] font-bold px-3.5 py-1.5 rounded-xl shrink-0 transition-all ${isBShift?'b-badge-glow':''} ${hasS?'cursor-pointer hover:opacity-80 active:scale-95':'cursor-default'}`} style={{background:stColors.length>1?`linear-gradient(90deg, ${VENUE_MAP[stLabels[0].split('-')[0]]?.color}55 0%, ${VENUE_MAP[stLabels[stLabels.length-1].split('-')[0]]?.color}55 100%)`:undefined,backgroundColor:stColors.length>1?undefined:`${co}45`,border:stColors.length>1?'1.5px solid rgba(255,255,255,0.3)':`1.5px solid ${co}99`}}> {stColors.length>1 ? <span style={{color:'#FFF', letterSpacing:'0.03em'}}>{st}</span> : st} </button> </div> ); })} </div> </div> </div> ); });
 
 /* =========================================================================
    4. MAIN APP ENTRY
@@ -347,7 +346,7 @@ const App = () => {
     /* --- 修正：Firestore Timestamp 物件解析，修復時間無法顯示的問題 --- */
     const formatLastUpdated = useCallback(v => {
         const d = (v && typeof v.toDate === 'function') ? v.toDate() : new Date(v);
-        if(Number.isNaN(d?.getTime() || NaN)) return "";
+        if(!d || Number.isNaN(d.getTime())) return "";
         return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
     }, []);
     
