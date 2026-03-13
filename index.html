@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>視聽班表系統 | V20.2</title>
+    <title>視聽班表系統 | V20.3</title>
     
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -137,7 +137,7 @@ const { useState, useEffect, useMemo, memo, useCallback, useRef } = React;
    1. CENTRAL CONFIG (集中管理所有設定與正則)
    ========================================================================= */
 const CONFIG = {
-    APP_VERSION: 'V20.2',
+    APP_VERSION: 'V20.3',
     APP_ID: "team-schedule-viewer",
     FIREBASE: { apiKey: "AIzaSyA7tgFRxDCnZpOzEvfT978wIAcqcXNZXVQ", authDomain: "team-schedule-viewer.firebaseapp.com", projectId: "team-schedule-viewer", storageBucket: "team-schedule-viewer.firebasestorage.app", messagingSenderId: "202883367260", appId: "1:202883367260:web:b31e495084a4ea8af20199" },
     VENUES: [ 
@@ -360,7 +360,6 @@ const App = () => {
     const [allDates,setAllDates] = useState([]), [schedule,setSchedule] = useState({roster:{},statuses:{},shows:{},notes:{}});
     const [aliasMap,setAliasMap] = useState({}), [lastUpdated,setLastUpdated] = useState(""), [isRecentlyUpdated,setIsRecentlyUpdated] = useState(false);
     const [isUnlocked,setIsUnlocked] = useState(false), [errorMsg,setErrorMsg] = useState(null), [isRefreshing,setIsRefreshing] = useState(false);
-    const [remoteVersion,setRemoteVersion] = useState(null);
     const [user,setUser] = useState(null), [dateIdx,setDateIdx] = useState(0), [activeModal,setActiveModal] = useState(null), [prevModal, setPrevModal] = useState(null), [queryTarget,setQueryTarget] = useState(null);
     const [calMonth,setCalMonth] = useState(()=>{const n=new Date();return{y:n.getFullYear(),m:n.getMonth()};});
     
@@ -445,32 +444,18 @@ const App = () => {
         }
     },[formatLastUpdated, scrollTo]);
 
-    const handleRefresh = useCallback(async ()=>{
+    const handleRefresh = useCallback(()=>{
         if(isRefreshing) return;
         markUpdateSeen();
-        if(!user || !window.Firebase) return;
         setIsRefreshing(true);
-        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-        const refreshStartedAt = performance.now();
-        try {
-            const db = Firebase.getFirestore(Firebase.getApp());
-            const snap = await Firebase.getDoc(Firebase.doc(db,'artifacts',CONFIG.APP_ID,'public','data','rosters','master'));
-            applyRosterSnapshot(snap);
-        } catch(e) {
-            console.error("Manual Refresh Error:", e);
-            setErrorMsg("資料刷新失敗，請稍後再試");
-        } finally {
-            const elapsed = performance.now() - refreshStartedAt;
-            if(elapsed < CONFIG.SYNC_FEEDBACK_MS){
-                await new Promise(resolve => setTimeout(resolve, CONFIG.SYNC_FEEDBACK_MS - elapsed));
-            }
-            setIsRefreshing(false);
-        }
-    },[applyRosterSnapshot, isRefreshing, markUpdateSeen, user]);
+        // 超級 F5：讓使用者看到 SYNCING... 動畫後，Cache-Busting 強制重載最新版
+        setTimeout(() => {
+            window.location.href = window.location.pathname + '?v=' + Date.now();
+        }, CONFIG.SYNC_FEEDBACK_MS);
+    },[isRefreshing, markUpdateSeen]);
 
     useEffect(() => {
         let unsubscribeAuth = null;
-        let unsubscribeAppConfig = null;
         const initFirebase = async () => {
             let waited = 0;
             while(!window.Firebase && waited < 50) { await new Promise(r => setTimeout(r, 100)); waited++; }
@@ -482,14 +467,10 @@ const App = () => {
                     if(!u) return; setUser(u);
                     const db = Firebase.getFirestore(app), snap = await Firebase.getDoc(Firebase.doc(db,'artifacts',CONFIG.APP_ID,'public','data','configs','name_mapping'));
                     if(snap.exists()) setAliasMap(snap.data().maps || {});
-                    // 監聽 app_config，版本號變動時即時通知所有設備
-                    unsubscribeAppConfig = Firebase.onSnapshot(Firebase.doc(db,'artifacts',CONFIG.APP_ID,'public','data','configs','app_config'), (cfgSnap) => {
-                        if(cfgSnap.exists()) { const rv = cfgSnap.data().appVersion; if(rv) setRemoteVersion(rv); }
-                    });
                 });
             } catch(e) { console.error("Firebase Init Error:", e); setErrorMsg("Firebase 初始化失敗，請重新整理"); }
         }; initFirebase();
-        return () => { if (unsubscribeAuth) unsubscribeAuth(); if (unsubscribeAppConfig) unsubscribeAppConfig(); };
+        return () => { if (unsubscribeAuth) unsubscribeAuth(); };
     }, []);
 
     useEffect(()=>{
@@ -539,19 +520,6 @@ const App = () => {
                 </div>
             </header>
             
-            {remoteVersion && remoteVersion !== CONFIG.APP_VERSION && (
-                <div className="shrink-0 z-40 flex items-center justify-between gap-3 px-4 py-2.5 bg-[rgba(10,132,255,0.18)] border-b border-[rgba(10,132,255,0.35)]" style={{backdropFilter:'blur(12px)'}}>
-                    <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-[var(--blue)] shrink-0">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                        </span>
-                        <span className="text-[12px] font-semibold text-white/80 truncate">發現新版本 <span className="text-[var(--blue)] font-black">{remoteVersion}</span>，點右側按鈕升級</span>
-                    </div>
-                    <button onClick={()=>{ window.location.href = window.location.pathname + '?v=' + remoteVersion; }} className="shrink-0 text-[11px] font-black tracking-[0.1em] px-3 py-1.5 rounded-full bg-[var(--blue)] text-white hover:brightness-110 active:scale-95 transition-all">
-                        立即升級
-                    </button>
-                </div>
-            )}
             <main className="flex-1 overflow-y-auto px-3.5 py-4 no-scrollbar z-10 text-left" style={{paddingBottom:'calc(7rem + env(safe-area-inset-bottom, 0px))'}}>
                 <div className="mac-glass sticky top-0 -mx-3 px-3 py-3 flex flex-col mb-4 z-20 shadow-[0_8px_32px_rgba(0,0,0,0.4)] rounded-b-[20px]">
                     <div id="nav-scroll-container" className="flex gap-2.5 overflow-x-auto no-scrollbar pb-2 px-1"> {allDates.map(d=>(<button key={d.fullKey} id={`nav-${d.fullKey}`} onClick={()=>goDate(d.absIdx,d.fullKey)} className={`flex-none w-[58px] py-2.5 rounded-2xl border flex flex-col items-center justify-center transition-all duration-300 ${dateIdx===d.absIdx?'border-blue-500/50 bg-[var(--blue)] shadow-[0_4px_12px_rgba(10,132,255,0.3)] scale-105':'border-white/5 bg-white/[0.03] hover:bg-white/[0.08]'}`}> <span className={`font-bold text-[10px] mb-0.5 ${dateIdx===d.absIdx?'text-white/80':d.isOff?'text-[var(--pink)]':'text-white/40'}`}>週{d.w}</span> <span className={`text-[17px] font-black leading-none ${dateIdx===d.absIdx?'text-white':d.isOff?'text-[var(--pink)]':'text-white/70'}`}>{d.d}</span> </button>))} </div>
