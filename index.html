@@ -529,9 +529,12 @@ const App = () => {
                 </div>
 
                 <button type="button" className={`w-full mb-5 text-left rounded-[var(--r-md)] px-4 py-3.5 flex items-start gap-3 border transition-colors ${hasNote?'bg-white/[0.05] border-white/30 reminder-glow hover:bg-white/[0.09]':'bg-white/[0.02] border-white/5 hover:bg-white/[0.04]'}`} onClick={()=>setActiveModal('notes')}>
-                    <span className={`mt-0.5 shrink-0 ${hasNote?'text-white/90':'text-white/20'}`}><Icon name="info"/></span>
+                    {/* 圖示：有提醒時維持紅色，無提醒時壓暗至 20% */}
+                    <span className={`mt-0.5 shrink-0 ${hasNote?'text-[var(--pink)]':'text-white/20'}`}><Icon name="info"/></span>
                     <div className="min-w-0">
-                        <p className={`text-[9.5px] font-bold uppercase tracking-[0.14em] mb-1 ${hasNote?'text-white/90':'text-white/20'}`}>{hasNote?'重要提醒':'提醒中心'}</p>
+                        {/* 標題：有提醒時維持紅色，無提醒時壓暗至 20% */}
+                        <p className={`text-[9.5px] font-bold uppercase tracking-[0.14em] mb-1 ${hasNote?'text-[var(--pink)]':'text-white/20'}`}>{hasNote?'重要提醒':'提醒中心'}</p>
+                        {/* 內容文字：有內容時全白高亮，無內容時壓暗至 25% */}
                         <p className={`text-[13.5px] font-medium leading-relaxed whitespace-pre-wrap ${hasNote?'text-white/95':'text-white/25'}`}>{hasNote ? <><span className="md:hidden">{formatNoteText(todayNote, true)}</span><span className="hidden md:inline">{formatNoteText(todayNote, false)}</span></> : '今日無提醒，點擊查看提醒總表'}</p>
                     </div>
                 </button>
