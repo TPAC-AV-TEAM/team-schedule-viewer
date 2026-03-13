@@ -532,10 +532,10 @@ const App = () => {
                     {/* 圖示：有提醒時維持紅色，無提醒時壓暗至 50% */}
                     <span className={`mt-0.5 shrink-0 ${hasNote?'text-[var(--pink)]':'text-white/50'}`}><Icon name="info"/></span>
                     <div className="min-w-0">
-                        {/* 標題：有提醒時維持紅色，無提醒時壓暗至 20% */}
-                        <p className={`text-[9.5px] font-bold uppercase tracking-[0.14em] mb-1 ${hasNote?'text-[var(--pink)]':'text-white/20'}`}>{hasNote?'重要提醒':'提醒中心'}</p>
-                        {/* 內容文字：有內容時全白高亮，無內容時壓暗至 25% */}
-                        <p className={`text-[13.5px] font-medium leading-relaxed whitespace-pre-wrap ${hasNote?'text-white/95':'text-white/25'}`}>{hasNote ? <><span className="md:hidden">{formatNoteText(todayNote, true)}</span><span className="hidden md:inline">{formatNoteText(todayNote, false)}</span></> : '今日無提醒，點擊查看提醒總表'}</p>
+                        {/* 標題：有提醒時維持紅色，無提醒時壓暗至 50% */}
+                        <p className={`text-[9.5px] font-bold uppercase tracking-[0.14em] mb-1 ${hasNote?'text-[var(--pink)]':'text-white/50'}`}>{hasNote?'重要提醒':'提醒中心'}</p>
+                        {/* 內容文字：有內容時全白高亮，無內容時壓暗至 50% */}
+                        <p className={`text-[13.5px] font-medium leading-relaxed whitespace-pre-wrap ${hasNote?'text-white/95':'text-white/50'}`}>{hasNote ? <><span className="md:hidden">{formatNoteText(todayNote, true)}</span><span className="hidden md:inline">{formatNoteText(todayNote, false)}</span></> : '今日無提醒，點擊查看提醒總表'}</p>
                     </div>
                 </button>
                 
