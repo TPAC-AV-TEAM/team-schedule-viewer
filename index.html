@@ -110,7 +110,10 @@
         @keyframes mq { 0%, 15% { transform: translateX(0); } 85%, 100% { transform: translateX(-100%); } }
         @media (hover: hover) { .mq-wrap:hover .mq-run { animation-play-state: paused; } }
 
-        @keyframes reminder-pulse { 0%,100% { border-color: rgba(255,55,95,0.22); } 50% { border-color: rgba(255,55,95,0.75); } }
+        @keyframes reminder-pulse { 
+            0%,100% { border-color: rgba(255,255,255,0.2); box-shadow: 0 0 0 rgba(255,255,255,0); } 
+            50% { border-color: #FFFFFF; box-shadow: 0 0 12px rgba(255,255,255,0.35); } 
+        }
         .reminder-glow { animation: reminder-pulse 3s infinite ease-in-out; }
 
         .wk-GT  { background: rgba(255,69,58,0.07) !important; border-color: rgba(255,69,58,0.20) !important; }
@@ -525,11 +528,11 @@ const App = () => {
                     <div id="nav-scroll-container" className="flex gap-2.5 overflow-x-auto no-scrollbar pb-2 px-1"> {allDates.map(d=>(<button key={d.fullKey} id={`nav-${d.fullKey}`} onClick={()=>goDate(d.absIdx,d.fullKey)} className={`flex-none w-[58px] py-2.5 rounded-2xl border flex flex-col items-center justify-center transition-all duration-300 ${dateIdx===d.absIdx?'border-blue-500/50 bg-[var(--blue)] shadow-[0_4px_12px_rgba(10,132,255,0.3)] scale-105':'border-white/5 bg-white/[0.03] hover:bg-white/[0.08]'}`}> <span className={`font-bold text-[10px] mb-0.5 ${dateIdx===d.absIdx?'text-white/80':d.isOff?'text-[var(--pink)]':'text-white/40'}`}>週{d.w}</span> <span className={`text-[17px] font-black leading-none ${dateIdx===d.absIdx?'text-white':d.isOff?'text-[var(--pink)]':'text-white/70'}`}>{d.d}</span> </button>))} </div>
                 </div>
 
-                <button type="button" className={`w-full mb-5 text-left rounded-[var(--r-md)] px-4 py-3.5 flex items-start gap-3 border transition-colors ${hasNote?'bg-[rgba(255,55,95,0.07)] border-[rgba(255,55,95,0.22)] reminder-glow hover:bg-[rgba(255,55,95,0.11)]':'bg-white/[0.03] border-[var(--border-mid)] hover:bg-white/[0.06]'}`} onClick={()=>setActiveModal('notes')}>
-                    <span className={`mt-0.5 shrink-0 ${hasNote?'text-[var(--pink)]':'text-white/45'}`}><Icon name="info"/></span>
+                <button type="button" className={`w-full mb-5 text-left rounded-[var(--r-md)] px-4 py-3.5 flex items-start gap-3 border transition-colors ${hasNote?'bg-white/[0.05] border-white/30 reminder-glow hover:bg-white/[0.09]':'bg-white/[0.02] border-white/5 hover:bg-white/[0.04]'}`} onClick={()=>setActiveModal('notes')}>
+                    <span className={`mt-0.5 shrink-0 ${hasNote?'text-white/90':'text-white/20'}`}><Icon name="info"/></span>
                     <div className="min-w-0">
-                        <p className={`text-[9.5px] font-bold uppercase tracking-[0.14em] mb-1 ${hasNote?'text-[var(--pink)]':'text-white/38'}`}>{hasNote?'重要提醒':'提醒中心'}</p>
-                        <p className={`text-[13.5px] font-medium leading-relaxed whitespace-pre-wrap ${hasNote?'text-white/88':'text-white/58'}`}>{hasNote ? <><span className="md:hidden">{formatNoteText(todayNote, true)}</span><span className="hidden md:inline">{formatNoteText(todayNote, false)}</span></> : '今日無提醒，點擊查看提醒總表'}</p>
+                        <p className={`text-[9.5px] font-bold uppercase tracking-[0.14em] mb-1 ${hasNote?'text-white/90':'text-white/20'}`}>{hasNote?'重要提醒':'提醒中心'}</p>
+                        <p className={`text-[13.5px] font-medium leading-relaxed whitespace-pre-wrap ${hasNote?'text-white/95':'text-white/25'}`}>{hasNote ? <><span className="md:hidden">{formatNoteText(todayNote, true)}</span><span className="hidden md:inline">{formatNoteText(todayNote, false)}</span></> : '今日無提醒，點擊查看提醒總表'}</p>
                     </div>
                 </button>
                 
