@@ -470,6 +470,7 @@ const App = () => {
 
     useEffect(() => {
         let unsubscribeAuth = null;
+        let unsubscribeAppConfig = null;
         const initFirebase = async () => {
             let waited = 0;
             while(!window.Firebase && waited < 50) { await new Promise(r => setTimeout(r, 100)); waited++; }
@@ -482,13 +483,13 @@ const App = () => {
                     const db = Firebase.getFirestore(app), snap = await Firebase.getDoc(Firebase.doc(db,'artifacts',CONFIG.APP_ID,'public','data','configs','name_mapping'));
                     if(snap.exists()) setAliasMap(snap.data().maps || {});
                     // 監聽 app_config，版本號變動時即時通知所有設備
-                    Firebase.onSnapshot(Firebase.doc(db,'artifacts',CONFIG.APP_ID,'public','data','configs','app_config'), (cfgSnap) => {
+                    unsubscribeAppConfig = Firebase.onSnapshot(Firebase.doc(db,'artifacts',CONFIG.APP_ID,'public','data','configs','app_config'), (cfgSnap) => {
                         if(cfgSnap.exists()) { const rv = cfgSnap.data().appVersion; if(rv) setRemoteVersion(rv); }
                     });
                 });
             } catch(e) { console.error("Firebase Init Error:", e); setErrorMsg("Firebase 初始化失敗，請重新整理"); }
         }; initFirebase();
-        return () => { if (unsubscribeAuth) unsubscribeAuth(); };
+        return () => { if (unsubscribeAuth) unsubscribeAuth(); if (unsubscribeAppConfig) unsubscribeAppConfig(); };
     }, []);
 
     useEffect(()=>{
