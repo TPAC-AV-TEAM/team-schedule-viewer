@@ -1,0 +1,1746 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="format-detection" content="telephone=no">
+  <title>電源估算器 | Partyline V1.4.5</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#000000">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    :root {
+      --bg:          #000000;
+      --card:        #151517;
+      --card-border: rgba(255,255,255,0.12);
+      --blue:        #0A84FF;
+      --blue-glow:   rgba(10,132,255,0.25);
+      --green:       #32D74B;
+      --red:         #FF453A;
+      --orange:      #FF9F0A;
+      --purple:      #BF5AF2;
+      --teal:        #5AC8FA;
+      --text-main:   #FFFFFF;
+      --text-sub:    #A1A1A8;
+      --text-mute:   #C7C7CC;
+      --border:      rgba(255,255,255,0.18);
+      --sep:         rgba(255,255,255,0.08);
+      --input-bg:    rgba(255,255,255,0.10);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text-main);
+      font-family: "SF Pro Display","Inter","-apple-system",sans-serif;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0;
+      overscroll-behavior-y: none; /* 防止移動端下拉刷新干擾 */
+    }
+
+    /* --- 頂部導覽列 (滿版毛玻璃) --- */
+    .header {
+      width: 100%;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 0.5px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    
+    /* --- 頂部內容區 (精準對齊 560px) --- */
+    .header-inner {
+      width: 100%;
+      max-width: 560px;
+      margin: 0 auto;
+      /* 將 padding 與 safe-area 移入 inner，確保與 .content 的 box-model 一致 */
+      padding: calc(16px + env(safe-area-inset-top, 0px)) 16px 16px;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 2px;
+      width: 100%;
+    }
+    
+    .header h1 { 
+      font-size: 19px; 
+      font-weight: 700; 
+      letter-spacing: 0.01em; 
+      margin-bottom: 0; 
+      white-space: nowrap; 
+      overflow: hidden; 
+      text-overflow: ellipsis;
+      text-align: left;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    
+    .header-icon-btn {
+      background: rgba(255,255,255,0.08);
+      border: 0.5px solid var(--border);
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      font-size: 18px;
+      color: var(--text-main);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s, transform 0.1s;
+      padding: 0;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .header-icon-btn:active { transform: scale(0.9); }
+    .header-icon-btn.danger { color: var(--red); background: rgba(255,69,58,0.1); border-color: rgba(255,69,58,0.3); }
+    @media (hover: hover) { 
+      .header-icon-btn:not(.danger):hover { background: rgba(255,255,255,0.15); } 
+      .header-icon-btn.danger:hover { background: rgba(255,69,58,0.2); }
+    }
+
+    .version-label { 
+      font-size: 10px; font-weight: 700; color: var(--blue); letter-spacing: 0.15em; 
+      margin-bottom: 12px; opacity: 0.9; text-align: left; width: 100%; 
+    }
+
+    .settings-container {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    
+    .dropdown-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      background: rgba(28, 28, 30, 0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 0.5px solid var(--border);
+      border-radius: 12px;
+      width: 150px;
+      display: flex;
+      flex-direction: column;
+      padding: 6px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-10px);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      transform-origin: top right;
+    }
+    .dropdown-menu.show {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+    .dropdown-item {
+      background: transparent;
+      border: none;
+      text-align: left;
+      padding: 10px 12px;
+      color: var(--text-main);
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: inherit;
+    }
+    @media (hover: hover) { .dropdown-item:hover { background: rgba(255,255,255,0.1); } }
+    .dropdown-item:active { background: rgba(255,255,255,0.15); transform: scale(0.98); }
+    .dropdown-item.danger { color: var(--red); }
+    .dropdown-divider { height: 1px; background: var(--sep); margin: 4px 0; }
+
+    .step-row { display: flex; justify-content: center; align-items: center; gap: 4px; flex-wrap: wrap; }
+    .step-pill {
+      display: flex; align-items: center; gap: 4px;
+      font-size: 12px; font-weight: 600; padding: 6px 10px;
+      border-radius: 8px; border: 1px solid var(--border);
+      color: var(--text-sub); cursor: pointer; transition: all 0.2s;
+      background: rgba(255,255,255,0.04);
+    }
+    .step-pill.active { background: var(--blue); color: #fff; border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-glow); }
+    @media (hover: hover) { .step-pill:not(.active):hover { border-color: var(--text-sub); color: var(--text-main); } }
+    .step-sep { color: var(--text-mute); font-size: 14px; opacity: 0.5; font-weight: 300; }
+    
+    .step-num {
+      width: 16px; height: 16px; border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700; flex-shrink: 0;
+    }
+
+    /* --- 中間內容區 --- */
+    .content { 
+      width: 100%; 
+      max-width: 560px; 
+      padding: 20px 16px 0; /* Box Model 與 header-inner / result-inner 保持一致 */
+      display: flex; 
+      flex-direction: column; 
+    }
+
+    .bottom-spacer { width: 100%; height: 150px; flex-shrink: 0; }
+
+    .card {
+      background: var(--card); border: 1px solid var(--card-border);
+      border-radius: 20px; padding: 20px 18px; margin-bottom: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4); animation: fadeIn 0.3s ease-out;
+    }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+
+    .card-title {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.12em;
+      color: var(--text-sub); text-transform: uppercase; margin-bottom: 14px;
+    }
+
+    .project-input {
+      width: 100%; background: var(--input-bg); border: 1.5px solid transparent;
+      border-radius: 12px; padding: 12px 16px; color: var(--text-main);
+      font-size: 15px; font-family: inherit; outline: none; transition: all 0.25s;
+      box-shadow: inset 0 0 0 0.5px var(--border);
+    }
+    .project-input:focus { background: rgba(255,255,255,0.14); border-color: var(--blue); box-shadow: 0 0 0 4px var(--blue-glow); }
+    .project-input::placeholder { color: rgba(255,255,255,0.35); }
+
+    .device-section { margin-bottom: 18px; }
+    .device-section:last-child { margin-bottom: 0; }
+    .section-label {
+      font-size: 12px; font-weight: 700; letter-spacing: 0.08em;
+      margin-bottom: 8px; display: flex; align-items: center; gap: 7px;
+    }
+    .section-bar { width: 3px; height: 13px; border-radius: 2px; background: currentColor; flex-shrink: 0; }
+    .divider-line { border: none; border-top: 1px solid var(--sep); margin: 16px 0; }
+
+    .device-row {
+      display: grid; grid-template-columns: 1fr auto auto;
+      align-items: center; gap: 10px; padding: 10px 12px;
+      border-radius: 12px; border: 1px solid var(--sep);
+      background: rgba(255,255,255,0.03); margin-bottom: 6px; transition: background 0.15s;
+    }
+    @media (hover: hover) { .device-row:hover { background: rgba(255,255,255,0.055); } }
+    
+    .device-name { font-size: 14px; font-weight: 500; line-height: 1.3; }
+    .device-amp { font-size: 11px; color: var(--text-sub); margin-top: 2px; }
+
+    .qty-ctrl { display: flex; align-items: center; }
+    .qty-btn {
+      width: 28px; height: 28px; background: var(--input-bg);
+      border: 0.5px solid var(--border); color: var(--text-main);
+      font-size: 16px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s; line-height: 1;
+    }
+    .qty-btn:first-child { border-radius: 8px 0 0 8px; }
+    .qty-btn:last-child  { border-radius: 0 8px 8px 0; }
+    .qty-btn:active { background: rgba(255,255,255,0.22); transform: scale(0.93); }
+    .qty-val {
+      width: 34px; text-align: center; font-size: 14px; font-weight: 600;
+      font-variant-numeric: tabular-nums; color: var(--text-main);
+      background: rgba(255,255,255,0.06);
+      border-top: 0.5px solid var(--border); border-bottom: 0.5px solid var(--border);
+      height: 28px; line-height: 28px;
+    }
+
+    .total-chip { font-size: 11px; font-variant-numeric: tabular-nums; color: var(--text-mute); min-width: 52px; text-align: right; }
+    .total-chip.has-value { color: var(--text-main); font-weight: 500; }
+
+    .seg-wrap { display: flex; border: 0.5px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 12px; }
+    .seg-btn {
+      flex: 1; padding: 10px 6px; font-size: 12px; font-weight: 600;
+      font-family: inherit; text-align: center; cursor: pointer; border: none;
+      background: transparent; color: var(--text-sub); transition: all 0.18s; line-height: 1.4;
+    }
+    .seg-btn.active { background: var(--blue); color: #fff; }
+    @media (hover: hover) { .seg-btn:not(.active):hover { background: rgba(255,255,255,0.07); color: var(--text-main); } }
+
+    .info-note {
+      font-size: 12px; color: var(--text-mute); background: rgba(255,255,255,0.04);
+      border-left: 2.5px solid var(--blue); border-radius: 0 8px 8px 0;
+      padding: 9px 12px; line-height: 1.55;
+    }
+    .info-note.compact { margin-top: 8px; }
+    .subnote { font-size: 11px; color: var(--text-sub); margin-top: 6px; line-height: 1.45; }
+    .hidden { display: none !important; }
+    .inline-edit { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
+    .inline-label { font-size: 11px; color: var(--text-sub); }
+    .inline-input {
+      width: 70px; padding: 6px 8px; border-radius: 8px;
+      border: 1px solid var(--border); background: var(--input-bg); color: #fff;
+      font-size: 12px; font-variant-numeric: tabular-nums;
+    }
+    .mini-table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+    .mini-table th, .mini-table td { padding: 6px 4px; border-bottom: 1px solid var(--sep); }
+    .mini-table th { text-align: left; font-size: 11px; color: var(--text-sub); font-weight: 600; }
+    .mini-table td { text-align: right; font-variant-numeric: tabular-nums; font-size: 12px; }
+    .mini-table td:first-child { text-align: left; }
+
+    .cable-table { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+    .cable-row {
+      display: grid; grid-template-columns: 1.2fr 1fr 1fr 1fr 1fr auto;
+      gap: 8px; align-items: center;
+      padding: 8px 10px; border-radius: 10px;
+      border: 1px solid var(--sep); background: rgba(255,255,255,0.03);
+    }
+    .cable-row.head { background: transparent; border: none; padding: 0 4px; }
+    .cable-head { font-size: 10px; color: var(--text-sub); letter-spacing: 0.06em; text-transform: uppercase; }
+    .cable-input, .cable-select {
+      width: 100%; padding: 6px 8px; border-radius: 8px;
+      border: 1px solid var(--border); background: var(--input-bg); color: #fff; font-size: 12px;
+    }
+    .cable-metric { font-size: 12px; text-align: right; color: var(--text-mute); font-variant-numeric: tabular-nums; }
+    .cable-actions { display: flex; justify-content: flex-end; }
+    .cable-btn {
+      padding: 6px 10px; border-radius: 8px; border: 1px solid var(--border);
+      background: rgba(255,255,255,0.06); color: var(--text-main); font-size: 11px;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .cable-btn:active { background: rgba(255,255,255,0.18); transform: scale(0.97); }
+    @media (hover: hover) { .cable-btn:not(:active):hover { background: rgba(255,255,255,0.12); } }
+
+    .psu-section-label { font-size: 12px; color: var(--text-sub); font-weight: 600; margin-bottom: 8px; }
+    .psu-row {
+      display: grid; grid-template-columns: 1fr auto auto;
+      align-items: center; gap: 10px; padding: 10px 12px;
+      border-radius: 12px; border: 1px solid var(--sep);
+      background: rgba(255,255,255,0.03); margin-bottom: 6px; transition: background 0.15s;
+    }
+    @media (hover: hover) { .psu-row:hover { background: rgba(255,255,255,0.055); } }
+    .psu-name { font-size: 14px; font-weight: 500; }
+    .psu-spec { font-size: 11px; color: var(--text-sub); margin-top: 2px; }
+    .psu-chip { font-size: 11px; font-variant-numeric: tabular-nums; color: var(--blue); min-width: 52px; text-align: right; font-weight: 500; }
+
+    /* --- 底部結果面板 (滿版毛玻璃) --- */
+    .result-panel {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: rgba(0,0,0,0.92);
+      backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+      border-top: 0.5px solid var(--border);
+      z-index: 90;
+    }
+    
+    /* --- 底部內容區 (精準對齊 560px) --- */
+    .result-inner { 
+      width: 100%;
+      max-width: 560px; 
+      margin: 0 auto; 
+      /* 將 padding 與 safe-area 移入 inner */
+      padding: 12px 16px calc(12px + env(safe-area-inset-bottom,0px));
+    }
+
+    .result-cards { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 10px; }
+    .result-card {
+      background: rgba(255,255,255,0.06); border: 0.5px solid var(--border);
+      border-radius: 12px; padding: 9px 12px;
+    }
+    .rc-label { font-size: 10px; color: var(--text-sub); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 4px; }
+    .rc-val { font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+
+    .progress-wrap { margin-bottom: 8px; }
+    .progress-track { height: 5px; border-radius: 3px; background: rgba(255,255,255,0.1); overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 3px; transition: width 0.4s ease, background 0.3s; }
+
+    .verdict {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 14px; border-radius: 10px;
+      font-size: 13px; font-weight: 500; line-height: 1.4;
+    }
+    .verdict.ok   { background: rgba(50,215,75,0.12);  color: var(--green);  border: 0.5px solid rgba(50,215,75,0.28); }
+    .verdict.warn { background: rgba(255,159,10,0.12); color: var(--orange); border: 0.5px solid rgba(255,159,10,0.28); }
+    .verdict.bad  { background: rgba(255,69,58,0.12);  color: var(--red);    border: 0.5px solid rgba(255,69,58,0.28); }
+    .verdict.idle { background: rgba(255,255,255,0.05); color: var(--text-sub); border: 0.5px solid var(--sep); }
+    .verdict-icon {
+      width: 22px; height: 22px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; flex-shrink: 0;
+      background: rgba(255,255,255,0.12);
+    }
+    .verdict.ok   .verdict-icon { background: rgba(50,215,75,0.22); }
+    .verdict.warn .verdict-icon { background: rgba(255,159,10,0.22); }
+    .verdict.bad  .verdict-icon { background: rgba(255,69,58,0.22); }
+
+    .nav-btn {
+      padding: 9px 20px; border-radius: 10px; font-size: 13px; font-weight: 600;
+      font-family: inherit; cursor: pointer; border: 0.5px solid var(--border);
+      background: var(--input-bg); color: var(--text-main); transition: all 0.18s;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .nav-btn:active { transform: scale(0.95); }
+    @media (hover: hover) { .nav-btn:hover { background: rgba(255,255,255,0.14); } }
+
+    .step-panel { display: none; }
+    .step-panel.active { display: block; }
+
+    .demand-summary {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px; border-radius: 12px;
+      background: rgba(10,132,255,0.1); border: 0.5px solid rgba(10,132,255,0.3);
+      margin-bottom: 14px;
+    }
+    .demand-summary .ds-label { font-size: 12px; color: var(--text-sub); }
+    .demand-summary .ds-value { font-size: 16px; font-weight: 700; color: var(--blue); font-variant-numeric: tabular-nums; }
+
+    /* ========================================================= */
+    /* 列印樣式優化 (@media print)                               */
+    /* ========================================================= */
+    .print-only { display: none; }
+    @media print {
+      @page { size: A4; margin: 15mm; }
+      body { background: #ffffff !important; color: #000000 !important; padding: 0 !important; display: block; overscroll-behavior-y: auto; }
+      
+      .print-only { display: block !important; text-align: center; margin-bottom: 10mm; border-bottom: 2px solid #000; padding-bottom: 5mm; }
+      .print-only h1 { font-size: 24px; margin-bottom: 5px; color: #000; }
+      .print-only .print-meta { font-size: 12px; color: #666; }
+
+      .header, .bottom-spacer { display: none !important; }
+      .settings-container, .step-row, .qty-btn, .cable-actions { display: none !important; }
+      
+      .step-panel { display: block !important; margin-bottom: 20px !important; page-break-inside: avoid; }
+      .content { max-width: 100% !important; padding: 0 !important; }
+
+      .card { background: none !important; border: 1px solid #ccc !important; box-shadow: none !important; color: #000 !important; page-break-inside: avoid; margin-bottom: 10mm; }
+      .card-title, .section-label, .ds-label, .rc-label, .inline-label, .device-amp, .psu-spec { color: #333 !important; }
+      .device-row, .psu-row, .cable-row { background: none !important; border-color: #ddd !important; padding: 8px 0 !important; }
+      
+      .device-row:not(.has-qty), .psu-row:not(.has-qty) { display: none !important; }
+      
+      .project-input, .cable-input, .inline-input, .cable-select { border: none !important; background: none !important; color: #000 !important; padding: 0 !important; }
+      .qty-val, .total-chip.has-value { border: none !important; background: none !important; color: #000 !important; font-weight: 700 !important; }
+      .seg-btn { color: #666 !important; }
+      .seg-btn.active { background: #eee !important; color: #000 !important; border: 1px solid #999 !important; }
+      .info-note { background: #f9f9f9 !important; border-left-color: #666 !important; color: #333 !important; }
+      
+      .result-panel { position: static !important; background: none !important; border: 2px solid #000 !important; border-radius: 12px; padding: 15px !important; margin-top: 10mm !important; page-break-inside: avoid; backdrop-filter: none !important; }
+      .result-cards { display: flex !important; justify-content: space-around !important; border-bottom: 1px solid #ddd !important; padding-bottom: 10px !important; }
+      .result-card { background: #fff !important; border: none !important; text-align: center !important; }
+      .rc-val { color: #000 !important; font-size: 18px !important; font-weight: 700 !important; }
+      .progress-wrap { display: none !important; }
+      .verdict { border: 1px solid #999 !important; background: #fff !important; color: #000 !important; }
+      .verdict-icon { background: #eee !important; color: #000 !important; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="print-only">
+  <h1>Clear-Com Partyline 電源需求估算報告</h1>
+  <div class="print-meta" id="print-project-name"></div>
+  <div class="print-meta" id="print-date"></div>
+</div>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="title-row">
+      <h1>Partyline Power Estimator</h1>
+      <div class="header-actions">
+        <button class="header-icon-btn danger" onclick="resetAll()" title="重設所有資料">↺</button>
+        <div class="settings-container">
+          <button class="header-icon-btn" id="settings-btn" title="設定與匯出">⚙️</button>
+          <div class="dropdown-menu" id="dropdown-menu">
+            <button class="dropdown-item" onclick="window.print()">🖨️ 列印或 PDF</button>
+            <button class="dropdown-item" onclick="exportCSV()">📊 匯出 CSV</button>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item danger" onclick="confirmClearStorage()">🗑️ 清除記錄</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="version-label">PARTYLINE · POWER CALC V1.4.5</div>
+    <div class="step-row" id="step-pills"></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="step-panel active" id="panel-1">
+    <div class="card">
+      <input class="project-input" id="projectName" placeholder="專案名稱（選填）" autocomplete="off">
+    </div>
+    <div class="card">
+      <div class="card-title">Step 1 — 系統設定</div>
+      <div class="seg-wrap" id="systemtype-ctrl"></div>
+      <div class="info-note" id="systemtype-note"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">電源餘裕設定</div>
+      <div class="seg-wrap" id="headroom-ctrl"></div>
+      <div class="info-note" id="headroom-note"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">PSU 並聯模式</div>
+      <div class="seg-wrap" id="sysmode-ctrl"></div>
+      <div class="info-note" id="sysmode-note"></div>
+    </div>
+    <div class="card" id="psurating-card">
+      <div class="card-title">Encore PSU 計算方式</div>
+      <div class="seg-wrap" id="psurating-ctrl"></div>
+      <div class="info-note" id="psurating-note"></div>
+    </div>
+  </div>
+
+  <div class="step-panel" id="panel-2">
+    <div class="card">
+      <div class="card-title">Step 2 — 設備數量</div>
+      <div id="device-groups"></div>
+    </div>
+  </div>
+
+  <div class="step-panel" id="panel-3">
+    <div class="card">
+      <div class="card-title">Step 3 — 電源供應器</div>
+      <div class="demand-summary">
+        <div class="ds-label">設備最大電流需求</div>
+        <div class="ds-value" id="demand-badge">0.000 A</div>
+      </div>
+      <div id="psu-groups"></div>
+      <div class="info-note compact" id="psu-note"></div>
+    </div>
+    <div class="card" id="energy-card">
+      <div class="card-title">Encore 電力 / 熱負載估算</div>
+      <div class="subnote">僅 Encore 系統顯示；其他系統為 N/A。</div>
+      <table class="mini-table">
+        <thead>
+          <tr><th></th><th>Idle</th><th>Max</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>功率 (W)</td><td id="power-idle-w">—</td><td id="power-max-w">—</td></tr>
+          <tr><td>熱負載 (BTU/h)</td><td id="btu-idle">—</td><td id="btu-max">—</td></tr>
+        </tbody>
+      </table>
+      <div class="subnote">等效交流電流（Max）：
+        <span id="ac-100">—</span> @100V /
+        <span id="ac-120">—</span> @120V /
+        <span id="ac-230">—</span> @230V
+      </div>
+    </div>
+  </div>
+
+  <div class="step-panel" id="panel-4">
+    <div class="card">
+      <div class="card-title">Step 4 — 線材 / 電壓降估算</div>
+      <div class="info-note" id="cable-note">輸入每段距離、Beltpack 數量與線徑，系統會估算總電壓降。</div>
+      <div class="inline-edit">
+        <span class="inline-label">每台 Beltpack 電流 (mA)</span>
+        <input class="inline-input" type="number" min="0" max="500" step="1" id="cable-current">
+        <span class="inline-label">長度單位</span>
+        <div class="seg-wrap" id="cable-unit"></div>
+      </div>
+      <div class="cable-table" id="cable-table"></div>
+      <div style="display: flex; gap: 8px; margin-top: 10px;">
+        <button class="nav-btn" style="flex: 1;" onclick="addCableRow()">+ 新增一列</button>
+        <button class="nav-btn" style="flex: 1; color: var(--red); border-color: rgba(255,69,58,0.3);" onclick="resetCable()">🗑️ 清空線材</button>
+      </div>
+      <div class="demand-summary" style="margin-top: 14px;">
+        <div class="ds-label">總電壓降</div>
+        <div class="ds-value" id="cable-drop-total">0.00 V</div>
+      </div>
+      <div class="verdict idle" id="cable-verdict">
+        <div class="verdict-icon">ℹ</div>
+        <div>請輸入線材與 Beltpack 參數。</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="bottom-spacer" id="bottom-spacer"></div>
+</div>
+
+<div class="result-panel" id="result-panel">
+  <div class="result-inner">
+    <div class="result-cards">
+      <div class="result-card">
+        <div class="rc-label">設備最大電流</div>
+        <div class="rc-val" id="rc-load" style="color:var(--text-main)">0.000 A</div>
+      </div>
+      <div class="result-card">
+        <div class="rc-label">PSU 可用預算</div>
+        <div class="rc-val" id="rc-budget" style="color:var(--blue)">0.00 A</div>
+      </div>
+      <div class="result-card">
+        <div class="rc-label">剩餘容量</div>
+        <div class="rc-val" id="rc-margin" style="color:var(--text-sub)">—</div>
+      </div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-track">
+        <div class="progress-fill" id="progress-fill" style="width:0%;background:var(--green)"></div>
+      </div>
+    </div>
+    <div class="verdict idle" id="verdict">
+      <div class="verdict-icon">ℹ</div>
+      <div>請先至上方完成 Step 1 ~ Step 3。</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+//  LEGACY LISTS & CONFIGURATIONS
+// ═══════════════════════════════════════════════════
+const LEGACY_DEVICES = [
+  { id: "RS-701/801-IM", idle: 0.012000, max: 0.028000 },
+  { id: "RS-702/802-IM", idle: 0.025000, max: 0.040000 },
+  { id: "RS-703", idle: 0.025000, max: 0.040000 },
+  { id: "RM-702/802-IM", idle: 0.090000, max: 0.110000 },
+  { id: "RM-704", idle: 0.165000, max: 0.195000 },
+  { id: "KB-701", idle: 0.090000, max: 0.110000 },
+  { id: "KB-702", idle: 0.090000, max: 0.110000 },
+  { id: "KB-702GM/802IM", idle: 0.090000, max: 0.110000 },
+  { id: "HB-702", idle: 0.050000, max: 0.100000 },
+  { id: "HB-704", idle: 0.050000, max: 0.100000 },
+  { id: "EF-701M", idle: 0.070000, max: 0.080000 },
+  { id: "IF-4W4", idle: 0.040000, max: 0.050000 },
+  { id: "FL-7", idle: 0.010000, max: 0.090000 },
+  { id: "MT-701", idle: 0.005000, max: 0.005000 },
+  { id: "RCS-2700", idle: 0.080000, max: 0.080000 },
+  { id: "TW-12C", idle: 0.040000, max: 0.050000 },
+  { id: "TW-47", idle: 0.050000, max: 0.060000 },
+  { id: "TWC-701", idle: 0.030000, max: 0.030000 },
+  { id: "TWC-703", idle: 0.065000, max: 0.065000 },
+  { id: "TWC-704 per TW", idle: 0.030000, max: 0.030000 },
+  { id: "Arcadia per port", idle: 0.010000, max: 0.010000 },
+  { id: "FSE-BASE per port", idle: 0.010000, max: 0.010000 },
+  { id: "FSII-BASEII per port", idle: 0.010000, max: 0.010000 },
+  { id: "HLI-2W2 per port", idle: 0.025000, max: 0.025000 },
+  { id: "LQ-2W per port", idle: 0.010000, max: 0.010000 },
+  { id: "PIC-4744", idle: 0.090000, max: 0.090000 },
+  { id: "PIC-4704", idle: 0.090000, max: 0.090000 },
+  { id: "MA-704", idle: 0.140000, max: 0.180000 },
+  { id: "AX-704", idle: 0.120000, max: 0.150000 },
+  { id: "TR-50", idle: 0.010000, max: 0.010000 },
+  { id: "AB-120", idle: 0.100000, max: 0.120000 },
+  { id: "SMQ-1", idle: 0.010000, max: 0.010000 },
+  { id: "DMQ-1", idle: 0.010000, max: 0.010000 },
+  { id: "RS-601", idle: 0.026000, max: 0.050000 },
+  { id: "RS-602/622", idle: 0.058000, max: 0.075000 },
+  { id: "RS-603/623", idle: 0.058000, max: 0.068000 },
+  { id: "AB-100", idle: 0.065000, max: 0.120000 },
+  { id: "CCI-22", idle: 0.040000, max: 0.040000 },
+  { id: "CSD-1", idle: 0.030000, max: 0.030000 },
+  { id: "EF-1", idle: 0.040000, max: 0.060000 },
+  { id: "FL-1", idle: 0.010000, max: 0.080000 },
+  { id: "IF4-B", idle: 0.050000, max: 0.050000 },
+  { id: "KB-211", idle: 0.090000, max: 0.100000 },
+  { id: "KB-212", idle: 0.090000, max: 0.100000 },
+  { id: "MR-202", idle: 0.010000, max: 0.030000 },
+  { id: "MR-204", idle: 0.010000, max: 0.030000 },
+  { id: "MS-812A", idle: 0.000000, max: 0.000000 },
+  { id: "MS-880", idle: 0.000000, max: 0.000000 },
+  { id: "NC-2", idle: 0.005000, max: 0.005000 },
+  { id: "RCS-2000", idle: 0.080000, max: 0.080000 },
+  { id: "RM-220", idle: 0.065000, max: 0.120000 },
+  { id: "RM-440", idle: 0.090000, max: 0.150000 },
+  { id: "RMK-1", idle: 0.030000, max: 0.030000 },
+  { id: "TW-12B", idle: 0.050000, max: 0.050000 },
+  { id: "TW-40", idle: 0.015000, max: 0.025000 },
+  { id: "TWC-10", idle: 0.030000, max: 0.030000 },
+  { id: "PC-501", idle: 0.025000, max: 0.050000 },
+  { id: "RS-501", idle: 0.025000, max: 0.050000 },
+  { id: "RS-502/522", idle: 0.035000, max: 0.060000 },
+  { id: "TR-532", idle: 0.025000, max: 0.025000 },
+  { id: "AC-10K/H", idle: 0.018000, max: 0.018000 },
+  { id: "AX-4", idle: 0.120000, max: 0.150000 },
+  { id: "CCI-2", idle: 0.040000, max: 0.040000 },
+  { id: "CP-100", idle: 0.012000, max: 0.040000 },
+  { id: "CP-300", idle: 0.025000, max: 0.060000 },
+  { id: "IF4-4", idle: 0.050000, max: 0.050000 },
+  { id: "KB-111A", idle: 0.020000, max: 0.100000 },
+  { id: "KB-112", idle: 0.020000, max: 0.100000 },
+  { id: "KB-115", idle: 0.020000, max: 0.100000 },
+  { id: "KB-124", idle: 0.020000, max: 0.100000 },
+  { id: "MA-4", idle: 0.140000, max: 0.180000 },
+  { id: "MR-102A", idle: 0.010000, max: 0.055000 },
+  { id: "MR-104A", idle: 0.010000, max: 0.055000 },
+  { id: "MS-812", idle: 0.000000, max: 0.000000 },
+  { id: "MT-1", idle: 0.005000, max: 0.005000 },
+  { id: "MX-820A", idle: 0.000000, max: 0.000000 },
+  { id: "MX-840A", idle: 0.000000, max: 0.000000 },
+  { id: "NC-1", idle: 0.005000, max: 0.005000 },
+  { id: "PC-101A", idle: 0.012000, max: 0.057000 },
+  { id: "RS-100A", idle: 0.012000, max: 0.057000 },
+  { id: "RS-201", idle: 0.015000, max: 0.060000 },
+  { id: "PIC-4 DLC", idle: 0.027000, max: 0.027000 },
+  { id: "PIC-4000", idle: 0.020000, max: 0.060000 },
+  { id: "PIC-4000B", idle: 0.020000, max: 0.060000 },
+  { id: "RM-120A", idle: 0.025000, max: 0.100000 },
+  { id: "RM-400A", idle: 0.050000, max: 0.150000 },
+  { id: "TR-62", idle: 0.015000, max: 0.015000 },
+  { id: "TW-12", idle: 0.050000, max: 0.050000 },
+  { id: "TW-20", idle: 0.015000, max: 0.025000 },
+  { id: "AC-10", idle: 0.018000, max: 0.018000 },
+  { id: "BA-1", idle: 0.000000, max: 0.000000 },
+  { id: "KB-100", idle: 0.020000, max: 0.100000 },
+  { id: "KB-110", idle: 0.020000, max: 0.100000 },
+  { id: "KB-111", idle: 0.020000, max: 0.100000 },
+  { id: "MR-102", idle: 0.010000, max: 0.055000 },
+  { id: "MX-820", idle: 0.000000, max: 0.000000 },
+  { id: "MX-840", idle: 0.000000, max: 0.000000 },
+  { id: "PC-101", idle: 0.007000, max: 0.050000 },
+  { id: "RS-100", idle: 0.007000, max: 0.050000 },
+  { id: "SB-8", idle: 0.000000, max: 0.000000 },
+  { id: "SB-8EX", idle: 0.000000, max: 0.000000 },
+  { id: "User Defined A", idle: 0.000000, max: 0.000000 },
+  { id: "User Defined B", idle: 0.000000, max: 0.000000 },
+  { id: "User Defined C", idle: 0.000000, max: 0.000000 },
+];
+
+const LEGACY_PSUS = [
+  { id: "CS-702", maxA: 2.000000, note: "" },
+  { id: "MS-702/802-IM", maxA: 2.000000, note: "" },
+  { id: "MS-704", maxA: 2.000000, note: "" },
+  { id: "PS-702", maxA: 2.000000, note: "" },
+  { id: "PS-704", maxA: 2.000000, note: "" },
+  { id: "SB-704", maxA: 2.000000, note: "" },
+  { id: "Arcadia", maxA: 1.120000, note: "" },
+  { id: "FSE-BASE", maxA: 1.120000, note: "" },
+  { id: "FSII-BASE-II", maxA: 0.800000, note: "" },
+  { id: "LQ 2-Wire on PoE", maxA: 0.070000, note: "" },
+  { id: "LQ 2-Wire on PSU", maxA: 0.150000, note: "" },
+  { id: "LQ-R 2-Wire", maxA: 0.500000, note: "" },
+  { id: "PK-7", maxA: 0.400000, note: "", standalone: true },
+  { id: "TWC-703 w.opt.PS", maxA: 0.550000, note: "", standalone: true },
+  { id: "MS-232", maxA: 2.000000, note: "" },
+  { id: "MS-440", maxA: 2.000000, note: "" },
+  { id: "MS-660", maxA: 2.000000, note: "" },
+  { id: "MS-812A", maxA: 0.000000, note: "" },
+  { id: "MS-880", maxA: 0.000000, note: "" },
+  { id: "PS-22", maxA: 1.000000, note: "" },
+  { id: "PS-232", maxA: 2.000000, note: "" },
+  { id: "PS-464", maxA: 2.500000, note: "" },
+  { id: "SB-440", maxA: 2.000000, note: "" },
+  { id: "PK-5", maxA: 0.400000, note: "" },
+  { id: "CS-210", maxA: 1.000000, note: "" },
+  { id: "CS-222", maxA: 1.000000, note: "" },
+  { id: "IS-808 DLC", maxA: 1.000000, note: "" },
+  { id: "MS-200", maxA: 2.000000, note: "" },
+  { id: "MS-200B", maxA: 1.000000, note: "" },
+  { id: "MS-200C", maxA: 2.000000, note: "" },
+  { id: "MS-222", maxA: 1.000000, note: "" },
+  { id: "MS-400", maxA: 2.000000, note: "" },
+  { id: "MS-400A", maxA: 2.000000, note: "" },
+  { id: "MS-808 DLC", maxA: 2.000000, note: "" },
+  { id: "MS-812", maxA: 0.000000, note: "" },
+  { id: "PS-20", maxA: 1.000000, note: "" },
+  { id: "PS-451", maxA: 2.000000, note: "" },
+  { id: "PS-452", maxA: 2.000000, note: "" },
+  { id: "PS-454", maxA: 2.000000, note: "" },
+  { id: "SB-412", maxA: 2.000000, note: "" },
+  { id: "SB-412A", maxA: 2.000000, note: "" },
+  { id: "Power Pac", maxA: 0.400000, note: "" },
+  { id: "PK-3", maxA: 0.400000, note: "" },
+  { id: "CS-100", maxA: 2.000000, note: "" },
+  { id: "CS-200", maxA: 2.000000, note: "" },
+  { id: "PS-10", maxA: 0.600000, note: "" },
+  { id: "PS-3000", maxA: 2.000000, note: "" },
+  { id: "SB-8", maxA: 0.000000, note: "" },
+  { id: "SB-8EX", maxA: 0.000000, note: "" },
+  { id: "User Defined A", maxA: 0.000000, note: "" },
+  { id: "User Defined B", maxA: 0.000000, note: "" },
+  { id: "User Defined C", maxA: 0.000000, note: "" },
+];
+
+const CONFIG = {
+  STEPS: [
+    { id: 1, label: '設定' },
+    { id: 2, label: '設備' },
+    { id: 3, label: '電源' },
+    { id: 4, label: '線材' },
+  ],
+  SYSTEM_TYPES: [
+    { id: 'encore', label: 'Encore', sublabel: '多通道 PSU', note: '適用 Encore 類比 Partyline，多通道 PSU 以總量與每通道上限估算。' },
+    { id: 'digital', label: 'Digital', sublabel: 'LQ / FSII', note: '適用 Arcadia / FSE-BASE / FSII / LQ 2-wire 等數位裝置。' },
+    { id: 'legacy', label: 'Legacy', sublabel: '傳統類比', note: 'Legacy 清單較長且為估算值，請搭配原廠文件確認。' },
+  ],
+  DEVICE_GROUPS: [
+    {
+      id: 'encore', label: 'Encore 使用者站台', color: 'var(--blue)', systems: ['encore'],
+      devices: [
+        { id: 'RS-701/801-IM',  idle: 0.012, max: 0.028 },
+        { id: 'RS-702/802-IM',  idle: 0.025, max: 0.040 },
+        { id: 'RS-703',         idle: 0.025, max: 0.040 },
+        { id: 'RM-702/802-IM',  idle: 0.090, max: 0.110 },
+        { id: 'RM-704',         idle: 0.165, max: 0.195 },
+        { id: 'KB-701',         idle: 0.090, max: 0.110 },
+        { id: 'KB-702',         idle: 0.090, max: 0.110 },
+        { id: 'KB-702GM/802IM', idle: 0.090, max: 0.110 },
+        { id: 'HB-702',         idle: 0.050, max: 0.100 },
+        { id: 'HB-704',         idle: 0.050, max: 0.100 },
+      ]
+    },
+    {
+      id: 'interface', label: '介面轉換器', color: 'var(--green)', systems: ['encore'],
+      devices: [
+        { id: 'AC-701',   idle: 0.018, max: 0.018 },
+        { id: 'CCI-22',   idle: 0.040, max: 0.040 },
+        { id: 'EF-701M',  idle: 0.070, max: 0.080 },
+        { id: 'IF-4W4',   idle: 0.040, max: 0.050 },
+        { id: 'FL-7',     idle: 0.010, max: 0.090 },
+        { id: 'MT-701',   idle: 0.005, max: 0.005 },
+        { id: 'RCS-2700', idle: 0.080, max: 0.080 },
+      ]
+    },
+    {
+      id: 'digital', label: 'Digital 設備', color: 'var(--orange)', systems: ['digital'],
+      devices: [
+        { id: 'Arcadia per port',  idle: 0.010, max: 0.010 },
+        { id: 'FSE-BASE per port', idle: 0.010, max: 0.010 },
+        { id: 'FSII-BASE per port', idle: 0.010, max: 0.010 },
+        { id: 'HLI-2W2 per port',  idle: 0.025, max: 0.025 },
+        { id: 'LQ-2W per port',    idle: 0.010, max: 0.010 },
+      ]
+    },
+    {
+      id: 'ifb', label: 'IFB 系統', color: 'var(--purple)', systems: ['encore'],
+      devices: [
+        { id: 'PIC-4744', idle: 0.090, max: 0.090 },
+        { id: 'PIC-4704', idle: 0.090, max: 0.090 },
+      ]
+    },
+    {
+      id: 'other', label: '其他配件', color: 'var(--teal)', systems: ['encore'],
+      devices: [
+        { id: 'TW-12C',         idle: 0.040, max: 0.050 },
+        { id: 'TW-47',          idle: 0.050, max: 0.060 },
+        { id: 'TWC-701',        idle: 0.030, max: 0.030 },
+        { id: 'TWC-703',        idle: 0.065, max: 0.065 },
+        { id: 'TWC-704 per TW', idle: 0.030, max: 0.030 },
+        { id: 'MA-704',         idle: 0.140, max: 0.180 },
+        { id: 'AX-704',         idle: 0.120, max: 0.150 },
+        { id: 'TR-50',          idle: 0.010, max: 0.010 },
+        { id: 'AB-120',         idle: 0.100, max: 0.120 },
+      ]
+    },
+    {
+      id: 'classic', label: 'Classic / PL-Pro', color: 'var(--red)', systems: ['encore'],
+      devices: [
+        { id: 'SMQ-1',      idle: 0.010, max: 0.010 },
+        { id: 'RS-501',     idle: 0.025, max: 0.050 },
+        { id: 'RS-601',     idle: 0.026, max: 0.050 },
+        { id: 'RS-602/622', idle: 0.058, max: 0.075 },
+        { id: 'RS-603/623', idle: 0.058, max: 0.068 },
+      ]
+    },
+    {
+      id: 'legacy', label: 'Legacy 裝置', color: 'var(--red)', systems: ['legacy'],
+      devices: LEGACY_DEVICES
+    },
+  ],
+  PSU_GROUPS: [
+    {
+      id: 'encore-multi', label: 'Encore 多通道電源供應器', systems: ['encore'],
+      psus: [
+        { id: 'CS-702',        maxA: 2.0, maxAChannel: 1.2, note: '2 通道 · 最大 1.2A／通道', overheadIdleA: 0.09, overheadMaxA: 0.11 },
+        { id: 'MS-702/802-IM', maxA: 2.0, maxAChannel: 1.2, note: '2 通道 · 最大 1.2A／通道', overheadIdleA: 0.09, overheadMaxA: 0.11 },
+        { id: 'MS-704',        maxA: 2.0, maxAChannel: 1.2, note: '4 通道 · 最大 1.2A／通道', overheadIdleA: 0.165, overheadMaxA: 0.195 },
+        { id: 'PS-702',        maxA: 2.0, maxAChannel: 1.2, note: '2 通道 · 最大 1.2A／通道', overheadIdleA: 0.09, overheadMaxA: 0.11 },
+        { id: 'PS-704',        maxA: 2.0, maxAChannel: 1.2, note: '4 通道 · 最大 1.2A／通道', overheadIdleA: 0.165, overheadMaxA: 0.195 },
+        { id: 'SB-704',        maxA: 2.0, maxAChannel: 1.2, note: '4 通道 · 最大 1.2A／通道', overheadIdleA: 0.165, overheadMaxA: 0.195 },
+      ]
+    },
+    {
+      id: 'standalone', label: '獨立電源供應器（Standalone）', systems: ['encore'],
+      psus: [
+        { id: 'PK-7',               maxA: 0.40, note: '獨立 PSU · 0.4A', standalone: true, overheadIdleA: 0.025, overheadMaxA: 0.04 },
+        { id: 'TWC-703',            maxA: 0.55, note: 'TWC-703 選配電源 · 0.55A', standalone: true },
+      ]
+    },
+    {
+      id: 'digital-psu', label: 'Digital Partyline PSU', systems: ['digital'],
+      psus: [
+        { id: 'Arcadia',          maxA: 1.12, note: '每對 port · 1.12A' },
+        { id: 'FSE-BASE',         maxA: 1.12, note: '每對 port · 1.12A' },
+        { id: 'FSII-BASE-II',     maxA: 0.80, note: '每對 port · 0.80A' },
+        { id: 'LQ 2-Wire on PoE', maxA: 0.07, note: '每對 port · 0.07A' },
+        { id: 'LQ 2-Wire on PSU', maxA: 0.15, note: '每對 port · 0.15A' },
+        { id: 'LQ-R 2-Wire',      maxA: 0.50, note: '每對 port · 0.50A' },
+      ]
+    },
+    {
+      id: 'legacy-psu', label: 'Legacy PSU', systems: ['legacy'],
+      psus: LEGACY_PSUS
+    },
+  ],
+  HEADROOM_MODES: [
+    { id: 'Conservative', label: '保守', sublabel: '長線材／繁忙系統', factor: 0.8, note: '保守模式：適合線材較長或系統繁忙的場景，PSU 預算扣除 20% 作為緩衝。' },
+    { id: 'Normal', label: '正常', sublabel: '大多數場景', factor: 0.9, note: '正常模式：適合大多數應用場景，PSU 預算保留 10% 緩衝容量。' },
+    { id: 'Aggressive', label: '積極', sublabel: '安靜／短線材', factor: 1.0, note: '積極模式：無額外保留容量，不建議用於嘈雜或繁忙環境。' },
+  ],
+  SYS_MODES: [
+    { id: 'Normal', label: '單一 PSU', parallelFactor: 1.0, note: '單一電源供應器，標準設定，預算不折減。' },
+    { id: 'Parallel', label: '並聯 PSU', parallelFactor: 0.8, note: '並聯模式：PSU 容量合計後折減 20%。需共用 AC 接地，建議加裝 MT-701。' },
+  ],
+  PSU_RATING_MODES: [
+    { id: 'perPSU', label: 'per PSU', sublabel: '2.0A', note: '以每台 PSU 2A 總量估算（預設）。' },
+    { id: 'perChannel', label: 'per Channel', sublabel: '1.2A', note: '以每通道 1.2A 上限估算，較保守。' },
+  ],
+  LIMITS: { DEVICE_MAX: 99, PSU_MAX: 9, STANDALONE_PSU_MAX: 1 },
+  THRESHOLDS: { SAFE: 0.85, WARNING: 1.00 },
+};
+
+const state = {
+  _version: '1.4.5',
+  projectName: '',
+  qtysBySystem: {},
+  psuQtysBySystem: {},
+  qtys: {},
+  psuQtys: {},
+  deviceOverridesBySystem: {},
+  psuOverridesBySystem: {},
+  deviceOverrides: {},
+  psuOverrides: {},
+  systemType: CONFIG.SYSTEM_TYPES[0],
+  headroom: CONFIG.HEADROOM_MODES[1],
+  sysMode:  CONFIG.SYS_MODES[0],
+  psuRating: CONFIG.PSU_RATING_MODES[0],
+  cable: {
+    unit: 'm', currentPerBeltpackmA: 50,
+    rows: Array.from({ length: 5 }, () => ({ distance: 0, beltpacks: 0, awg: 22 })),
+  },
+};
+
+const STORAGE_KEY = 'clearcom_power_calc_state_v1_4';
+
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (err) { console.warn('Storage unavailable', err); }
+}
+
+function loadState() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return false;
+    const loaded = JSON.parse(saved);
+    if (!loaded?._version || !loaded._version.startsWith('1.4')) return false;
+    Object.assign(state, loaded);
+    state._version = '1.4.5';
+    state.systemType = CONFIG.SYSTEM_TYPES.find(t => t.id === loaded?.systemType?.id) ?? CONFIG.SYSTEM_TYPES[0];
+    state.headroom = CONFIG.HEADROOM_MODES.find(m => m.id === loaded?.headroom?.id) ?? CONFIG.HEADROOM_MODES[1];
+    state.sysMode = CONFIG.SYS_MODES.find(m => m.id === loaded?.sysMode?.id) ?? CONFIG.SYS_MODES[0];
+    state.psuRating = CONFIG.PSU_RATING_MODES.find(m => m.id === loaded?.psuRating?.id) ?? CONFIG.PSU_RATING_MODES[0];
+    return true;
+  } catch (err) { return false; }
+}
+
+function clearSavedState() {
+  try { localStorage.removeItem(STORAGE_KEY); } catch (err) {}
+}
+
+const $        = id => document.getElementById(id);
+const esc      = s  => String(s ?? '').replace(/[^a-zA-Z0-9]/g, '_');
+const isGroupActive = g => !g.systems || g.systems.includes(state.systemType.id);
+const activeDeviceGroups = () => CONFIG.DEVICE_GROUPS.filter(isGroupActive);
+const activePSUGroups = () => CONFIG.PSU_GROUPS.filter(isGroupActive);
+const allDevs  = () => activeDeviceGroups().flatMap(g => g.devices);
+const allPSUs  = () => activePSUGroups().flatMap(g => g.psus);
+const clamp = (n, min, max) => Math.min(max, Math.max(min, Number(n) || 0));
+const getPSUById = id => allPSUs().find(p => p.id === id);
+const isStandalonePSU = id => !!(getPSUById(id)?.standalone);
+const getDeviceMaxQty = () => CONFIG.LIMITS.DEVICE_MAX;
+const getPSUMaxQty = id => isStandalonePSU(id) ? CONFIG.LIMITS.STANDALONE_PSU_MAX : CONFIG.LIMITS.PSU_MAX;
+
+const DEVICE_ID_ALIASES = {
+  'Arcadia (per port)': 'Arcadia per port',
+  'FSE-BASE (per port)': 'FSE-BASE per port',
+  'FSII-BASE-II per port': 'FSII-BASE per port',
+  'HLI-2W2 (per port)': 'HLI-2W2 per port',
+  'LQ-2W (per port)': 'LQ-2W per port',
+};
+
+function ensureSystemStore(systemId) {
+  if (!state.qtysBySystem[systemId]) state.qtysBySystem[systemId] = {};
+  if (!state.psuQtysBySystem[systemId]) state.psuQtysBySystem[systemId] = {};
+  if (!state.deviceOverridesBySystem[systemId]) state.deviceOverridesBySystem[systemId] = {};
+  if (!state.psuOverridesBySystem[systemId]) state.psuOverridesBySystem[systemId] = {};
+}
+
+function syncSystemStore() {
+  ensureSystemStore(state.systemType.id);
+  state.qtys = state.qtysBySystem[state.systemType.id];
+  state.psuQtys = state.psuQtysBySystem[state.systemType.id];
+  state.deviceOverrides = state.deviceOverridesBySystem[state.systemType.id];
+  state.psuOverrides = state.psuOverridesBySystem[state.systemType.id];
+  if (state.systemType.id === 'digital') {
+    Object.entries(DEVICE_ID_ALIASES).forEach(([from, to]) => {
+      if (state.qtys[from] && !state.qtys[to]) {
+        state.qtys[to] = state.qtys[from];
+        delete state.qtys[from];
+      }
+    });
+  }
+}
+
+const AWG_TABLE = [
+  { awg: 8,  r1000: 0.6 }, { awg: 10, r1000: 1.0 }, { awg: 12, r1000: 1.5 },
+  { awg: 14, r1000: 2.5 }, { awg: 16, r1000: 4.0 }, { awg: 18, r1000: 6.5 },
+  { awg: 20, r1000: 10.0 }, { awg: 22, r1000: 15.0 }, { awg: 24, r1000: 25.0 },
+  { awg: 26, r1000: 40.0 }, { awg: 28, r1000: 65.0 },
+];
+const AWG_MAP = new Map(AWG_TABLE.map(i => [i.awg, i.r1000]));
+const getDeviceById = id => CONFIG.DEVICE_GROUPS.flatMap(g => g.devices).find(d => d.id === id);
+const formatPsuNote = (p, maxA) => p?.note || (typeof maxA === 'number' ? (maxA > 0 ? `最大 ${maxA.toFixed(2)}A` : '未標示') : '');
+
+// ═══════════════════════════════════════════════════
+//  UI BUILDING
+// ═══════════════════════════════════════════════════
+function buildStepPills() {
+  const container = $('step-pills');
+  if (!container) return;
+  container.innerHTML = CONFIG.STEPS.map((s, index) => `
+    <div class="step-pill${s.id === 1 ? ' active' : ''}" id="pill-${s.id}" onclick="goStep(${s.id})">
+      <div class="step-num">${s.id}</div>${s.label}
+    </div>
+    ${index < CONFIG.STEPS.length - 1 ? '<span class="step-sep">›</span>' : ''}
+  `).join('');
+}
+
+function buildSystemTypeCtrl() {
+  const container = $('systemtype-ctrl');
+  if (container) {
+    container.innerHTML = CONFIG.SYSTEM_TYPES.map(m => `
+      <button class="seg-btn${m.id === state.systemType.id ? ' active' : ''}" onclick="setSystemType('${m.id}')">
+        ${m.label}<br><span style="font-size:10px;font-weight:400;opacity:.75">${m.sublabel}</span>
+      </button>`).join('');
+  }
+  const note = $('systemtype-note');
+  if (note) note.textContent = state.systemType.note;
+}
+
+function buildDeviceGroups() {
+  const container = $('device-groups');
+  if (!container) return;
+  const groups = activeDeviceGroups();
+  container.innerHTML = groups.map((g, i) => `
+    ${i > 0 ? '<hr class="divider-line">' : ''}
+    <div class="device-section">
+      <div class="section-label" style="color:${g.color}">
+        <div class="section-bar"></div>${g.label}
+      </div>
+      ${g.devices.map(d => {
+        const q = state.qtys[d.id] || 0;
+        const ov = state.deviceOverrides[d.id] || {};
+        const idleA = (typeof ov.idle === 'number') ? ov.idle : d.idle;
+        const maxA = (typeof ov.max === 'number') ? ov.max : d.max;
+        const isUser = d.user || /^User Defined/i.test(d.id);
+        const chip = q > 0 ? (q * maxA).toFixed(3) + ' A' : '—';
+        const chipClass = q > 0 ? 'total-chip has-value' : 'total-chip';
+        const editHtml = isUser ? `
+          <div class="inline-edit">
+            <span class="inline-label">閒置 mA</span>
+            <input class="inline-input" type="number" min="0" step="1"
+              value="${Math.round(idleA * 1000)}"
+              oninput="setDeviceOverride('${d.id}','idle',this.value)">
+            <span class="inline-label">最大 mA</span>
+            <input class="inline-input" type="number" min="0" step="1"
+              value="${Math.round(maxA * 1000)}"
+              oninput="setDeviceOverride('${d.id}','max',this.value)">
+          </div>` : '';
+        return `
+        <div class="device-row" id="device-${esc(d.id)}">
+          <div>
+            <div class="device-name">${d.label || d.id}</div>
+            <div class="device-amp">閒置 ${(idleA*1000).toFixed(0)} mA &nbsp;·&nbsp; 最大 ${(maxA*1000).toFixed(0)} mA</div>
+            ${editHtml}
+          </div>
+          <div class="qty-ctrl">
+            <button class="qty-btn" onclick="adj('${d.id}',-1)">−</button>
+            <div class="qty-val" id="qty-${esc(d.id)}">${q > 0 ? q : ''}</div>
+            <button class="qty-btn" onclick="adj('${d.id}',1)">+</button>
+          </div>
+          <div class="${chipClass}" id="chip-${esc(d.id)}">${chip}</div>
+        </div>`;
+      }).join('')}
+    </div>`).join('');
+}
+
+function buildHeadroomCtrl() {
+  const container = $('headroom-ctrl');
+  if (container) {
+    container.innerHTML = CONFIG.HEADROOM_MODES.map(m => `
+      <button class="seg-btn${m.id === state.headroom.id ? ' active' : ''}" onclick="setHeadroom('${m.id}')">
+        ${m.label}<br><span style="font-size:10px;font-weight:400;opacity:.75">${m.sublabel}</span>
+      </button>`).join('');
+  }
+  const note = $('headroom-note');
+  if (note) note.textContent = state.headroom.note;
+}
+
+function buildSysModeCtrl() {
+  const container = $('sysmode-ctrl');
+  if (container) {
+    container.innerHTML = CONFIG.SYS_MODES.map(m => `
+      <button class="seg-btn${m.id === state.sysMode.id ? ' active' : ''}" onclick="setSysMode('${m.id}')">
+        ${m.label}
+      </button>`).join('');
+  }
+  const note = $('sysmode-note');
+  if (note) note.textContent = state.sysMode.note;
+}
+
+function buildPsuRatingCtrl() {
+  const container = $('psurating-ctrl');
+  if (container) {
+    container.innerHTML = CONFIG.PSU_RATING_MODES.map(m => `
+      <button class="seg-btn${m.id === state.psuRating.id ? ' active' : ''}" onclick="setPsuRating('${m.id}')">
+        ${m.label}<br><span style="font-size:10px;font-weight:400;opacity:.75">${m.sublabel}</span>
+      </button>`).join('');
+  }
+  const note = $('psurating-note');
+  if (note) note.textContent = state.psuRating.note;
+}
+
+function buildPSUGroups() {
+  const container = $('psu-groups');
+  if (!container) return;
+  const groups = activePSUGroups();
+  container.innerHTML = groups.map((g, i) => `
+    ${i > 0 ? '<hr class="divider-line">' : ''}
+    <div class="psu-section-label">${g.label}</div>
+    ${g.psus.map(p => {
+      const q = state.psuQtys[p.id] || 0;
+      const isUser = p.user || /^User Defined/i.test(p.id);
+      const overrideA = state.psuOverrides[p.id];
+      const maxA = (typeof overrideA === 'number') ? overrideA : p.maxA;
+      const note = formatPsuNote(p, maxA);
+      const editHtml = isUser ? `
+        <div class="inline-edit">
+          <span class="inline-label">自訂 A</span>
+          <input class="inline-input" type="number" min="0" step="0.01"
+            value="${typeof maxA === 'number' ? maxA.toFixed(2) : ''}"
+            oninput="setPsuOverride('${p.id}',this.value)">
+        </div>` : '';
+      return `
+      <div class="psu-row" id="psu-${esc(p.id)}">
+        <div>
+          <div class="psu-name">${p.id}</div>
+          <div class="psu-spec">${note}</div>
+          ${editHtml}
+        </div>
+        <div class="qty-ctrl">
+          <button class="qty-btn" onclick="adjPSU('${p.id}',-1)">−</button>
+          <div class="qty-val" id="pqty-${esc(p.id)}">${q > 0 ? q : ''}</div>
+          <button class="qty-btn" onclick="adjPSU('${p.id}',1)">+</button>
+        </div>
+        <div class="psu-chip" id="pchip-${esc(p.id)}">—</div>
+      </div>`;}).join('')}`).join('');
+}
+
+// ═══════════════════════════════════════════════════
+//  INTERACTIONS & STATE UPDATES
+// ═══════════════════════════════════════════════════
+$('projectName')?.addEventListener('input', (e) => {
+  state.projectName = e.target.value;
+  saveState();
+});
+
+function adj(id, delta) {
+  const max = getDeviceMaxQty(id);
+  state.qtys[id] = clamp((state.qtys[id] || 0) + delta, 0, max);
+  const el = $('qty-' + esc(id));
+  if (el) el.textContent = state.qtys[id] > 0 ? state.qtys[id] : '';
+  calc();
+}
+
+function adjPSU(id, delta) {
+  const max = getPSUMaxQty(id);
+  state.psuQtys[id] = clamp((state.psuQtys[id] || 0) + delta, 0, max);
+  const el = $('pqty-' + esc(id));
+  if (el) el.textContent = state.psuQtys[id] > 0 ? state.psuQtys[id] : '';
+  calc();
+}
+
+function setDeviceOverride(id, field, value) {
+  if (!state.deviceOverrides[id]) state.deviceOverrides[id] = {};
+  const num = parseFloat(value);
+  if (Number.isNaN(num)) delete state.deviceOverrides[id][field];
+  else state.deviceOverrides[id][field] = Math.max(0, num) / 1000;
+  updateDeviceRow(id);
+  calc();
+}
+
+function updateDeviceRow(id) {
+  const d = getDeviceById(id);
+  if (!d) return;
+  const ov = state.deviceOverrides[id] || {};
+  const idleA = (typeof ov.idle === 'number') ? ov.idle : d.idle;
+  const maxA = (typeof ov.max === 'number') ? ov.max : d.max;
+  const row = $('device-' + esc(id));
+  const amp = row?.querySelector('.device-amp');
+  if (amp) amp.textContent = `閒置 ${(idleA*1000).toFixed(0)} mA · 最大 ${(maxA*1000).toFixed(0)} mA`;
+}
+
+function setPsuOverride(id, value) {
+  const num = parseFloat(value);
+  if (Number.isNaN(num)) delete state.psuOverrides[id];
+  else state.psuOverrides[id] = Math.max(0, num);
+  updatePsuRow(id);
+  calc();
+}
+
+function updatePsuRow(id) {
+  const p = getPSUById(id);
+  if (!p) return;
+  const overrideA = state.psuOverrides[id];
+  const maxA = (typeof overrideA === 'number') ? overrideA : p.maxA;
+  const row = $('psu-' + esc(id));
+  const spec = row?.querySelector('.psu-spec');
+  if (spec) spec.textContent = formatPsuNote(p, maxA);
+}
+
+function setSystemType(id) {
+  state.systemType = CONFIG.SYSTEM_TYPES.find(m => m.id === id) || CONFIG.SYSTEM_TYPES[0];
+  syncSystemStore();
+  document.querySelectorAll('#systemtype-ctrl .seg-btn').forEach((b, i) =>
+    b.classList.toggle('active', CONFIG.SYSTEM_TYPES[i].id === state.systemType.id));
+  
+  const note = $('systemtype-note');
+  if (note) note.textContent = state.systemType.note;
+  
+  buildDeviceGroups();
+  buildPSUGroups();
+  updatePsuRatingVisibility();
+  updatePsuNote();
+  updateCableNote();
+  calc();
+}
+
+function setHeadroom(id) {
+  state.headroom = CONFIG.HEADROOM_MODES.find(m => m.id === id) ?? CONFIG.HEADROOM_MODES[1];
+  document.querySelectorAll('#headroom-ctrl .seg-btn').forEach((b, i) =>
+    b.classList.toggle('active', CONFIG.HEADROOM_MODES[i].id === id));
+  
+  const note = $('headroom-note');
+  if (note) note.textContent = state.headroom.note;
+  calc();
+}
+
+function setSysMode(id) {
+  state.sysMode = CONFIG.SYS_MODES.find(m => m.id === id) ?? CONFIG.SYS_MODES[0];
+  document.querySelectorAll('#sysmode-ctrl .seg-btn').forEach((b, i) =>
+    b.classList.toggle('active', CONFIG.SYS_MODES[i].id === id));
+  
+  const note = $('sysmode-note');
+  if (note) note.textContent = state.sysMode.note;
+  calc();
+}
+
+function setPsuRating(id) {
+  state.psuRating = CONFIG.PSU_RATING_MODES.find(m => m.id === id) ?? CONFIG.PSU_RATING_MODES[0];
+  document.querySelectorAll('#psurating-ctrl .seg-btn').forEach((b, i) =>
+    b.classList.toggle('active', CONFIG.PSU_RATING_MODES[i].id === id));
+  
+  const note = $('psurating-note');
+  if (note) note.textContent = state.psuRating.note;
+  calc();
+}
+
+function goStep(n) {
+  CONFIG.STEPS.forEach(s => {
+    $('panel-' + s.id)?.classList.toggle('active', s.id === n);
+    $('pill-'  + s.id)?.classList.toggle('active', s.id === n);
+  });
+  // 使用 requestAnimationFrame 確保 DOM 更新後再執行滾動，提升行動端穩定性
+  window.requestAnimationFrame(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+  calc();
+}
+
+function resetAll() {
+  if (!confirm("⚠️ 確定要清空當前系統的所有設備與電源數量嗎？\n(此動作無法復原)")) return;
+  state.qtysBySystem[state.systemType.id] = {};
+  state.psuQtysBySystem[state.systemType.id] = {};
+  state.deviceOverridesBySystem[state.systemType.id] = {};
+  state.psuOverridesBySystem[state.systemType.id] = {};
+  
+  state.cable.unit = 'm';
+  state.cable.rows = Array.from({ length: 5 }, () => ({ distance: 0, beltpacks: 0, awg: 22 }));
+  
+  syncSystemStore();
+  buildDeviceGroups();
+  buildPSUGroups();
+  buildCableUnitCtrl();
+  buildCableRows();
+  calc();
+}
+
+function updatePsuRatingVisibility() {
+  const card = $('psurating-card');
+  if (card) card.classList.toggle('hidden', state.systemType.id !== 'encore');
+}
+
+function updatePsuNote() {
+  const note = $('psu-note');
+  if (!note) return;
+  if (state.systemType.id === 'digital') {
+    note.textContent = 'Digital PSU 以每對 2-wire port 的供電上限估算，容量較小時請特別留意。';
+  } else if (state.systemType.id === 'legacy') {
+    note.textContent = 'Legacy 參數為估算值，請搭配原廠文件確認；數值為 0A 的項目代表不供電或未標示。';
+  } else {
+    note.textContent = '注意：多通道 PSU 最大輸出 2A，每通道上限 1.2A（連續）。並聯模式需共用 AC 接地，建議加裝 MT-701 隔離器。';
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  CABLE CALCULATION
+// ═══════════════════════════════════════════════════
+function buildCableUnitCtrl() {
+  const units = [{ id: 'ft', label: 'ft' }, { id: 'm', label: 'm' }];
+  const container = $('cable-unit');
+  if (container) {
+    container.innerHTML = units.map(u => `
+      <button class="seg-btn${u.id === state.cable.unit ? ' active' : ''}" onclick="setCableUnit('${u.id}')">${u.label}</button>
+    `).join('');
+  }
+}
+
+function setCableUnit(id) {
+  state.cable.unit = id;
+  buildCableUnitCtrl();
+  buildCableRows();
+  updateCableCalc();
+}
+
+function buildCableRows() {
+  const container = $('cable-table');
+  if (!container) return;
+
+  const head = `
+    <div class="cable-row head">
+      <div class="cable-head">距離 (${state.cable.unit})</div>
+      <div class="cable-head">Beltpacks</div>
+      <div class="cable-head">AWG</div>
+      <div class="cable-head">段電流 (A)</div>
+      <div class="cable-head">段電壓降 (V)</div>
+      <div class="cable-head">操作</div>
+    </div>`;
+
+  const rows = state.cable.rows.map((r, i) => `
+    <div class="cable-row">
+      <input class="cable-input" type="number" min="0" step="1" value="${r.distance}"
+        oninput="setCableRow(${i},'distance',this.value)">
+      <input class="cable-input" type="number" min="0" step="1" value="${r.beltpacks}"
+        oninput="setCableRow(${i},'beltpacks',this.value)">
+      <select class="cable-select" onchange="setCableRow(${i},'awg',this.value)">
+        ${AWG_TABLE.map(a => `<option value="${a.awg}"${a.awg === r.awg ? ' selected' : ''}>${a.awg}</option>`).join('')}
+      </select>
+      <div class="cable-metric" id="cable-current-${i}">—</div>
+      <div class="cable-metric" id="cable-drop-${i}">—</div>
+      <div class="cable-actions">
+        <button class="cable-btn" onclick="removeCableRow(${i})">刪除</button>
+      </div>
+    </div>
+  `).join('');
+
+  container.innerHTML = head + rows;
+  const currentInput = $('cable-current');
+  if (currentInput) {
+    currentInput.value = state.cable.currentPerBeltpackmA;
+    currentInput.oninput = () => updateCableCalc();
+  }
+}
+
+function setCableRow(index, field, value) {
+  const row = state.cable.rows[index];
+  if (!row) return;
+  if (field === 'awg') row.awg = parseInt(value, 10) || row.awg;
+  else row[field] = Math.max(0, parseFloat(value) || 0);
+  updateCableCalc();
+}
+
+function addCableRow() {
+  state.cable.rows.push({ distance: 0, beltpacks: 0, awg: 22 });
+  buildCableRows();
+  updateCableCalc();
+}
+
+function removeCableRow(index) {
+  if (state.cable.rows.length <= 1) return;
+  state.cable.rows.splice(index, 1);
+  buildCableRows();
+  updateCableCalc();
+}
+
+function resetCable() {
+  if (!confirm("⚠️ 確定要清空所有線材設定嗎？")) return;
+  state.cable.unit = 'm';
+  state.cable.rows = Array.from({ length: 5 }, () => ({ distance: 0, beltpacks: 0, awg: 22 }));
+  buildCableUnitCtrl();
+  buildCableRows();
+  updateCableCalc();
+}
+
+function updateCableNote() {
+  const note = $('cable-note');
+  if (!note) return;
+  if (state.systemType.id === 'digital') {
+    note.textContent = 'Digital 系統不適用此線材估算。';
+  } else {
+    note.textContent = '輸入每段距離、Beltpack 數量與線徑，系統會估算總電壓降。';
+  }
+}
+
+function updateCableCalc() {
+  const totalEl = $('cable-drop-total');
+  const verdict = $('cable-verdict');
+  if (!totalEl || !verdict) return;
+
+  if (state.systemType.id === 'digital') {
+    totalEl.textContent = 'N/A';
+    verdict.className = 'verdict idle';
+    verdict.innerHTML = '<div class="verdict-icon">ℹ</div><div>Digital 系統不適用線材電壓降估算。</div>';
+    saveState();
+    return;
+  }
+
+  const currentPerBeltpackmA = parseFloat($('cable-current')?.value || state.cable.currentPerBeltpackmA);
+  state.cable.currentPerBeltpackmA = Math.max(0, currentPerBeltpackmA || 0);
+
+  const currentPerBeltpackA = state.cable.currentPerBeltpackmA / 1000;
+  const dropCurrents = state.cable.rows.map(r => (r.beltpacks || 0) * currentPerBeltpackA);
+  const totalCurrent = dropCurrents.reduce((a, b) => a + b, 0);
+
+  let lineCurrent = totalCurrent;
+  let totalDrop = 0;
+
+  state.cable.rows.forEach((r, i) => {
+    const lengthFt = state.cable.unit === 'm' ? (r.distance / 0.3048) : r.distance;
+    const r1000 = AWG_MAP.get(r.awg) || 0;
+    const resistance = (r1000 / 1000) * lengthFt * 2;
+    const segDrop = lineCurrent * resistance;
+    totalDrop += segDrop;
+    
+    const curEl = $('cable-current-' + i);
+    const dropEl = $('cable-drop-' + i);
+    if (curEl) curEl.textContent = lineCurrent > 0 ? lineCurrent.toFixed(3) : '—';
+    if (dropEl) dropEl.textContent = segDrop > 0 ? segDrop.toFixed(3) : '—';
+    lineCurrent = Math.max(0, lineCurrent - dropCurrents[i]);
+  });
+
+  totalEl.textContent = totalDrop.toFixed(2) + ' V';
+  if (totalCurrent === 0) {
+    verdict.className = 'verdict idle';
+    verdict.innerHTML = '<div class="verdict-icon">ℹ</div><div>請輸入線材與 Beltpack 參數。</div>';
+  } else if (totalDrop <= 10) {
+    verdict.className = 'verdict ok';
+    verdict.innerHTML = '<div class="verdict-icon">✓</div><div>總電壓降低於 10V，線材選擇合理。</div>';
+  } else {
+    verdict.className = 'verdict warn';
+    verdict.innerHTML = '<div class="verdict-icon">!</div><div>總電壓降偏高，建議改用更粗線徑或縮短距離。</div>';
+  }
+  saveState();
+}
+
+// ═══════════════════════════════════════════════════
+//  EXPORT & UI UTILS
+// ═══════════════════════════════════════════════════
+function csvCell(value) {
+  const s = String(value ?? '');
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function exportCSV() {
+  const projectName = $('projectName')?.value || '未命名專案';
+  const timestamp = new Date().toLocaleString('zh-TW');
+  
+  let csv = `Clear-Com Partyline 電源需求估算 (V1.4.5)\n`;
+  csv += `專案名稱,${csvCell(projectName)}\n`;
+  csv += `產生時間,${csvCell(timestamp)}\n`;
+  csv += `系統類型,${csvCell(state.systemType.label)}\n\n`;
+  
+  csv += `設備清單\n`;
+  csv += `設備名稱,數量,閒置電流(A),最大電流(A),小計(A)\n`;
+  
+  allDevs().forEach(d => {
+    const q = state.qtys[d.id] || 0;
+    if (q > 0) {
+      const ov = state.deviceOverrides[d.id] || {};
+      const idleA = (typeof ov.idle === 'number') ? ov.idle : d.idle;
+      const maxA = (typeof ov.max === 'number') ? ov.max : d.max;
+      csv += `${csvCell(d.label || d.id)},${q},${idleA.toFixed(3)},${maxA.toFixed(3)},${(q * maxA).toFixed(3)}\n`;
+    }
+  });
+  
+  csv += `\nPSU 清單\n`;
+  csv += `PSU 型號,數量,額定容量(A),可用預算(A)\n`;
+  
+  const useChannelRating = state.systemType.id === 'encore' && state.psuRating.id === 'perChannel';
+  allPSUs().forEach(p => {
+    const q = state.psuQtys[p.id] || 0;
+    if (q > 0) {
+      const overrideA = state.psuOverrides[p.id];
+      const maxA = (typeof overrideA === 'number') ? overrideA : p.maxA;
+      const baseA = (useChannelRating && p.maxAChannel) ? p.maxAChannel : maxA;
+      const budget = q * baseA * state.headroom.factor * state.sysMode.parallelFactor;
+      csv += `${csvCell(p.id)},${q},${baseA.toFixed(2)},${budget.toFixed(2)}\n`;
+    }
+  });
+  
+  csv += `\n摘要\n`;
+  csv += `項目,數值\n`;
+  csv += `總設備負載,${csvCell($('rc-load')?.textContent || 'N/A')}\n`;
+  csv += `總PSU預算,${csvCell($('rc-budget')?.textContent || 'N/A')}\n`;
+  csv += `剩餘容量,${csvCell($('rc-margin')?.textContent || 'N/A')}\n`;
+  
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${esc(projectName) || 'ClearCom_Calc'}_${Date.now()}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+function confirmClearStorage() {
+  if (confirm('⚠️ 確定要清除已儲存的資料嗎？\n這將重設瀏覽器中的自動儲存記錄。')) {
+    clearSavedState();
+    location.reload();
+  }
+}
+
+window.addEventListener('beforeprint', () => {
+  const pName = $('projectName')?.value || '未命名專案';
+  if ($('print-project-name')) $('print-project-name').textContent = `專案：${pName}`;
+  if ($('print-date')) $('print-date').textContent = `產生時間：${new Date().toLocaleString('zh-TW')}`;
+});
+
+// DROPDOWN
+const settingsBtn = $('settings-btn');
+const dropdownMenu = $('dropdown-menu');
+if (settingsBtn && dropdownMenu) {
+  settingsBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    dropdownMenu.classList.toggle('show');
+  });
+  document.addEventListener('click', (e) => {
+    if (!dropdownMenu.contains(e.target)) dropdownMenu.classList.remove('show');
+  });
+  window.addEventListener('scroll', () => {
+    if (dropdownMenu.classList.contains('show')) dropdownMenu.classList.remove('show');
+  }, { passive: true });
+}
+
+// RESIZE OBSERVER
+function initSpacerObserver() {
+  const panel = $('result-panel');
+  const spacer = $('bottom-spacer');
+  if (!panel || !spacer) return;
+
+  if (window.ResizeObserver) {
+    const ro = new ResizeObserver(() => {
+      window.requestAnimationFrame(() => {
+        spacer.style.height = (panel.offsetHeight + 24) + 'px';
+      });
+    });
+    ro.observe(panel);
+  } else {
+    const updateSpacer = () => { 
+      window.requestAnimationFrame(() => {
+        spacer.style.height = (panel.offsetHeight + 24) + 'px'; 
+      });
+    };
+    window.addEventListener('resize', updateSpacer, { passive: true });
+    updateSpacer();
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  CORE ENGINE
+// ═══════════════════════════════════════════════════
+function calc() {
+  let totalMax = 0;
+  let totalIdle = 0;
+  
+  allDevs().forEach(d => {
+    const q      = state.qtys[d.id] || 0;
+    const ov = state.deviceOverrides[d.id] || {};
+    const idleA = (typeof ov.idle === 'number') ? ov.idle : d.idle;
+    const maxA = (typeof ov.max === 'number') ? ov.max : d.max;
+    const rowMax = q * maxA;
+    const rowIdle = q * idleA;
+    totalMax += rowMax;
+    totalIdle += rowIdle;
+    
+    const chip = $('chip-' + esc(d.id));
+    if (chip) {
+      chip.textContent = q > 0 ? rowMax.toFixed(3) + ' A' : '—';
+      chip.className   = q > 0 ? 'total-chip has-value' : 'total-chip';
+    }
+    
+    const row = $('device-' + esc(d.id));
+    if (row) row.classList.toggle('has-qty', q > 0);
+  });
+
+  let totalBudget = 0;
+  const useChannelRating = state.systemType.id === 'encore' && state.psuRating.id === 'perChannel';
+  
+  allPSUs().forEach(p => {
+    const q      = state.psuQtys[p.id] || 0;
+    const overrideA = state.psuOverrides[p.id];
+    const maxA = (typeof overrideA === 'number') ? overrideA : p.maxA;
+    const baseA  = (useChannelRating && p.maxAChannel) ? p.maxAChannel : maxA;
+    const budget = q * baseA * state.headroom.factor * state.sysMode.parallelFactor;
+    totalBudget += budget;
+    
+    const chip = $('pchip-' + esc(p.id));
+    if (chip) chip.textContent = q > 0 ? budget.toFixed(2) + ' A' : '—';
+    
+    const row = $('psu-' + esc(p.id));
+    if (row) row.classList.toggle('has-qty', q > 0);
+  });
+
+  const badge = $('demand-badge');
+  if (badge) badge.textContent = totalMax.toFixed(3) + ' A';
+
+  const rcLoad = $('rc-load');
+  const rcBudget = $('rc-budget');
+  if (rcLoad) rcLoad.textContent   = totalMax.toFixed(3)   + ' A';
+  if (rcBudget) rcBudget.textContent = totalBudget.toFixed(2) + ' A';
+
+  const margin     = totalBudget - totalMax;
+  // 防禦除以 0 導致的 NaN
+  const usageRatio = totalBudget > 0 ? totalMax / totalBudget : (totalMax > 0 ? Infinity : 0);
+  const pct        = Math.min(100, isFinite(usageRatio) ? usageRatio * 100 : 100);
+
+  const { SAFE, WARNING } = CONFIG.THRESHOLDS;
+  const barColor = usageRatio <= SAFE    ? 'var(--green)'
+                 : usageRatio <= WARNING ? 'var(--orange)'
+                 :                        'var(--red)';
+  const fill = $('progress-fill');
+  if (fill) {
+    fill.style.width      = Math.round(pct) + '%';
+    fill.style.background = barColor;
+  }
+
+  const rcMargin = $('rc-margin');
+  const verdict  = $('verdict');
+
+  const setVerdict = (cls, icon, msg, mText, mColor) => {
+    if (verdict) {
+      verdict.className = 'verdict ' + cls;
+      verdict.innerHTML = `<div class="verdict-icon">${icon}</div><div>${msg}</div>`;
+    }
+    if (rcMargin) {
+      rcMargin.textContent = mText;
+      rcMargin.style.color = mColor;
+    }
+  };
+
+  const totalPSUCount = allPSUs().reduce((sum, p) => sum + (state.psuQtys[p.id] || 0), 0);
+  const standaloneCount = allPSUs().filter(p => p.standalone).reduce((sum, p) => sum + (state.psuQtys[p.id] || 0), 0);
+  const otherPSUCount = Math.max(0, totalPSUCount - standaloneCount);
+  const warnings = [];
+
+  if (standaloneCount > 1) warnings.push('Standalone PSU 僅能擇一且數量上限為 1。');
+  if (standaloneCount > 0 && otherPSUCount > 0) warnings.push('Standalone PSU 不建議與其他 PSU 混用。');
+  if (state.sysMode.id === 'Parallel' && totalPSUCount > 2) warnings.push('並聯 PSU 超過 2 台不建議，建議使用 MT-701 分區隔離。');
+
+  if      (totalBudget === 0 && totalMax === 0)
+    setVerdict('idle', 'ℹ', '請先至上方完成 Step 1 ~ Step 3。', '—', 'var(--text-sub)');
+  else if (totalBudget === 0)
+    setVerdict('warn', '!', '尚未選擇電源供應器 — 請至 Step 3 選擇 PSU 型號與數量。', '需選 PSU', 'var(--orange)');
+  else if (totalMax === 0)
+    setVerdict('idle', 'ℹ', '已選擇電源供應器，請至 Step 2 新增使用設備。', '+' + totalBudget.toFixed(2) + ' A', 'var(--blue)');
+  else if (margin >= 0) {
+    const pctLeft = ((margin / totalBudget) * 100).toFixed(0);
+    setVerdict('ok', '✓', `電源充足 — 剩餘 ${margin.toFixed(3)} A（${pctLeft}%），系統可正常運作。`, '+' + margin.toFixed(3) + ' A', 'var(--green)');
+  } else
+    setVerdict('bad', '✕', `電源不足 — 缺口 ${Math.abs(margin).toFixed(3)} A，請至 Step 3 增加電源供應器或減少設備。`, margin.toFixed(3) + ' A', 'var(--red)');
+
+  if (warnings.length && verdict && verdict.className.indexOf('bad') === -1) {
+    verdict.className = 'verdict warn';
+    verdict.innerHTML = `<div class="verdict-icon">!</div><div>${warnings.join(' ')}</div>`;
+  }
+
+  const isEncore = state.systemType.id === 'encore';
+  const MSPS_FACTOR = 1.5; 
+  let psuOverheadIdleA = 0;
+  let psuOverheadMaxA = 0;
+  
+  if (isEncore) {
+    allPSUs().forEach(p => {
+      const q = state.psuQtys[p.id] || 0;
+      if (!q) return;
+      psuOverheadIdleA += q * (p.overheadIdleA || 0);
+      psuOverheadMaxA += q * (p.overheadMaxA || 0);
+    });
+  }
+  
+  const powerIdleW = (totalIdle * 30) + (psuOverheadIdleA * 30 * MSPS_FACTOR);
+  const powerMaxW = (totalMax * 30) + (psuOverheadMaxA * 30 * MSPS_FACTOR);
+  const btuIdle = powerIdleW * 3.41214;
+  const btuMax = powerMaxW * 3.41214;
+  
+  const setText = (id, val) => { const el = $(id); if (el) el.textContent = val; };
+  const showEnergy = isEncore && totalPSUCount > 0;
+  
+  if (showEnergy) {
+    setText('power-idle-w', powerIdleW.toFixed(1));
+    setText('power-max-w', powerMaxW.toFixed(1));
+    setText('btu-idle', btuIdle.toFixed(0));
+    setText('btu-max', btuMax.toFixed(0));
+    setText('ac-100', (powerMaxW / 100).toFixed(2) + ' A');
+    setText('ac-120', (powerMaxW / 120).toFixed(2) + ' A');
+    setText('ac-230', (powerMaxW / 230).toFixed(2) + ' A');
+  } else {
+    setText('power-idle-w', 'N/A');
+    setText('power-max-w', 'N/A');
+    setText('btu-idle', 'N/A');
+    setText('btu-max', 'N/A');
+    setText('ac-100', 'N/A');
+    setText('ac-120', 'N/A');
+    setText('ac-230', 'N/A');
+  }
+
+  updateCableCalc();
+  saveState(); 
+}
+
+// ═══════════════════════════════════════════════════
+//  BOOTSTRAP
+// ═══════════════════════════════════════════════════
+const loaded = loadState();
+syncSystemStore();
+
+if (loaded && $('projectName')) {
+  $('projectName').value = state.projectName || '';
+}
+
+buildStepPills();
+buildSystemTypeCtrl();
+buildDeviceGroups();
+buildHeadroomCtrl();
+buildSysModeCtrl();
+buildPsuRatingCtrl();
+buildPSUGroups();
+updatePsuRatingVisibility();
+updatePsuNote();
+buildCableUnitCtrl();
+buildCableRows();
+updateCableNote();
+initSpacerObserver();
+calc();
+
+</script>
+</body>
+</html>
