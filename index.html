@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>視聽班表系統 | V21.3</title>
+    <title>視聽班表系統 | V21.4</title>
     
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -180,10 +180,10 @@
         // 有網路後自動重整
         window.addEventListener('online', function(){ window.location.reload(); });
     }
-    // React 載入失敗後備（有快取但 CDN 掛掉）
+    // React 載入失敗後備：只要 React 沒載入就顯示警告，不論有無快取
     window.addEventListener('load', function(){
         setTimeout(function(){
-            if(!window.React && !hasCachedData){
+            if(!window.React){
                 var guard = document.getElementById('offline-guard');
                 if(guard) guard.style.display = 'flex';
             }
@@ -200,7 +200,7 @@ const { useState, useEffect, useMemo, memo, useCallback, useRef } = React;
    1. CENTRAL CONFIG
    ========================================================================= */
 const CONFIG = {
-    APP_VERSION: 'V21.3',
+    APP_VERSION: 'V21.4',
     APP_ID: "team-schedule-viewer",
     FIREBASE: { apiKey: "AIzaSyA7tgFRxDCnZpOzEvfT978wIAcqcXNZXVQ", authDomain: "team-schedule-viewer.firebaseapp.com", projectId: "team-schedule-viewer", storageBucket: "team-schedule-viewer.firebasestorage.app", messagingSenderId: "202883367260", appId: "1:202883367260:web:b31e495084a4ea8af20199" },
     VENUES: [ 
@@ -222,6 +222,10 @@ const CONFIG = {
         "2026/01/01", "2026/01/02", "2026/02/16", "2026/02/17", "2026/02/18", 
         "2026/02/19", "2026/02/20", "2026/03/02", "2026/04/03", "2026/04/06", 
         "2026/05/01", "2026/06/19", "2026/09/25", "2026/10/09"
+    ]),
+    // V21.4: 補班日（週六日但需上班，排除出 isOff 判斷）
+    MAKEUP_DAYS: new Set([
+        // 範例："2026/03/07"
     ]),
     REGEX: { LEAVE: /休|例|假/, OFFICE: /辦公|支援|居家|其他|其它/ }
 };
@@ -265,8 +269,9 @@ const formatNoteText = (text, isMobile = false) => {
         const currentKey = getDayKey();
         if (currentKey !== loadedKey) {
             loadedKey = currentKey;
-            // V21.2: 跨日時，有快取或有網路才 reload，防止離線黑屏
-            if (window.RosterCache.hasCache() || navigator.onLine) {
+            // V21.4 修 2: 嚴格限制為有網路才 reload
+            // 離線狀態下有快取也不能 reload，沒有 Service Worker 攔截會直接變恐龍畫面
+            if (navigator.onLine) {
                 window.location.reload();
             }
         }
@@ -433,7 +438,7 @@ const App = () => {
         return keys.map((k,idx)=>{
             const [yy,mm,dd]=k.split('/').map(Number), o=new Date(yy,mm-1,dd);
             const w=['日','一','二','三','四','五','六'][o.getDay()];
-            const isOff=w==='六'||w==='日'||CONFIG.HOLIDAYS.has(k);
+            const isOff=(w==='六'||w==='日'||CONFIG.HOLIDAYS.has(k))&&!CONFIG.MAKEUP_DAYS.has(k);
             return{d:`${mm}/${dd}`,w,fullKey:k,absIdx:idx,isOff};
         });
     });
@@ -518,7 +523,7 @@ const App = () => {
         return () => { document.body.style.cursor = ''; };
     }, [isRefreshing]);
 
-    const hasInitializedSnapshotRef = useRef(false);
+    const hasScrolledRef = useRef(false);
     const selectedDateKeyRef = useRef(null);
     // V21.3 修 1: 用 isFirstLoadRef 正確區分「無快取等待首次資料」vs「有快取後的背景同步」
     // 有快取 → false（Firebase 回來時走背景更新，亮紅點，不跳動畫面）
@@ -536,7 +541,7 @@ const App = () => {
         const sd = keys.map((k,idx)=>{
             const [yy,mm,dd]=k.split('/').map(Number), o=new Date(yy,mm-1,dd);
             const w=['日','一','二','三','四','五','六'][o.getDay()];
-            const isOff=w==='六'||w==='日'||CONFIG.HOLIDAYS.has(k);
+            const isOff=(w==='六'||w==='日'||CONFIG.HOLIDAYS.has(k))&&!CONFIG.MAKEUP_DAYS.has(k);
             return{d:`${mm}/${dd}`,w,fullKey:k,absIdx:idx,isOff};
         });
         const fmtKey = data.lastUpdated ? formatLastUpdated(data.lastUpdated) : "";
@@ -552,10 +557,10 @@ const App = () => {
         if(fmtKey) setLastUpdated(fmtKey);
         if(!keys.length) return;
         const todayKey = formatK(new Date());
-        const preferredKey = hasInitializedSnapshotRef.current ? selectedDateKeyRef.current : todayKey;
+        const preferredKey = hasScrolledRef.current ? selectedDateKeyRef.current : todayKey;
         const targetKey = keys.includes(preferredKey) ? preferredKey : (keys.includes(todayKey) ? todayKey : keys[0]);
         const targetIdx = keys.indexOf(targetKey);
-        hasInitializedSnapshotRef.current = true;
+        hasScrolledRef.current = true;
         if(targetIdx !== -1){
             setDateIdx(targetIdx);
             setTimeout(()=>scrollTo(targetKey,"nav-scroll-container"), 300);
