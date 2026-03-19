@@ -501,12 +501,6 @@ const App = () => {
         return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
     }, []);
     
-    const visibleDates = useMemo(()=>{ 
-        if(!allDates.length) return []; 
-        const start=Math.max(0,dateIdx-7), end=Math.min(allDates.length,dateIdx+61); 
-        return allDates.slice(start,end); 
-    },[allDates,dateIdx]);
-
     const handleBackToday = useCallback(()=>{ const tK=formatK(new Date()), i=allDates.findIndex(d=>d.fullKey===tK); if(i!==-1) goDate(i,tK); },[allDates,goDate]);
     const openCal = useCallback(()=>{ setPrevModal(activeModal); if(allDates[dateIdx]){ const d = parseK(allDates[dateIdx].fullKey); setCalMonth({y:d.getFullYear(), m:d.getMonth()}); } setActiveModal('calendar'); },[activeModal, allDates, dateIdx]);
     
