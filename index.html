@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>視聽班表系統 | V21.4</title>
+    <title>視聽班表系統 | V21.5</title>
     
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -200,7 +200,7 @@ const { useState, useEffect, useMemo, memo, useCallback, useRef } = React;
    1. CENTRAL CONFIG
    ========================================================================= */
 const CONFIG = {
-    APP_VERSION: 'V21.4',
+    APP_VERSION: 'V21.5',
     APP_ID: "team-schedule-viewer",
     FIREBASE: { apiKey: "AIzaSyA7tgFRxDCnZpOzEvfT978wIAcqcXNZXVQ", authDomain: "team-schedule-viewer.firebaseapp.com", projectId: "team-schedule-viewer", storageBucket: "team-schedule-viewer.firebasestorage.app", messagingSenderId: "202883367260", appId: "1:202883367260:web:b31e495084a4ea8af20199" },
     VENUES: [ 
@@ -268,10 +268,10 @@ const formatNoteText = (text, isMobile = false) => {
     const checkAndReload = () => {
         const currentKey = getDayKey();
         if (currentKey !== loadedKey) {
-            loadedKey = currentKey;
-            // V21.4 修 2: 嚴格限制為有網路才 reload
-            // 離線狀態下有快取也不能 reload，沒有 Service Worker 攔截會直接變恐龍畫面
+            // V21.5 修 3: loadedKey 只在真正 reload 成功後才更新
+            // 若離線跳過 reload，保留舊 loadedKey，等網路恢復後仍能觸發重整
             if (navigator.onLine) {
+                loadedKey = currentKey;
                 window.location.reload();
             }
         }
@@ -383,7 +383,7 @@ const CalendarPicker = memo(({ allDates, onSelect, onClose, calMonth, setCalMont
     const dateSet = useMemo(()=>new Set(allDates.map(d=>d.fullKey)),[allDates]);
     const {y,m} = calMonth, firstDay = new Date(y,m,1).getDay(), daysInMonth = new Date(y,m+1,0).getDate(), todayK = formatK(new Date()), cells = []; 
     for(let i=0;i<firstDay;i++) cells.push(null); for(let d=1;d<=daysInMonth;d++) cells.push(d);
-    return ( <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-md" onClick={onClose}> <div className="animate-window bg-[rgba(18,18,22,0.96)] border border-[var(--border-mid)] rounded-[var(--r-xl)] shadow-2xl w-full max-w-[280px] p-5" onClick={e=>e.stopPropagation()}> <div className="flex items-center justify-between mb-4"> <button onClick={()=>setCalMonth(p=>p.m===0?{y:p.y-1,m:11}:{y:p.y,m:p.m-1})} className="text-xl px-2 py-1">‹</button> <span className="text-[15px] font-bold">{y} 年 {m+1} 月</span> <button onClick={()=>setCalMonth(p=>p.m===11?{y:p.y+1,m:0}:{y:p.y,m:p.m+1})} className="text-xl px-2 py-1">›</button> </div> <div className="grid grid-cols-7 gap-y-1.5 gap-x-1"> {['日','一','二','三','四','五','六'].map(w=>(<div key={w} className="text-center text-[10.5px] font-semibold text-white/28 tracking-wide">{w}</div>))} {cells.map((d,i)=>{ if(!d) return <div key={"e"+i}/>; const fk=`${y}/${String(m+1).padStart(2,'0')}/${String(d).padStart(2,'0')}`, has=dateSet.has(fk), isToday=fk===todayK, isWk=(firstDay+d-1)%7===0||(firstDay+d-1)%7===6 || CONFIG.HOLIDAYS.has(fk); return ( <button key={fk} disabled={!has} onClick={()=>onSelect(fk)} className={`h-8 w-full rounded-full text-[13px] flex items-center justify-center transition-all ${isToday?'bg-[var(--blue)] text-white':has?(isWk?'text-rose-400 hover:bg-white/10':'text-white hover:bg-white/10'):'text-white/12 cursor-default'}`}>{d}</button> ); })} </div> </div> </div> );
+    return ( <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-md" onClick={onClose}> <div className="animate-window bg-[rgba(18,18,22,0.96)] border border-[var(--border-mid)] rounded-[var(--r-xl)] shadow-2xl w-full max-w-[280px] p-5" onClick={e=>e.stopPropagation()}> <div className="flex items-center justify-between mb-4"> <button onClick={()=>setCalMonth(p=>p.m===0?{y:p.y-1,m:11}:{y:p.y,m:p.m-1})} className="text-xl px-2 py-1">‹</button> <span className="text-[15px] font-bold">{y} 年 {m+1} 月</span> <button onClick={()=>setCalMonth(p=>p.m===11?{y:p.y+1,m:0}:{y:p.y,m:p.m+1})} className="text-xl px-2 py-1">›</button> </div> <div className="grid grid-cols-7 gap-y-1.5 gap-x-1"> {['日','一','二','三','四','五','六'].map(w=>(<div key={w} className="text-center text-[10.5px] font-semibold text-white/28 tracking-wide">{w}</div>))} {cells.map((d,i)=>{ if(!d) return <div key={"e"+i}/>; const fk=`${y}/${String(m+1).padStart(2,'0')}/${String(d).padStart(2,'0')}`, has=dateSet.has(fk), isToday=fk===todayK, isWk=(((firstDay+d-1)%7===0||(firstDay+d-1)%7===6)&&!CONFIG.MAKEUP_DAYS.has(fk))||CONFIG.HOLIDAYS.has(fk); return ( <button key={fk} disabled={!has} onClick={()=>onSelect(fk)} className={`h-8 w-full rounded-full text-[13px] flex items-center justify-center transition-all ${isToday?'bg-[var(--blue)] text-white':has?(isWk?'text-rose-400 hover:bg-white/10':'text-white hover:bg-white/10'):'text-white/12 cursor-default'}`}>{d}</button> ); })} </div> </div> </div> );
 });
 
 const NotesModal = memo(({ onClose, visibleDates, schedule, goDate, handleBackToday }) => {
@@ -438,7 +438,7 @@ const App = () => {
         return keys.map((k,idx)=>{
             const [yy,mm,dd]=k.split('/').map(Number), o=new Date(yy,mm-1,dd);
             const w=['日','一','二','三','四','五','六'][o.getDay()];
-            const isOff=(w==='六'||w==='日'||CONFIG.HOLIDAYS.has(k))&&!CONFIG.MAKEUP_DAYS.has(k);
+            const isOff=((w==='六'||w==='日')&&!CONFIG.MAKEUP_DAYS.has(k))||CONFIG.HOLIDAYS.has(k);
             return{d:`${mm}/${dd}`,w,fullKey:k,absIdx:idx,isOff};
         });
     });
@@ -541,7 +541,7 @@ const App = () => {
         const sd = keys.map((k,idx)=>{
             const [yy,mm,dd]=k.split('/').map(Number), o=new Date(yy,mm-1,dd);
             const w=['日','一','二','三','四','五','六'][o.getDay()];
-            const isOff=(w==='六'||w==='日'||CONFIG.HOLIDAYS.has(k))&&!CONFIG.MAKEUP_DAYS.has(k);
+            const isOff=((w==='六'||w==='日')&&!CONFIG.MAKEUP_DAYS.has(k))||CONFIG.HOLIDAYS.has(k);
             return{d:`${mm}/${dd}`,w,fullKey:k,absIdx:idx,isOff};
         });
         const fmtKey = data.lastUpdated ? formatLastUpdated(data.lastUpdated) : "";
