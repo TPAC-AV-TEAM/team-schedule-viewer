@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>視聽班表系統 | V21.1</title>
+    <title>視聽班表系統 | V21.2</title>
     
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -41,7 +41,6 @@
                 SAVED_AT:'tpac_cache_saved_at'
             },
             save: function(payload) {
-                // payload: { roster, statuses, shows, notes, lastUpdated }
                 window.SafeStorage.set(this.KEYS.DATA, payload);
                 window.SafeStorage.set(this.KEYS.SAVED_AT, new Date().toISOString());
             },
@@ -53,6 +52,12 @@
             },
             hasCache: function() {
                 return !!window.SafeStorage.get(this.KEYS.DATA, null);
+            },
+            getSeenUpdate: function() {
+                return window.SafeStorage.get(this.KEYS.UPDATED, '');
+            },
+            setSeenUpdate: function(val) {
+                window.SafeStorage.set(this.KEYS.UPDATED, val);
             }
         };
     </script>
@@ -195,7 +200,7 @@ const { useState, useEffect, useMemo, memo, useCallback, useRef } = React;
    1. CENTRAL CONFIG
    ========================================================================= */
 const CONFIG = {
-    APP_VERSION: 'V21.1',
+    APP_VERSION: 'V21.2',
     APP_ID: "team-schedule-viewer",
     FIREBASE: { apiKey: "AIzaSyA7tgFRxDCnZpOzEvfT978wIAcqcXNZXVQ", authDomain: "team-schedule-viewer.firebaseapp.com", projectId: "team-schedule-viewer", storageBucket: "team-schedule-viewer.firebasestorage.app", messagingSenderId: "202883367260", appId: "1:202883367260:web:b31e495084a4ea8af20199" },
     VENUES: [ 
@@ -258,7 +263,13 @@ const formatNoteText = (text, isMobile = false) => {
     let loadedKey = getDayKey();
     const checkAndReload = () => {
         const currentKey = getDayKey();
-        if (currentKey !== loadedKey) { loadedKey = currentKey; window.location.reload(); }
+        if (currentKey !== loadedKey) {
+            loadedKey = currentKey;
+            // V21.2: 跨日時，有快取或有網路才 reload，防止離線黑屏
+            if (window.RosterCache.hasCache() || navigator.onLine) {
+                window.location.reload();
+            }
+        }
     };
     setInterval(checkAndReload, 3600000);
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkAndReload(); });
@@ -413,11 +424,9 @@ const QueryModal = memo(({ queryStaff, queryVenue, onClose, setQueryStaff, setQu
    5. MAIN APP ENTRY
    ========================================================================= */
 const App = () => {
-    // V21: 嘗試從快取讀取初始資料，實現秒開
-    const _cached = window.RosterCache.load();
-    const _initSchedule = _cached
-        ? { roster: safeParse(_cached.roster), statuses: safeParse(_cached.statuses), shows: safeParse(_cached.shows), notes: safeParse(_cached.notes) }
-        : { roster:{}, statuses:{}, shows:{}, notes:{} };
+    // V21.2 修 1+8: useState lazy initialization，確保只讀一次 localStorage
+    const [_cachedRef] = useState(() => window.RosterCache.load());
+    const _cached = _cachedRef;
 
     const [allDates,setAllDates] = useState(()=>{
         if(!_cached?.roster) return [];
@@ -429,11 +438,13 @@ const App = () => {
             return{d:`${mm}/${dd}`,w,fullKey:k,absIdx:idx,isOff};
         });
     });
-    const [schedule,setSchedule] = useState(_initSchedule);
+    // V21.2 修 8: 直接在 useState 內初始化，移除多餘的 _initSchedule 變數
+    const [schedule,setSchedule] = useState(()=> _cached
+        ? { roster: safeParse(_cached.roster), statuses: safeParse(_cached.statuses), shows: safeParse(_cached.shows), notes: safeParse(_cached.notes) }
+        : { roster:{}, statuses:{}, shows:{}, notes:{} }
+    );
     const [aliasMap,setAliasMap] = useState({}), [lastUpdated,setLastUpdated] = useState(_cached?.lastUpdated||""), [isRecentlyUpdated,setIsRecentlyUpdated] = useState(false);
-    // V21: 有快取則直接解鎖，不等 Firebase
     const [isUnlocked,setIsUnlocked] = useState(!!_cached), [errorMsg,setErrorMsg] = useState(null), [isRefreshing,setIsRefreshing] = useState(false);
-    // V21: 離線狀態追蹤
     const [isOffline, setIsOffline] = useState(!navigator.onLine);
     const [user,setUser] = useState(null), [dateIdx,setDateIdx] = useState(0), [activeModal,setActiveModal] = useState(null), [prevModal, setPrevModal] = useState(null), [queryTarget,setQueryTarget] = useState(null);
     const [calMonth,setCalMonth] = useState(()=>{const n=new Date();return{y:n.getFullYear(),m:n.getMonth()};});
@@ -469,7 +480,8 @@ const App = () => {
 
     const markUpdateSeen = useCallback(()=>{ 
         if(!isRecentlyUpdated || !lastUpdated) return; 
-        window.SafeStorage.set('tpac_seen_update', lastUpdated); 
+        // V21.2 修 7: 統一使用 RosterCache.setSeenUpdate
+        window.RosterCache.setSeenUpdate(lastUpdated);
         setIsRecentlyUpdated(false); 
     },[isRecentlyUpdated, lastUpdated]);
     
@@ -549,7 +561,12 @@ const App = () => {
     }, [scrollTo]);
 
     const applyRosterSnapshot = useCallback((snap)=>{
-        if(!snap.exists()){ setErrorMsg("找不到班表資料庫，請聯絡管理員"); return; }
+        if(!snap.exists()){ 
+            // V21.2 修 5+6: 有快取時用 Toast 顯示，不破壞主畫面
+            setErrorMsg("找不到班表資料庫，請聯絡管理員"); 
+            setTimeout(()=>setErrorMsg(null), 4000);
+            return; 
+        }
         setErrorMsg(null);
         const parsed = parseSnapshotData(snap);
         if(!parsed) return;
@@ -557,41 +574,40 @@ const App = () => {
         // 存入 localStorage（不論初次或背景更新都存）
         window.RosterCache.save({ roster: parsed.roster, statuses: parsed.statuses, shows: parsed.shows, notes: parsed.notes, lastUpdated: parsed.fmtKey });
 
-        const isFirstLoad = !isUnlocked;
+        // V21.2 修 2: 改用 hasInitializedSnapshotRef 判斷初次載入，移除 isUnlocked 依賴，防止重複訂閱
+        const isFirstLoad = !hasInitializedSnapshotRef.current;
 
         if(isFirstLoad){
-            // 初次載入：直接套用，解鎖畫面
             applyParsedData(parsed);
             setIsRecentlyUpdated(false);
-            window.SafeStorage.set('tpac_seen_update', parsed.fmtKey);
+            // V21.2 修 7: 統一使用 RosterCache.setSeenUpdate
+            window.RosterCache.setSeenUpdate(parsed.fmtKey);
         } else {
-            // V21.1: 背景更新 — 存入暫存區，只亮紅點，畫面不動
-            if(parsed.fmtKey && parsed.fmtKey !== (window.SafeStorage.get('tpac_seen_update') || '')){
+            // 背景更新 — 存入暫存區，只亮紅點，畫面不動
+            if(parsed.fmtKey && parsed.fmtKey !== window.RosterCache.getSeenUpdate()){
                 pendingUpdateRef.current = parsed;
                 setLastUpdated(parsed.fmtKey);
                 setIsRecentlyUpdated(true);
             }
         }
-    },[isUnlocked, parseSnapshotData, applyParsedData]);
+    },[parseSnapshotData, applyParsedData]);
 
     const handleRefresh = useCallback(()=>{
         if(isRefreshing) return;
-        // V21: 離線時點 SYNC 給予提示，不 reload
         if(isOffline){
             setErrorMsg("目前無網路連線，無法同步");
             setTimeout(()=>setErrorMsg(null), 3000);
             return;
         }
-        // V21.1: 有暫存的新資料 → 直接套用，不 reload
         if(pendingUpdateRef.current){
             const parsed = pendingUpdateRef.current;
             pendingUpdateRef.current = null;
             applyParsedData(parsed);
             setIsRecentlyUpdated(false);
-            window.SafeStorage.set('tpac_seen_update', parsed.fmtKey);
+            // V21.2 修 7: 統一使用 RosterCache.setSeenUpdate
+            window.RosterCache.setSeenUpdate(parsed.fmtKey);
             return;
         }
-        // 無暫存（版本已是最新）→ 只標記已讀
         markUpdateSeen();
         setIsRefreshing(true);
         setTimeout(() => setIsRefreshing(false), CONFIG.SYNC_FEEDBACK_MS);
@@ -602,7 +618,12 @@ const App = () => {
         const initFirebase = async () => {
             let waited = 0;
             while(!window.Firebase && waited < 50) { await new Promise(r => setTimeout(r, 100)); waited++; }
-            if(!window.Firebase) { setErrorMsg("Firebase 載入逾時，請重新整理"); return; }
+            if(!window.Firebase) { 
+                // V21.2 修 5: 有快取時用 Toast，不破壞主畫面
+                setErrorMsg("Firebase 載入逾時，請重新整理");
+                setTimeout(()=>setErrorMsg(null), 5000);
+                return; 
+            }
             try {
                 const app = Firebase.getApps().length === 0 ? Firebase.initializeApp(CONFIG.FIREBASE) : Firebase.getApp();
                 const auth = Firebase.getAuth(app); await Firebase.signInAnonymously(auth);
@@ -611,7 +632,12 @@ const App = () => {
                     const db = Firebase.getFirestore(app), snap = await Firebase.getDoc(Firebase.doc(db,'artifacts',CONFIG.APP_ID,'public','data','configs','name_mapping'));
                     if(snap.exists()) setAliasMap(snap.data().maps || {});
                 });
-            } catch(e) { console.error("Firebase Init Error:", e); setErrorMsg("Firebase 初始化失敗，請重新整理"); }
+            } catch(e) { 
+                console.error("Firebase Init Error:", e); 
+                // V21.2 修 5: 有快取時用 Toast，不破壞主畫面
+                setErrorMsg("Firebase 初始化失敗，請重新整理");
+                setTimeout(()=>setErrorMsg(null), 5000);
+            }
         }; initFirebase();
         return () => { if (unsubscribeAuth) unsubscribeAuth(); };
     }, []);
@@ -619,7 +645,16 @@ const App = () => {
     useEffect(()=>{
         if(!user) return; 
         const db=Firebase.getFirestore(Firebase.getApp());
-        return Firebase.onSnapshot( Firebase.doc(db,'artifacts',CONFIG.APP_ID,'public','data','rosters','master'), applyRosterSnapshot, (e)=>{ console.error("Firebase Sync Error:", e); setErrorMsg("資料同步失敗，請重新整理"); } );
+        return Firebase.onSnapshot( 
+            Firebase.doc(db,'artifacts',CONFIG.APP_ID,'public','data','rosters','master'), 
+            applyRosterSnapshot, 
+            (e)=>{ 
+                console.error("Firebase Sync Error:", e); 
+                // V21.2 修 6: 統一用 Toast，不破壞主畫面
+                setErrorMsg("資料同步失敗");
+                setTimeout(()=>setErrorMsg(null), 4000);
+            } 
+        );
     },[applyRosterSnapshot, user]);
 
     useEffect(()=>{
@@ -668,11 +703,11 @@ const App = () => {
             <header className="mac-glass pt-12 pb-4 px-5 flex items-center justify-between shrink-0 z-50">
                 <div className="flex flex-col justify-center">
                     <h1 className="text-[19px] font-extrabold tracking-[-0.03em] cursor-pointer text-white/90 hover:text-white transition-colors leading-none" onClick={()=>setActiveModal('master')}>視 聽 班 表 系 統</h1>
-                    {/* V21: 離線狀態 / SYNC 按鈕 */}
+                    {/* V21.2: 離線狀態 / SYNC 按鈕 */}
                     {isOffline
                         ? <span className="flex items-center mt-1.5 text-[10px] font-semibold tracking-[0.12em] text-white/30 gap-1.5">
                             <span className="w-1.5 h-1.5 rounded-full bg-white/25 shrink-0"/>
-                            OFFLINE{lastUpdated ? ` · ${lastUpdated}` : ''}
+                            {lastUpdated ? `OFFLINE · 目前使用快取版本 ${lastUpdated}` : 'OFFLINE'}
                           </span>
                         : lastUpdated&&( <button type="button" className={`flex items-center mt-1.5 text-left transition-colors ${isRefreshing?'cursor-wait text-white/78 animate-pulse':`cursor-pointer ${isRecentlyUpdated?'text-white/60':'text-white/32 hover:text-white/58'}`}`} onClick={handleRefresh} title="點擊同步並標記已讀"> {isRecentlyUpdated&&<span className="w-1.5 h-1.5 rounded-full bg-[var(--pink)] mr-1.5 animate-pulse shrink-0"/>} <span className="text-[10px] font-semibold tracking-[0.12em]">{isRefreshing?'SYNCING...':`SYNC: ${lastUpdated}`}</span> </button> )
                     }
@@ -712,8 +747,8 @@ const App = () => {
             {(activeModal==='queryStaff'||activeModal==='queryVenue')&&( <QueryModal queryStaff={queryStaff} queryVenue={queryVenue} onClose={closeModal} setQueryStaff={name=>{ if(name){setQueryTarget(name);setActiveModal('queryStaff');} else closeModal(); }} setQueryVenue={id=>{ if(id){setQueryTarget(id);setActiveModal('queryVenue');} else closeModal(); }} visibleDates={visibleDates} schedule={schedule} aliasMap={aliasMap} curFk={curFk} handleStaffClick={handleStaffClick} handleBackToday={handleBackToday} openCal={openCal} /> )}
             {activeModal==='calendar'&&( <CalendarPicker allDates={allDates} onSelect={fk=>{ const i=allDates.findIndex(d=>d.fullKey===fk); if(i!==-1)goDate(i,fk); if(prevModal){ setActiveModal(prevModal); setPrevModal(null); } else closeModal(); }} onClose={()=>{ if(prevModal){setActiveModal(prevModal);setPrevModal(null);} else closeModal(); }} calMonth={calMonth} setCalMonth={setCalMonth} /> )}
             
-            {/* V21: 離線操作提示 toast */}
-            {errorMsg&&isOffline&&( <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[9000] px-5 py-3 rounded-2xl bg-[rgba(255,69,58,0.18)] border border-[rgba(255,69,58,0.35)] text-white/90 text-[13px] font-semibold backdrop-blur-md shadow-xl whitespace-nowrap animate-window">{errorMsg}</div> )}
+            {/* V21.2 修 6: Toast 只要有 errorMsg 就顯示，不綁死 isOffline */}
+            {errorMsg&&( <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[9000] px-5 py-3 rounded-2xl bg-[rgba(255,69,58,0.18)] border border-[rgba(255,69,58,0.35)] text-white/90 text-[13px] font-semibold backdrop-blur-md shadow-xl whitespace-nowrap animate-window">{errorMsg}</div> )}
             
             <footer className="fixed bottom-0 left-0 right-0 py-2.5 flex items-center justify-center pointer-events-none text-[9px] font-semibold tracking-[0.28em] text-white/14"> <span>TPAC SCHEDULE SYSTEM | {CONFIG.APP_VERSION}</span> </footer>
         </div>
