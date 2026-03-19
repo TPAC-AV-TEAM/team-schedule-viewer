@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>視聽班表系統 | V21.6</title>
+    <title>視聽班表系統 | V21.7</title>
     
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -208,7 +208,7 @@ const { useState, useEffect, useMemo, memo, useCallback, useRef } = React;
    1. CENTRAL CONFIG
    ========================================================================= */
 const CONFIG = {
-    APP_VERSION: 'V21.6',
+    APP_VERSION: 'V21.7',
     APP_ID: "team-schedule-viewer",
     FIREBASE: { apiKey: "AIzaSyA7tgFRxDCnZpOzEvfT978wIAcqcXNZXVQ", authDomain: "team-schedule-viewer.firebaseapp.com", projectId: "team-schedule-viewer", storageBucket: "team-schedule-viewer.firebasestorage.app", messagingSenderId: "202883367260", appId: "1:202883367260:web:b31e495084a4ea8af20199" },
     VENUES: [ 
@@ -399,7 +399,7 @@ const CalendarPicker = memo(({ allDates, onSelect, onClose, calMonth, setCalMont
 const NotesModal = memo(({ onClose, visibleDates, schedule, goDate, handleBackToday }) => {
     const today = new Date(); today.setHours(0,0,0,0);
     const notesList = visibleDates.filter(d => schedule?.notes?.[d.fullKey]?.trim());
-    return ( <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={onClose}> <div className="animate-window bg-[var(--glass-modal)] border border-[var(--border-mid)] w-full max-w-md rounded-[var(--r-2xl)] flex flex-col max-h-[85vh] overflow-hidden" onClick={e=>e.stopPropagation()}> <div className="p-3 border-b border-[var(--border-dim)] bg-white/[0.03] flex items-center justify-between"> <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/[0.07] border border-[var(--border-mid)] text-white/55 hover:bg-white/15 hover:text-white/90 transition-all flex items-center justify-center text-[18px] leading-none">×</button> <h3 className="text-[16px] font-bold text-[var(--pink)]">重要提醒</h3> <ActionBtn onClick={handleBackToday} icon="today" tip="回到今天"/> </div> <div id="notes-scroll-container" className="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar scroll-smooth"> {notesList.length===0 ? ( <div className="text-center text-white/40 py-10">無任何提醒事項</div> ) : notesList.map(d=>( <button key={d.fullKey} id={`note-${d.fullKey}`} onClick={() => { onClose(); setTimeout(() => requestAnimationFrame(() => goDate(d.absIdx, d.fullKey)), 100); }} className={`w-full text-left p-3.5 rounded-2xl border transition-all ${parseK(d.fullKey)<today?'bg-white/[0.02] border-white/5 opacity-60':'bg-[rgba(255,55,95,0.08)] border-[rgba(255,55,95,0.2)]'}`}> <div className="text-[12px] font-bold">{d.fullKey} (週{d.w})</div> <div className="text-[14.5px] font-medium leading-relaxed whitespace-pre-wrap"><span className="md:hidden">{formatNoteText(schedule?.notes?.[d.fullKey], true)}</span><span className="hidden md:inline">{formatNoteText(schedule?.notes?.[d.fullKey], false)}</span></div> </button> ))} </div> </div> </div> );
+    return ( <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={onClose}> <div className="animate-window bg-[var(--glass-modal)] border border-[var(--border-mid)] w-full max-w-md rounded-[var(--r-2xl)] flex flex-col max-h-[85vh] overflow-hidden" onClick={e=>e.stopPropagation()}> <div className="p-3 border-b border-[var(--border-dim)] bg-white/[0.03] flex items-center justify-between"> <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/[0.07] border border-[var(--border-mid)] text-white/55 hover:bg-white/15 hover:text-white/90 transition-all flex items-center justify-center text-[18px] leading-none">×</button> <h3 className="text-[16px] font-bold text-[var(--pink)]">重要提醒</h3> <ActionBtn onClick={handleBackToday} icon="today" tip="回到今天"/> </div> <div id="notes-scroll-container" className="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar scroll-smooth"> {notesList.length===0 ? ( <div className="text-center text-white/40 py-10">無任何提醒事項</div> ) : notesList.map(d=>( <button key={d.fullKey} id={`note-${d.fullKey}`} onClick={() => { onClose(); setTimeout(() => requestAnimationFrame(() => goDate(d.absIdx, d.fullKey)), 300); }} className={`w-full text-left p-3.5 rounded-2xl border transition-all ${parseK(d.fullKey)<today?'bg-white/[0.02] border-white/5 opacity-60':'bg-[rgba(255,55,95,0.08)] border-[rgba(255,55,95,0.2)]'}`}> <div className="text-[12px] font-bold">{d.fullKey} (週{d.w})</div> <div className="text-[14.5px] font-medium leading-relaxed whitespace-pre-wrap"><span className="md:hidden">{formatNoteText(schedule?.notes?.[d.fullKey], true)}</span><span className="hidden md:inline">{formatNoteText(schedule?.notes?.[d.fullKey], false)}</span></div> </button> ))} </div> </div> </div> );
 });
 
 const MasterRosterModal = memo(({ onClose, visibleDates, schedule, aliasMap, todayK, handleStaffClick, handleBackToday, openCal }) => {
@@ -531,6 +531,13 @@ const App = () => {
 
     const hasScrolledRef = useRef(false);
     const selectedDateKeyRef = useRef(null);
+    // V21.7: 防止 Toast 定時器競態（Race Condition）— 統一用 showError 管理
+    const errorTimeoutRef = useRef(null);
+    const showError = useCallback((msg, ms = 4000) => {
+        clearTimeout(errorTimeoutRef.current);
+        setErrorMsg(msg);
+        if (msg) errorTimeoutRef.current = setTimeout(() => setErrorMsg(null), ms);
+    }, []);
     // V21.3 修 1: 用 isFirstLoadRef 正確區分「無快取等待首次資料」vs「有快取後的背景同步」
     // 有快取 → false（Firebase 回來時走背景更新，亮紅點，不跳動畫面）
     // 無快取 → true（Firebase 回來時直接渲染解鎖畫面）
@@ -575,11 +582,10 @@ const App = () => {
 
     const applyRosterSnapshot = useCallback((snap)=>{
         if(!snap.exists()){ 
-            setErrorMsg("找不到班表資料庫，請聯絡管理員"); 
-            setTimeout(()=>setErrorMsg(null), 4000);
+            showError("找不到班表資料庫，請聯絡管理員", 4000);
             return; 
         }
-        setErrorMsg(null);
+        showError(null);
         const parsed = parseSnapshotData(snap);
         if(!parsed) return;
 
@@ -606,9 +612,9 @@ const App = () => {
 
     const handleRefresh = useCallback(()=>{
         if(isRefreshing) return;
+        // V21.7 修: offline 防護永遠最優先，避免語意模糊的「離線套用快取」
         if(isOffline){
-            setErrorMsg("目前無網路連線，無法同步");
-            setTimeout(()=>setErrorMsg(null), 3000);
+            showError("目前無網路連線，無法同步", 3000);
             return;
         }
         if(pendingUpdateRef.current){
@@ -616,34 +622,40 @@ const App = () => {
             pendingUpdateRef.current = null;
             applyParsedData(parsed);
             setIsRecentlyUpdated(false);
-            // V21.2 修 7: 統一使用 RosterCache.setSeenUpdate
             window.RosterCache.setSeenUpdate(parsed.fmtKey);
+            return;
+        }
+        // V21.7 修: 無待套用資料時，告知使用者已是最新，而非播假動畫
+        if(!isRecentlyUpdated){
+            showError("已是最新版本", 2000);
             return;
         }
         markUpdateSeen();
         setIsRefreshing(true);
         setTimeout(() => setIsRefreshing(false), CONFIG.SYNC_FEEDBACK_MS);
-    },[isRefreshing, isOffline, pendingUpdateRef, applyParsedData, markUpdateSeen]);
+    },[isRefreshing, isOffline, isRecentlyUpdated, pendingUpdateRef, applyParsedData, markUpdateSeen, showError]);
 
     useEffect(() => {
-        let unsubscribeAuth = null;
         let isMounted = true; // V21.6 修 3: 防止非同步洩漏
+        // V21.7 修: 用閉包穩定承接 unsubscribeAuth，防止 await 期間 unmount 造成 listener 洩漏
+        let unsubscribeAuth = null;
         const initFirebase = async () => {
             let waited = 0;
             while(!window.Firebase && waited < 50) { await new Promise(r => setTimeout(r, 100)); waited++; }
             if(!isMounted) return; // 元件已卸載，放棄執行
             if(!window.Firebase) { 
-                setErrorMsg("Firebase 載入逾時，請重新整理");
-                setTimeout(()=>setErrorMsg(null), 5000);
+                showError("Firebase 載入逾時，請重新整理", 5000);
                 return; 
             }
             try {
                 const app = Firebase.getApps().length === 0 ? Firebase.initializeApp(CONFIG.FIREBASE) : Firebase.getApp();
-                const auth = Firebase.getAuth(app); await Firebase.signInAnonymously(auth);
-                if(!isMounted) return; // await 後再次確認
+                const auth = Firebase.getAuth(app);
+                // 先註冊 listener 取得 unsubscribe，再執行 signIn，確保 cleanup 一定有東西清
                 unsubscribeAuth = Firebase.onAuthStateChanged(auth, async (u) => {
-                    if(!u) return; setUser(u);
+                    if(!u || !isMounted) return;
+                    setUser(u);
                     const db = Firebase.getFirestore(app), snap = await Firebase.getDoc(Firebase.doc(db,'artifacts',CONFIG.APP_ID,'public','data','configs','name_mapping'));
+                    if(!isMounted) return;
                     if(snap.exists()){
                         const maps = snap.data().maps || {};
                         setAliasMap(maps);
@@ -651,10 +663,10 @@ const App = () => {
                         window.RosterCache.saveAlias(maps);
                     }
                 });
+                await Firebase.signInAnonymously(auth);
             } catch(e) { 
                 console.error("Firebase Init Error:", e); 
-                setErrorMsg("Firebase 初始化失敗，請重新整理");
-                setTimeout(()=>setErrorMsg(null), 5000);
+                showError("Firebase 初始化失敗，請重新整理", 5000);
             }
         }; initFirebase();
         return () => { isMounted = false; if (unsubscribeAuth) unsubscribeAuth(); };
@@ -669,8 +681,7 @@ const App = () => {
             (e)=>{ 
                 console.error("Firebase Sync Error:", e); 
                 // V21.2 修 6: 統一用 Toast，不破壞主畫面
-                setErrorMsg("資料同步失敗");
-                setTimeout(()=>setErrorMsg(null), 4000);
+                showError("資料同步失敗", 4000);
             } 
         );
     },[applyRosterSnapshot, user]);
