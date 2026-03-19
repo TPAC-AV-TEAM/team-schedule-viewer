@@ -166,6 +166,14 @@
             [data-tip]:hover::after { content: attr(data-tip); position: absolute; top: 120%; left: 50%; transform: translateX(-50%); background: rgba(28,28,32,0.97); color: rgba(255,255,255,0.88); border: 1px solid var(--border-mid); padding: 5px 11px; border-radius: var(--r-xs); font-size: 11px; font-weight: 600; white-space: nowrap; z-index: 10000; pointer-events: none; backdrop-filter: blur(16px); box-shadow: 0 6px 22px rgba(0,0,0,0.55); animation: tip-fade 0.12s ease-out forwards; }
         }
         @keyframes tip-fade { from { opacity:0; transform:translateX(-50%) translateY(-4px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
+
+        /* V21.8: Offline 紅色閃爍指示器 */
+        @keyframes offline-pulse {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.35; }
+        }
+        .offline-dot  { animation: offline-pulse 1.2s ease-in-out infinite; }
+        .offline-text { animation: offline-pulse 1.2s ease-in-out infinite; }
     </style>
 </head>
 <body>
@@ -501,6 +509,13 @@ const App = () => {
         return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
     }, []);
     
+    // V21.8: visibleDates 僅供主畫面導覽列使用，限制渲染數量；Modal 一律傳 allDates
+    const visibleDates = useMemo(()=>{ 
+        if(!allDates.length) return []; 
+        const start=Math.max(0,dateIdx-7), end=Math.min(allDates.length,dateIdx+61); 
+        return allDates.slice(start,end); 
+    },[allDates,dateIdx]);
+
     const handleBackToday = useCallback(()=>{ const tK=formatK(new Date()), i=allDates.findIndex(d=>d.fullKey===tK); if(i!==-1) goDate(i,tK); },[allDates,goDate]);
     const openCal = useCallback(()=>{ setPrevModal(activeModal); if(allDates[dateIdx]){ const d = parseK(allDates[dateIdx].fullKey); setCalMonth({y:d.getFullYear(), m:d.getMonth()}); } setActiveModal('calendar'); },[activeModal, allDates, dateIdx]);
     
@@ -729,9 +744,11 @@ const App = () => {
                     <h1 className="text-[19px] font-extrabold tracking-[-0.03em] cursor-pointer text-white/90 hover:text-white transition-colors leading-none" onClick={()=>setActiveModal('master')}>視 聽 班 表 系 統</h1>
                     {/* V21.2: 離線狀態 / SYNC 按鈕 */}
                     {isOffline
-                        ? <span className="flex items-center mt-1.5 text-[10px] font-semibold tracking-[0.12em] text-white/30 gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-white/25 shrink-0"/>
-                            {lastUpdated ? `OFFLINE · 目前使用快取版本 ${lastUpdated}` : 'OFFLINE'}
+                        ? <span className="flex items-center mt-1.5 gap-1.5">
+                            <span className="offline-dot w-1.5 h-1.5 rounded-full bg-[var(--pink)] shrink-0"/>
+                            <span className="offline-text text-[10px] font-semibold tracking-[0.12em] text-[var(--pink)]">
+                                {lastUpdated ? `OFFLINE · 快取版本 ${lastUpdated}` : 'OFFLINE'}
+                            </span>
                           </span>
                         : lastUpdated&&( <button type="button" className={`flex items-center mt-1.5 text-left transition-colors ${isRefreshing?'cursor-wait text-white/78 animate-pulse':`cursor-pointer ${isRecentlyUpdated?'text-white/60':'text-white/32 hover:text-white/58'}`}`} onClick={handleRefresh} title="點擊同步並標記已讀"> {isRecentlyUpdated&&<span className="w-1.5 h-1.5 rounded-full bg-[var(--pink)] mr-1.5 animate-pulse shrink-0"/>} <span className="text-[10px] font-semibold tracking-[0.12em]">{isRefreshing?'SYNCING...':`SYNC: ${lastUpdated}`}</span> </button> )
                     }
@@ -744,7 +761,7 @@ const App = () => {
             
             <main className="flex-1 overflow-y-auto px-3.5 py-4 no-scrollbar z-10 text-left" style={{paddingBottom:'calc(7rem + env(safe-area-inset-bottom, 0px))'}}>
                 <div className="mac-glass sticky top-0 -mx-3 px-3 py-3 flex flex-col mb-4 z-20 shadow-[0_8px_32px_rgba(0,0,0,0.4)] rounded-b-[20px]">
-                    <div id="nav-scroll-container" className="flex gap-2.5 overflow-x-auto no-scrollbar pb-2 px-1"> {allDates.map(d=>(<button key={d.fullKey} id={`nav-${d.fullKey}`} onClick={()=>goDate(d.absIdx,d.fullKey)} className={`flex-none w-[58px] py-2.5 rounded-2xl border flex flex-col items-center justify-center transition-all duration-300 ${dateIdx===d.absIdx?'border-blue-500/50 bg-[var(--blue)] shadow-[0_4px_12px_rgba(10,132,255,0.3)] scale-105':'border-white/5 bg-white/[0.03] hover:bg-white/[0.08]'}`}> <span className={`font-bold text-[10px] mb-0.5 ${dateIdx===d.absIdx?'text-white/80':d.isOff?'text-[var(--pink)]':'text-white/40'}`}>週{d.w}</span> <span className={`text-[17px] font-black leading-none ${dateIdx===d.absIdx?'text-white':d.isOff?'text-[var(--pink)]':'text-white/70'}`}>{d.d}</span> </button>))} </div>
+                    <div id="nav-scroll-container" className="flex gap-2.5 overflow-x-auto no-scrollbar pb-2 px-1"> {visibleDates.map(d=>(<button key={d.fullKey} id={`nav-${d.fullKey}`} onClick={()=>goDate(d.absIdx,d.fullKey)} className={`flex-none w-[58px] py-2.5 rounded-2xl border flex flex-col items-center justify-center transition-all duration-300 ${dateIdx===d.absIdx?'border-blue-500/50 bg-[var(--blue)] shadow-[0_4px_12px_rgba(10,132,255,0.3)] scale-105':'border-white/5 bg-white/[0.03] hover:bg-white/[0.08]'}`}> <span className={`font-bold text-[10px] mb-0.5 ${dateIdx===d.absIdx?'text-white/80':d.isOff?'text-[var(--pink)]':'text-white/40'}`}>週{d.w}</span> <span className={`text-[17px] font-black leading-none ${dateIdx===d.absIdx?'text-white':d.isOff?'text-[var(--pink)]':'text-white/70'}`}>{d.d}</span> </button>))} </div>
                 </div>
 
                 {/* V20.4 修改：UI 按鈕狀態（白光呼吸框、紅字/灰字切換） */}
