@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>視聽班表系統 | V20.4</title>
+    <title>視聽班表系統 | V21.1</title>
     
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -31,6 +31,29 @@
         window.SafeStorage = {
             set: (key, value) => { try { localStorage.setItem(key, JSON.stringify(value)); return true; } catch(err) { return false; } },
             get: (key, def) => { try { const val = localStorage.getItem(key); return val ? JSON.parse(val) : (def !== undefined ? def : null); } catch(err) { return def; } }
+        };
+
+        // V21: 班表快取專用方法
+        window.RosterCache = {
+            KEYS: {
+                DATA:    'tpac_roster_cache',
+                UPDATED: 'tpac_seen_update',
+                SAVED_AT:'tpac_cache_saved_at'
+            },
+            save: function(payload) {
+                // payload: { roster, statuses, shows, notes, lastUpdated }
+                window.SafeStorage.set(this.KEYS.DATA, payload);
+                window.SafeStorage.set(this.KEYS.SAVED_AT, new Date().toISOString());
+            },
+            load: function() {
+                return window.SafeStorage.get(this.KEYS.DATA, null);
+            },
+            getSavedAt: function() {
+                return window.SafeStorage.get(this.KEYS.SAVED_AT, null);
+            },
+            hasCache: function() {
+                return !!window.SafeStorage.get(this.KEYS.DATA, null);
+            }
         };
     </script>
 
@@ -133,6 +156,37 @@
     </style>
 </head>
 <body>
+<!-- V21: 初次無網路防護 (Vanilla JS，不依賴 React/CDN) -->
+<div id="offline-guard" style="display:none;position:fixed;inset:0;z-index:99999;background:#0c0c0e;font-family:system-ui,sans-serif;color:rgba(255,255,255,0.9);flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;gap:16px;">
+    <div style="font-size:48px;">⚠️</div>
+    <div style="font-size:18px;font-weight:700;letter-spacing:-0.02em;">初次使用需要網路連線</div>
+    <div style="font-size:14px;color:rgba(255,255,255,0.55);line-height:1.7;max-width:300px;">系統元件與班表資料尚未下載到此裝置。<br>請確認網路狀態後，重新整理頁面。</div>
+    <button onclick="window.location.reload()" style="margin-top:8px;padding:12px 28px;background:rgba(10,132,255,0.8);border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:600;cursor:pointer;letter-spacing:0.02em;">重新整理</button>
+</div>
+<script>
+(function(){
+    // 僅在完全沒有快取且斷網時顯示警告
+    var hasCachedData = !!(localStorage && localStorage.getItem('tpac_roster_cache'));
+    var isOnline = navigator.onLine;
+    if(!hasCachedData && !isOnline){
+        // CDN 可能未載入，直接顯示原生警告
+        var guard = document.getElementById('offline-guard');
+        if(guard) guard.style.display = 'flex';
+        // 有網路後自動重整
+        window.addEventListener('online', function(){ window.location.reload(); });
+    }
+    // React 載入失敗後備（有快取但 CDN 掛掉）
+    window.addEventListener('load', function(){
+        setTimeout(function(){
+            if(!window.React && !hasCachedData){
+                var guard = document.getElementById('offline-guard');
+                if(guard) guard.style.display = 'flex';
+            }
+        }, 5000);
+    });
+})();
+</script>
+
 <div id="root"></div>
 <script type="text/babel">
 const { useState, useEffect, useMemo, memo, useCallback, useRef } = React;
@@ -141,7 +195,7 @@ const { useState, useEffect, useMemo, memo, useCallback, useRef } = React;
    1. CENTRAL CONFIG
    ========================================================================= */
 const CONFIG = {
-    APP_VERSION: 'V20.4', // 更新版本號
+    APP_VERSION: 'V21.1',
     APP_ID: "team-schedule-viewer",
     FIREBASE: { apiKey: "AIzaSyA7tgFRxDCnZpOzEvfT978wIAcqcXNZXVQ", authDomain: "team-schedule-viewer.firebaseapp.com", projectId: "team-schedule-viewer", storageBucket: "team-schedule-viewer.firebasestorage.app", messagingSenderId: "202883367260", appId: "1:202883367260:web:b31e495084a4ea8af20199" },
     VENUES: [ 
@@ -359,15 +413,59 @@ const QueryModal = memo(({ queryStaff, queryVenue, onClose, setQueryStaff, setQu
    5. MAIN APP ENTRY
    ========================================================================= */
 const App = () => {
-    const [allDates,setAllDates] = useState([]), [schedule,setSchedule] = useState({roster:{},statuses:{},shows:{},notes:{}});
-    const [aliasMap,setAliasMap] = useState({}), [lastUpdated,setLastUpdated] = useState(""), [isRecentlyUpdated,setIsRecentlyUpdated] = useState(false);
-    const [isUnlocked,setIsUnlocked] = useState(false), [errorMsg,setErrorMsg] = useState(null), [isRefreshing,setIsRefreshing] = useState(false);
+    // V21: 嘗試從快取讀取初始資料，實現秒開
+    const _cached = window.RosterCache.load();
+    const _initSchedule = _cached
+        ? { roster: safeParse(_cached.roster), statuses: safeParse(_cached.statuses), shows: safeParse(_cached.shows), notes: safeParse(_cached.notes) }
+        : { roster:{}, statuses:{}, shows:{}, notes:{} };
+
+    const [allDates,setAllDates] = useState(()=>{
+        if(!_cached?.roster) return [];
+        const keys = Object.keys(safeParse(_cached.roster)).sort();
+        return keys.map((k,idx)=>{
+            const [yy,mm,dd]=k.split('/').map(Number), o=new Date(yy,mm-1,dd);
+            const w=['日','一','二','三','四','五','六'][o.getDay()];
+            const isOff=w==='六'||w==='日'||CONFIG.HOLIDAYS.has(k);
+            return{d:`${mm}/${dd}`,w,fullKey:k,absIdx:idx,isOff};
+        });
+    });
+    const [schedule,setSchedule] = useState(_initSchedule);
+    const [aliasMap,setAliasMap] = useState({}), [lastUpdated,setLastUpdated] = useState(_cached?.lastUpdated||""), [isRecentlyUpdated,setIsRecentlyUpdated] = useState(false);
+    // V21: 有快取則直接解鎖，不等 Firebase
+    const [isUnlocked,setIsUnlocked] = useState(!!_cached), [errorMsg,setErrorMsg] = useState(null), [isRefreshing,setIsRefreshing] = useState(false);
+    // V21: 離線狀態追蹤
+    const [isOffline, setIsOffline] = useState(!navigator.onLine);
     const [user,setUser] = useState(null), [dateIdx,setDateIdx] = useState(0), [activeModal,setActiveModal] = useState(null), [prevModal, setPrevModal] = useState(null), [queryTarget,setQueryTarget] = useState(null);
     const [calMonth,setCalMonth] = useState(()=>{const n=new Date();return{y:n.getFullYear(),m:n.getMonth()};});
     
     const { scrollTo, allScrollTo } = useScrollSync();
     const goDate = useCallback((absIdx,fk)=>{ setDateIdx(absIdx); allScrollTo(fk); },[allScrollTo]);
     useSwipeDateNavigation(allDates, dateIdx, goDate, activeModal);
+
+    // V21.1: 暫存區 — onSnapshot 背景更新時存這裡，不直接改畫面
+    const pendingUpdateRef = useRef(null);
+
+    // V21: 監聽網路狀態
+    useEffect(()=>{
+        const onOnline  = () => setIsOffline(false);
+        const onOffline = () => setIsOffline(true);
+        window.addEventListener('online',  onOnline);
+        window.addEventListener('offline', onOffline);
+        return ()=>{ window.removeEventListener('online', onOnline); window.removeEventListener('offline', onOffline); };
+    },[]);
+
+    // V21: 有快取時，初始化完成後定位到今天
+    const didInitFromCache = useRef(false);
+    useEffect(()=>{
+        if(!didInitFromCache.current && _cached && allDates.length){
+            didInitFromCache.current = true;
+            const todayKey = formatK(new Date());
+            const i = allDates.findIndex(d=>d.fullKey===todayKey);
+            const idx = i !== -1 ? i : 0;
+            setDateIdx(idx);
+            setTimeout(()=>scrollTo(allDates[idx]?.fullKey,"nav-scroll-container"), 300);
+        }
+    },[allDates]); // eslint-disable-line
 
     const markUpdateSeen = useCallback(()=>{ 
         if(!isRecentlyUpdated || !lastUpdated) return; 
@@ -414,46 +512,90 @@ const App = () => {
     const selectedDateKeyRef = useRef(null);
     useEffect(()=>{ selectedDateKeyRef.current = allDates[dateIdx]?.fullKey || null; },[allDates, dateIdx]);
 
-    const applyRosterSnapshot = useCallback((snap)=>{
-        if(!snap.exists()){ setErrorMsg("找不到班表資料庫，請聯絡管理員"); return; }
-        setErrorMsg(null);
-        const data=snap.data(), roster=safeParse(data.roster), statuses=safeParse(data.statuses), shows=safeParse(data.shows), notes=safeParse(data.notes);
-        if(data.lastUpdated){
-            const fmtKey = formatLastUpdated(data.lastUpdated);
-            if(fmtKey){
-                setLastUpdated(fmtKey);
-                setIsRecentlyUpdated(fmtKey !== (window.SafeStorage.get('tpac_seen_update') || ''));
-            }
-        }
-        const keys=Object.keys(roster).sort(), sd=keys.map((k,idx)=>{ 
-            const [yy,mm,dd]=k.split('/').map(Number), o=new Date(yy,mm-1,dd); 
+    // V21.1: 將 snapshot 資料解析成可用格式
+    const parseSnapshotData = useCallback((snap) => {
+        if(!snap.exists()) return null;
+        const data = snap.data();
+        const roster = safeParse(data.roster), statuses = safeParse(data.statuses);
+        const shows = safeParse(data.shows), notes = safeParse(data.notes);
+        const keys = Object.keys(roster).sort();
+        const sd = keys.map((k,idx)=>{
+            const [yy,mm,dd]=k.split('/').map(Number), o=new Date(yy,mm-1,dd);
             const w=['日','一','二','三','四','五','六'][o.getDay()];
             const isOff=w==='六'||w==='日'||CONFIG.HOLIDAYS.has(k);
-            return{d:`${mm}/${dd}`,w,fullKey:k,absIdx:idx,isOff}; 
+            return{d:`${mm}/${dd}`,w,fullKey:k,absIdx:idx,isOff};
         });
-        setSchedule({roster,statuses,shows,notes}); setAllDates(sd); setIsUnlocked(true);
+        const fmtKey = data.lastUpdated ? formatLastUpdated(data.lastUpdated) : "";
+        return { roster, statuses, shows, notes, allDates: sd, keys, fmtKey };
+    }, [formatLastUpdated]);
 
+    // V21.1: 把解析好的資料套用到畫面，並定位日期
+    const applyParsedData = useCallback((parsed) => {
+        const { roster, statuses, shows, notes, allDates: sd, keys, fmtKey } = parsed;
+        setSchedule({roster,statuses,shows,notes});
+        setAllDates(sd);
+        setIsUnlocked(true);
+        if(fmtKey) setLastUpdated(fmtKey);
         if(!keys.length) return;
         const todayKey = formatK(new Date());
         const preferredKey = hasInitializedSnapshotRef.current ? selectedDateKeyRef.current : todayKey;
         const targetKey = keys.includes(preferredKey) ? preferredKey : (keys.includes(todayKey) ? todayKey : keys[0]);
         const targetIdx = keys.indexOf(targetKey);
-
         hasInitializedSnapshotRef.current = true;
         if(targetIdx !== -1){
             setDateIdx(targetIdx);
             setTimeout(()=>scrollTo(targetKey,"nav-scroll-container"), 300);
         }
-    },[formatLastUpdated, scrollTo]);
+    }, [scrollTo]);
+
+    const applyRosterSnapshot = useCallback((snap)=>{
+        if(!snap.exists()){ setErrorMsg("找不到班表資料庫，請聯絡管理員"); return; }
+        setErrorMsg(null);
+        const parsed = parseSnapshotData(snap);
+        if(!parsed) return;
+
+        // 存入 localStorage（不論初次或背景更新都存）
+        window.RosterCache.save({ roster: parsed.roster, statuses: parsed.statuses, shows: parsed.shows, notes: parsed.notes, lastUpdated: parsed.fmtKey });
+
+        const isFirstLoad = !isUnlocked;
+
+        if(isFirstLoad){
+            // 初次載入：直接套用，解鎖畫面
+            applyParsedData(parsed);
+            setIsRecentlyUpdated(false);
+            window.SafeStorage.set('tpac_seen_update', parsed.fmtKey);
+        } else {
+            // V21.1: 背景更新 — 存入暫存區，只亮紅點，畫面不動
+            if(parsed.fmtKey && parsed.fmtKey !== (window.SafeStorage.get('tpac_seen_update') || '')){
+                pendingUpdateRef.current = parsed;
+                setLastUpdated(parsed.fmtKey);
+                setIsRecentlyUpdated(true);
+            }
+        }
+    },[isUnlocked, parseSnapshotData, applyParsedData]);
 
     const handleRefresh = useCallback(()=>{
         if(isRefreshing) return;
+        // V21: 離線時點 SYNC 給予提示，不 reload
+        if(isOffline){
+            setErrorMsg("目前無網路連線，無法同步");
+            setTimeout(()=>setErrorMsg(null), 3000);
+            return;
+        }
+        // V21.1: 有暫存的新資料 → 直接套用，不 reload
+        if(pendingUpdateRef.current){
+            const parsed = pendingUpdateRef.current;
+            pendingUpdateRef.current = null;
+            applyParsedData(parsed);
+            setIsRecentlyUpdated(false);
+            window.SafeStorage.set('tpac_seen_update', parsed.fmtKey);
+            return;
+        }
+        // 無暫存（版本已是最新）→ 只標記已讀
         markUpdateSeen();
         setIsRefreshing(true);
-        setTimeout(() => {
-            window.location.href = window.location.pathname + '?v=' + Date.now();
-        }, CONFIG.SYNC_FEEDBACK_MS);
-    },[isRefreshing, markUpdateSeen]);
+        setTimeout(() => setIsRefreshing(false), CONFIG.SYNC_FEEDBACK_MS);
+    },[isRefreshing, isOffline, pendingUpdateRef, applyParsedData, markUpdateSeen]);
 
     useEffect(() => {
         let unsubscribeAuth = null;
@@ -503,7 +645,20 @@ const App = () => {
         return{s}; 
     },[dateIdx,allDates,schedule]);
     
-    if(!isUnlocked) return ( <div className="h-screen flex flex-col items-center justify-center text-[16px] font-medium tracking-[0.22em] gap-4" style={{background:'var(--bg-base)'}}> {errorMsg?<span className="text-rose-500 font-bold px-6 text-center leading-relaxed">{errorMsg}</span>:<span style={{color:'rgba(255,255,255,0.65)'}}>CONNECTING...</span>} </div> );
+    if(!isUnlocked) return ( 
+        <div className="h-screen flex flex-col items-center justify-center text-[16px] font-medium tracking-[0.22em] gap-4" style={{background:'var(--bg-base)'}}>
+            {errorMsg
+                ? <span className="text-rose-500 font-bold px-6 text-center leading-relaxed">{errorMsg}</span>
+                : isOffline
+                    ? <div className="flex flex-col items-center gap-3 px-8 text-center">
+                        <span className="text-4xl">📡</span>
+                        <span className="text-white/70 text-[15px] font-semibold tracking-normal leading-relaxed">無網路連線<br/><span className="text-white/40 text-[13px] font-normal">請連線後重新整理以載入班表</span></span>
+                        <button onClick={()=>window.location.reload()} className="mt-2 px-6 py-2.5 rounded-xl bg-white/10 border border-white/15 text-white/70 text-[13px] font-semibold hover:bg-white/15 transition-all">重新整理</button>
+                      </div>
+                    : <span style={{color:'rgba(255,255,255,0.65)'}}>CONNECTING...</span>
+            }
+        </div>
+    );
     
     const todayK=formatK(new Date()), curFk=allDates.length?allDates[dateIdx]?.fullKey:todayK, todayNote=schedule?.notes?.[curFk], hasNote=!!(todayNote?.trim()), queryStaff = activeModal==='queryStaff' ? queryTarget : null, queryVenue = activeModal==='queryVenue' ? queryTarget : null;
 
@@ -513,7 +668,14 @@ const App = () => {
             <header className="mac-glass pt-12 pb-4 px-5 flex items-center justify-between shrink-0 z-50">
                 <div className="flex flex-col justify-center">
                     <h1 className="text-[19px] font-extrabold tracking-[-0.03em] cursor-pointer text-white/90 hover:text-white transition-colors leading-none" onClick={()=>setActiveModal('master')}>視 聽 班 表 系 統</h1>
-                    {lastUpdated&&( <button type="button" className={`flex items-center mt-1.5 text-left transition-colors ${isRefreshing?'cursor-wait text-white/78 animate-pulse':`cursor-pointer ${isRecentlyUpdated?'text-white/60':'text-white/32 hover:text-white/58'}`}`} onClick={handleRefresh} title="點擊同步並標記已讀"> {isRecentlyUpdated&&<span className="w-1.5 h-1.5 rounded-full bg-[var(--pink)] mr-1.5 animate-pulse shrink-0"/>} <span className="text-[10px] font-semibold tracking-[0.12em]">{isRefreshing?'SYNCING...':`SYNC: ${lastUpdated}`}</span> </button> )}
+                    {/* V21: 離線狀態 / SYNC 按鈕 */}
+                    {isOffline
+                        ? <span className="flex items-center mt-1.5 text-[10px] font-semibold tracking-[0.12em] text-white/30 gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-white/25 shrink-0"/>
+                            OFFLINE{lastUpdated ? ` · ${lastUpdated}` : ''}
+                          </span>
+                        : lastUpdated&&( <button type="button" className={`flex items-center mt-1.5 text-left transition-colors ${isRefreshing?'cursor-wait text-white/78 animate-pulse':`cursor-pointer ${isRecentlyUpdated?'text-white/60':'text-white/32 hover:text-white/58'}`}`} onClick={handleRefresh} title="點擊同步並標記已讀"> {isRecentlyUpdated&&<span className="w-1.5 h-1.5 rounded-full bg-[var(--pink)] mr-1.5 animate-pulse shrink-0"/>} <span className="text-[10px] font-semibold tracking-[0.12em]">{isRefreshing?'SYNCING...':`SYNC: ${lastUpdated}`}</span> </button> )
+                    }
                 </div>
                 <div className="flex items-center gap-2.5 flex-shrink-0">
                     <ActionBtn onClick={handleBackToday} icon="today" tip="回到今天"/>
@@ -549,6 +711,9 @@ const App = () => {
             {activeModal==='master'&&( <MasterRosterModal onClose={closeModal} visibleDates={visibleDates} schedule={schedule} aliasMap={aliasMap} todayK={todayK} handleStaffClick={handleStaffClick} handleBackToday={handleBackToday} openCal={openCal}/> )}
             {(activeModal==='queryStaff'||activeModal==='queryVenue')&&( <QueryModal queryStaff={queryStaff} queryVenue={queryVenue} onClose={closeModal} setQueryStaff={name=>{ if(name){setQueryTarget(name);setActiveModal('queryStaff');} else closeModal(); }} setQueryVenue={id=>{ if(id){setQueryTarget(id);setActiveModal('queryVenue');} else closeModal(); }} visibleDates={visibleDates} schedule={schedule} aliasMap={aliasMap} curFk={curFk} handleStaffClick={handleStaffClick} handleBackToday={handleBackToday} openCal={openCal} /> )}
             {activeModal==='calendar'&&( <CalendarPicker allDates={allDates} onSelect={fk=>{ const i=allDates.findIndex(d=>d.fullKey===fk); if(i!==-1)goDate(i,fk); if(prevModal){ setActiveModal(prevModal); setPrevModal(null); } else closeModal(); }} onClose={()=>{ if(prevModal){setActiveModal(prevModal);setPrevModal(null);} else closeModal(); }} calMonth={calMonth} setCalMonth={setCalMonth} /> )}
+            
+            {/* V21: 離線操作提示 toast */}
+            {errorMsg&&isOffline&&( <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[9000] px-5 py-3 rounded-2xl bg-[rgba(255,69,58,0.18)] border border-[rgba(255,69,58,0.35)] text-white/90 text-[13px] font-semibold backdrop-blur-md shadow-xl whitespace-nowrap animate-window">{errorMsg}</div> )}
             
             <footer className="fixed bottom-0 left-0 right-0 py-2.5 flex items-center justify-center pointer-events-none text-[9px] font-semibold tracking-[0.28em] text-white/14"> <span>TPAC SCHEDULE SYSTEM | {CONFIG.APP_VERSION}</span> </footer>
         </div>
