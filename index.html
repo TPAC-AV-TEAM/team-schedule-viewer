@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>視聽班表系統 | V21.2</title>
+    <title>視聽班表系統 | V21.3</title>
     
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -200,7 +200,7 @@ const { useState, useEffect, useMemo, memo, useCallback, useRef } = React;
    1. CENTRAL CONFIG
    ========================================================================= */
 const CONFIG = {
-    APP_VERSION: 'V21.2',
+    APP_VERSION: 'V21.3',
     APP_ID: "team-schedule-viewer",
     FIREBASE: { apiKey: "AIzaSyA7tgFRxDCnZpOzEvfT978wIAcqcXNZXVQ", authDomain: "team-schedule-viewer.firebaseapp.com", projectId: "team-schedule-viewer", storageBucket: "team-schedule-viewer.firebasestorage.app", messagingSenderId: "202883367260", appId: "1:202883367260:web:b31e495084a4ea8af20199" },
     VENUES: [ 
@@ -424,13 +424,12 @@ const QueryModal = memo(({ queryStaff, queryVenue, onClose, setQueryStaff, setQu
    5. MAIN APP ENTRY
    ========================================================================= */
 const App = () => {
-    // V21.2 修 1+8: useState lazy initialization，確保只讀一次 localStorage
-    const [_cachedRef] = useState(() => window.RosterCache.load());
-    const _cached = _cachedRef;
+    // V21.3 修 3: 簡化變數命名，移除多餘別名
+    const [cachedData] = useState(() => window.RosterCache.load());
 
     const [allDates,setAllDates] = useState(()=>{
-        if(!_cached?.roster) return [];
-        const keys = Object.keys(safeParse(_cached.roster)).sort();
+        if(!cachedData?.roster) return [];
+        const keys = Object.keys(safeParse(cachedData.roster)).sort();
         return keys.map((k,idx)=>{
             const [yy,mm,dd]=k.split('/').map(Number), o=new Date(yy,mm-1,dd);
             const w=['日','一','二','三','四','五','六'][o.getDay()];
@@ -438,13 +437,12 @@ const App = () => {
             return{d:`${mm}/${dd}`,w,fullKey:k,absIdx:idx,isOff};
         });
     });
-    // V21.2 修 8: 直接在 useState 內初始化，移除多餘的 _initSchedule 變數
-    const [schedule,setSchedule] = useState(()=> _cached
-        ? { roster: safeParse(_cached.roster), statuses: safeParse(_cached.statuses), shows: safeParse(_cached.shows), notes: safeParse(_cached.notes) }
+    const [schedule,setSchedule] = useState(()=> cachedData
+        ? { roster: safeParse(cachedData.roster), statuses: safeParse(cachedData.statuses), shows: safeParse(cachedData.shows), notes: safeParse(cachedData.notes) }
         : { roster:{}, statuses:{}, shows:{}, notes:{} }
     );
-    const [aliasMap,setAliasMap] = useState({}), [lastUpdated,setLastUpdated] = useState(_cached?.lastUpdated||""), [isRecentlyUpdated,setIsRecentlyUpdated] = useState(false);
-    const [isUnlocked,setIsUnlocked] = useState(!!_cached), [errorMsg,setErrorMsg] = useState(null), [isRefreshing,setIsRefreshing] = useState(false);
+    const [aliasMap,setAliasMap] = useState({}), [lastUpdated,setLastUpdated] = useState(cachedData?.lastUpdated||""), [isRecentlyUpdated,setIsRecentlyUpdated] = useState(false);
+    const [isUnlocked,setIsUnlocked] = useState(!!cachedData), [errorMsg,setErrorMsg] = useState(null), [isRefreshing,setIsRefreshing] = useState(false);
     const [isOffline, setIsOffline] = useState(!navigator.onLine);
     const [user,setUser] = useState(null), [dateIdx,setDateIdx] = useState(0), [activeModal,setActiveModal] = useState(null), [prevModal, setPrevModal] = useState(null), [queryTarget,setQueryTarget] = useState(null);
     const [calMonth,setCalMonth] = useState(()=>{const n=new Date();return{y:n.getFullYear(),m:n.getMonth()};});
@@ -468,7 +466,7 @@ const App = () => {
     // V21: 有快取時，初始化完成後定位到今天
     const didInitFromCache = useRef(false);
     useEffect(()=>{
-        if(!didInitFromCache.current && _cached && allDates.length){
+        if(!didInitFromCache.current && cachedData && allDates.length){
             didInitFromCache.current = true;
             const todayKey = formatK(new Date());
             const i = allDates.findIndex(d=>d.fullKey===todayKey);
@@ -522,6 +520,10 @@ const App = () => {
 
     const hasInitializedSnapshotRef = useRef(false);
     const selectedDateKeyRef = useRef(null);
+    // V21.3 修 1: 用 isFirstLoadRef 正確區分「無快取等待首次資料」vs「有快取後的背景同步」
+    // 有快取 → false（Firebase 回來時走背景更新，亮紅點，不跳動畫面）
+    // 無快取 → true（Firebase 回來時直接渲染解鎖畫面）
+    const isFirstLoadRef = useRef(!window.RosterCache.hasCache());
     useEffect(()=>{ selectedDateKeyRef.current = allDates[dateIdx]?.fullKey || null; },[allDates, dateIdx]);
 
     // V21.1: 將 snapshot 資料解析成可用格式
@@ -562,7 +564,6 @@ const App = () => {
 
     const applyRosterSnapshot = useCallback((snap)=>{
         if(!snap.exists()){ 
-            // V21.2 修 5+6: 有快取時用 Toast 顯示，不破壞主畫面
             setErrorMsg("找不到班表資料庫，請聯絡管理員"); 
             setTimeout(()=>setErrorMsg(null), 4000);
             return; 
@@ -574,13 +575,13 @@ const App = () => {
         // 存入 localStorage（不論初次或背景更新都存）
         window.RosterCache.save({ roster: parsed.roster, statuses: parsed.statuses, shows: parsed.shows, notes: parsed.notes, lastUpdated: parsed.fmtKey });
 
-        // V21.2 修 2: 改用 hasInitializedSnapshotRef 判斷初次載入，移除 isUnlocked 依賴，防止重複訂閱
-        const isFirstLoad = !hasInitializedSnapshotRef.current;
-
-        if(isFirstLoad){
+        // V21.3 修 1: 用 isFirstLoadRef 正確區分初次載入 vs 背景同步
+        // true  = 無快取，等待首次 Firebase 資料 → 直接渲染解鎖
+        // false = 有快取已秒開 → 走背景更新，只亮紅點，畫面不動
+        if(isFirstLoadRef.current){
+            isFirstLoadRef.current = false; // 渲染後立即設為 false
             applyParsedData(parsed);
             setIsRecentlyUpdated(false);
-            // V21.2 修 7: 統一使用 RosterCache.setSeenUpdate
             window.RosterCache.setSeenUpdate(parsed.fmtKey);
         } else {
             // 背景更新 — 存入暫存區，只亮紅點，畫面不動
@@ -747,8 +748,8 @@ const App = () => {
             {(activeModal==='queryStaff'||activeModal==='queryVenue')&&( <QueryModal queryStaff={queryStaff} queryVenue={queryVenue} onClose={closeModal} setQueryStaff={name=>{ if(name){setQueryTarget(name);setActiveModal('queryStaff');} else closeModal(); }} setQueryVenue={id=>{ if(id){setQueryTarget(id);setActiveModal('queryVenue');} else closeModal(); }} visibleDates={visibleDates} schedule={schedule} aliasMap={aliasMap} curFk={curFk} handleStaffClick={handleStaffClick} handleBackToday={handleBackToday} openCal={openCal} /> )}
             {activeModal==='calendar'&&( <CalendarPicker allDates={allDates} onSelect={fk=>{ const i=allDates.findIndex(d=>d.fullKey===fk); if(i!==-1)goDate(i,fk); if(prevModal){ setActiveModal(prevModal); setPrevModal(null); } else closeModal(); }} onClose={()=>{ if(prevModal){setActiveModal(prevModal);setPrevModal(null);} else closeModal(); }} calMonth={calMonth} setCalMonth={setCalMonth} /> )}
             
-            {/* V21.2 修 6: Toast 只要有 errorMsg 就顯示，不綁死 isOffline */}
-            {errorMsg&&( <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[9000] px-5 py-3 rounded-2xl bg-[rgba(255,69,58,0.18)] border border-[rgba(255,69,58,0.35)] text-white/90 text-[13px] font-semibold backdrop-blur-md shadow-xl whitespace-nowrap animate-window">{errorMsg}</div> )}
+            {/* V21.3 修 2: Toast 加入 max-w 防溢出 */}
+            {errorMsg&&( <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[9000] px-5 py-3 rounded-2xl bg-[rgba(255,69,58,0.18)] border border-[rgba(255,69,58,0.35)] text-white/90 text-[13px] font-semibold backdrop-blur-md shadow-xl max-w-[85vw] whitespace-normal text-center animate-window">{errorMsg}</div> )}
             
             <footer className="fixed bottom-0 left-0 right-0 py-2.5 flex items-center justify-center pointer-events-none text-[9px] font-semibold tracking-[0.28em] text-white/14"> <span>TPAC SCHEDULE SYSTEM | {CONFIG.APP_VERSION}</span> </footer>
         </div>
