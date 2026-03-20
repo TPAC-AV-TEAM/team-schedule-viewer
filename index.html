@@ -698,7 +698,7 @@ const App = () => {
                         ? <span className="flex items-center mt-1.5 gap-1.5">
                             <span className="offline-dot w-1.5 h-1.5 rounded-full bg-[var(--pink)] shrink-0"/>
                             <span className="offline-text text-[10px] font-semibold tracking-[0.12em] text-[var(--pink)]">
-                                {lastUpdated ? `OFFLINE · 快取版本 ${lastUpdated}` : 'OFFLINE'}
+                                {lastUpdated ? `OFFLINE${lastUpdated}` : 'OFFLINE'}
                             </span>
                           </span>
                         : lastUpdated&&( <button type="button" className={`flex items-center mt-1.5 text-left transition-colors ${isRefreshing?'cursor-wait text-white/78 animate-pulse':`cursor-pointer ${isRecentlyUpdated?'text-white/60':'text-white/32 hover:text-white/58'}`}`} onClick={handleRefresh} title="點擊同步並標記已讀"> {isRecentlyUpdated&&<span className="w-1.5 h-1.5 rounded-full bg-[var(--pink)] mr-1.5 animate-pulse shrink-0"/>} <span className="text-[10px] font-semibold tracking-[0.12em]">{isRefreshing?'SYNCING...':`SYNC: ${lastUpdated}`}</span> </button> )
