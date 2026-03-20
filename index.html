@@ -125,9 +125,15 @@
 
         .day-block { background: var(--glass-card); border: 1px solid var(--border-dim); border-radius: var(--r-lg); padding: 14px 15px; margin-bottom: 10px; box-shadow: 0 1px 0 rgba(255,255,255,0.05) inset, 0 3px 14px rgba(0,0,0,0.22); }
         
+        /* 修改點：跑馬燈首幀停留優化 */
         .mq-wrap { overflow: hidden; white-space: nowrap; position: relative; width: 100%; }
-        .mq-run { display: inline-block; padding-left: 0; animation: mq 16s linear infinite; }
-        @keyframes mq { 0%, 15% { transform: translateX(0); } 85%, 100% { transform: translateX(-100%); } }
+        .mq-run { display: inline-block; padding-left: 0; animation: mq-stepped 16s linear infinite; }
+        @keyframes mq-stepped { 
+            /* 0% 到 20%：保持原位不動，讓使用者有足夠時間閱讀開頭文字 */
+            0%, 20% { transform: translateX(0); } 
+            /* 85% 到 100%：完成位移並跳轉回起點 */
+            85%, 100% { transform: translateX(-100%); } 
+        }
         @media (hover: hover) { .mq-wrap:hover .mq-run { animation-play-state: paused; } }
 
         /* V20.4 修改：純白光呼吸框 */
