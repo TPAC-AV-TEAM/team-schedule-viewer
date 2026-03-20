@@ -301,12 +301,12 @@ const useScrollSync = () => {
     return { scrollTo, allScrollTo };
 };
 
-const useSwipeDateNavigation = (visibleDates, dateIdxInAllDates, goDate, activeModal, allDates) => {
+const useSwipeDateNavigation = (allDates, dateIdx, goDate, activeModal) => {
     const swipeRef = useRef({});
-    const activeDateIdxRef = useRef(dateIdxInAllDates);
+    const activeDateIdxRef = useRef(dateIdx);
     const activeModalRef = useRef(activeModal);
 
-    useEffect(() => { activeDateIdxRef.current = dateIdxInAllDates; }, [dateIdxInAllDates]);
+    useEffect(() => { activeDateIdxRef.current = dateIdx; }, [dateIdx]);
     useEffect(() => { activeModalRef.current = activeModal; }, [activeModal]);
 
     useEffect(() => {
@@ -316,24 +316,21 @@ const useSwipeDateNavigation = (visibleDates, dateIdxInAllDates, goDate, activeM
             swipeRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, ignore: inNav };
         };
         const onEnd = e => {
-            if(swipeRef.current.ignore || activeModalRef.current || !visibleDates.length) return;
+            if(swipeRef.current.ignore || activeModalRef.current || !allDates.length) return;
             const dx = e.changedTouches[0].clientX - swipeRef.current.x;
             const dy = Math.abs(e.changedTouches[0].clientY - swipeRef.current.y);
             if(Math.abs(dx) > 60 && dy < 40){
-                const curAllIdx = activeDateIdxRef.current;
+                const cur = activeDateIdxRef.current;
                 const dir = dx < 0 ? 1 : -1;
-                const targetAllIdx = curAllIdx + dir;
-                
-                const isTargetVisible = visibleDates.some(d => d.absIdx === targetAllIdx);
-                if (isTargetVisible && allDates[targetAllIdx]) {
-                    goDate(targetAllIdx, allDates[targetAllIdx].fullKey);
-                }
+                const ni = Math.max(0, Math.min(allDates.length - 1, cur + dir));
+                const nextDate = allDates[ni];
+                if(nextDate) goDate(ni, nextDate.fullKey);
             }
         };
         document.addEventListener('touchstart', onStart, { passive: true });
         document.addEventListener('touchend', onEnd, { passive: true });
         return () => { document.removeEventListener('touchstart', onStart); document.removeEventListener('touchend', onEnd); };
-    }, [visibleDates, goDate, allDates]);
+    }, [allDates, goDate]);
 };
 
 /* =========================================================================
@@ -444,9 +441,6 @@ const App = () => {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isOffline, setIsOffline] = useState(!navigator.onLine);
     const [user, setUser] = useState(null);
-
-    // V22.3: 返回今日狀態旗標（動態造橋用）
-    const [isReturning, setIsReturning] = useState(false);
     
     const [dateIdx, setDateIdx] = useState(() => {
         if(!cachedData?.roster) return 0;
@@ -460,24 +454,14 @@ const App = () => {
     const { scrollTo, allScrollTo } = useScrollSync();
     const goDate = useCallback((absIdx,fk)=>{ setDateIdx(absIdx); allScrollTo(fk); },[allScrollTo]);
     
-    // V22.1+: visibleDates 前7後60，V22.3 動態造橋支援平滑返回今日
+    // visibleDates 供 Modal 使用（前7後60），導覽列直接用 allDates
     const visibleDates = useMemo(()=>{ 
         if(!allDates.length) return []; 
-        let start = Math.max(0, dateIdx - 7);
-        let end = Math.min(allDates.length, dateIdx + 61);
-        // V22.3: isReturning 時擴展視窗到今天，確保 smooth scroll 有完整軌道
-        if(isReturning){
-            const tK = formatK(new Date());
-            const todayIdx = allDates.findIndex(d => d.fullKey === tK);
-            if(todayIdx !== -1){
-                start = Math.min(start, Math.max(0, todayIdx - 7));
-                end = Math.max(end, Math.min(allDates.length, todayIdx + 61));
-            }
-        }
-        return allDates.slice(start, end); 
-    },[allDates, dateIdx, isReturning]);
+        const start=Math.max(0,dateIdx-7), end=Math.min(allDates.length,dateIdx+61); 
+        return allDates.slice(start,end); 
+    },[allDates,dateIdx]);
 
-    useSwipeDateNavigation(visibleDates, dateIdx, goDate, activeModal, allDates);
+    useSwipeDateNavigation(allDates, dateIdx, goDate, activeModal);
 
     useEffect(()=>{
         const onOnline  = () => setIsOffline(false);
@@ -509,16 +493,7 @@ const App = () => {
         return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
     }, []);
 
-    // V22.3: 動態造橋，確保 smooth scroll 有完整 DOM 軌道
-    const handleBackToday = useCallback(()=>{ 
-        const tK = formatK(new Date());
-        const i = allDates.findIndex(d => d.fullKey === tK);
-        if(i !== -1){
-            setIsReturning(true);   // 先撐開視窗（鋪軌道）
-            goDate(i, tK);          // 觸發跳轉與 smooth scroll
-            setTimeout(() => setIsReturning(false), 800); // scroll 結束後收回
-        }
-    },[allDates, goDate]);
+    const handleBackToday = useCallback(()=>{ const tK=formatK(new Date()), i=allDates.findIndex(d=>d.fullKey===tK); if(i!==-1) goDate(i,tK); },[allDates,goDate]);
     const openCal = useCallback(()=>{ setPrevModal(activeModal); if(allDates[dateIdx]){ const d = parseK(allDates[dateIdx].fullKey); setCalMonth({y:d.getFullYear(), m:d.getMonth()}); } setActiveModal('calendar'); },[activeModal, allDates, dateIdx]);
     
     const handleStaffClick = useCallback(name=>{ setQueryTarget(name); setActiveModal('queryStaff'); },[]);
@@ -698,7 +673,7 @@ const App = () => {
                         ? <span className="flex items-center mt-1.5 gap-1.5">
                             <span className="offline-dot w-1.5 h-1.5 rounded-full bg-[var(--pink)] shrink-0"/>
                             <span className="offline-text text-[10px] font-semibold tracking-[0.12em] text-[var(--pink)]">
-                                {lastUpdated ? `OFFLINE:${lastUpdated}` : 'OFFLINE'}
+                                {lastUpdated ? `OFFLINE · 快取版本 ${lastUpdated}` : 'OFFLINE'}
                             </span>
                           </span>
                         : lastUpdated&&( <button type="button" className={`flex items-center mt-1.5 text-left transition-colors ${isRefreshing?'cursor-wait text-white/78 animate-pulse':`cursor-pointer ${isRecentlyUpdated?'text-white/60':'text-white/32 hover:text-white/58'}`}`} onClick={handleRefresh} title="點擊同步並標記已讀"> {isRecentlyUpdated&&<span className="w-1.5 h-1.5 rounded-full bg-[var(--pink)] mr-1.5 animate-pulse shrink-0"/>} <span className="text-[10px] font-semibold tracking-[0.12em]">{isRefreshing?'SYNCING...':`SYNC: ${lastUpdated}`}</span> </button> )
@@ -712,7 +687,7 @@ const App = () => {
             
             <main className="flex-1 overflow-y-auto px-3.5 py-4 no-scrollbar z-10 text-left" style={{paddingBottom:'calc(7rem + env(safe-area-inset-bottom, 0px))'}}>
                 <div className="mac-glass sticky top-0 -mx-3 px-3 py-3 flex flex-col mb-4 z-20 shadow-[0_8px_32px_rgba(0,0,0,0.4)] rounded-b-[20px]">
-                    <div id="nav-scroll-container" className="flex gap-2.5 overflow-x-auto no-scrollbar pb-2 px-1"> {visibleDates.map(d=>(<button key={d.fullKey} id={`nav-${d.fullKey}`} onClick={()=>goDate(d.absIdx,d.fullKey)} className={`flex-none w-[58px] py-2.5 rounded-2xl border flex flex-col items-center justify-center transition-all duration-300 ${dateIdx===d.absIdx?'border-blue-500/50 bg-[var(--blue)] shadow-[0_4px_12px_rgba(10,132,255,0.3)] scale-105':'border-white/5 bg-white/[0.03] hover:bg-white/[0.08]'}`}> <span className={`font-bold text-[10px] mb-0.5 ${dateIdx===d.absIdx?'text-white/80':d.isOff?'text-[var(--pink)]':'text-white/40'}`}>週{d.w}</span> <span className={`text-[17px] font-black leading-none ${dateIdx===d.absIdx?'text-white':d.isOff?'text-[var(--pink)]':'text-white/70'}`}>{d.d}</span> </button>))} </div>
+                    <div id="nav-scroll-container" className="flex gap-2.5 overflow-x-auto no-scrollbar pb-2 px-1"> {allDates.map(d=>(<button key={d.fullKey} id={`nav-${d.fullKey}`} onClick={()=>goDate(d.absIdx,d.fullKey)} className={`flex-none w-[58px] py-2.5 rounded-2xl border flex flex-col items-center justify-center transition-all duration-300 ${dateIdx===d.absIdx?'border-blue-500/50 bg-[var(--blue)] shadow-[0_4px_12px_rgba(10,132,255,0.3)] scale-105':'border-white/5 bg-white/[0.03] hover:bg-white/[0.08]'}`}> <span className={`font-bold text-[10px] mb-0.5 ${dateIdx===d.absIdx?'text-white/80':d.isOff?'text-[var(--pink)]':'text-white/40'}`}>週{d.w}</span> <span className={`text-[17px] font-black leading-none ${dateIdx===d.absIdx?'text-white':d.isOff?'text-[var(--pink)]':'text-white/70'}`}>{d.d}</span> </button>))} </div>
                 </div>
 
                 <button type="button" className={`w-full mb-5 text-left rounded-[var(--r-md)] px-4 py-3.5 flex items-start gap-3 border transition-colors ${hasNote?'bg-white/[0.05] border-white/30 reminder-glow hover:bg-white/[0.09]':'bg-white/[0.02] border-white/5 hover:bg-white/[0.04]'}`} onClick={()=>setActiveModal('notes')}>
