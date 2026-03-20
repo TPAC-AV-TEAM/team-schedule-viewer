@@ -243,7 +243,7 @@ const isAlertShift = shift => !!shift && shift.toUpperCase() !== 'A';
 const formatNoteText = (text, isMobile = false) => {
     if (!text) return "";
     const circles = ['','➊','➋','➌','➍','➎','➏','➐','➑','➒','➓','⓫','⓬','⓭','⓮','⓯','⓰','⓱','⓲','⓳','⓴'];
-    let formatted = text.replace(/(^|\s)(\d+)[.、,，]\s*/g, (m, p1, p2) => {
+    let formatted = text.replace(/(^|\s)(\d+)[.、,，]\s*/gm, (m, p1, p2) => {
         const n = parseInt(p2, 10);
         const badge = (n > 0 && n <= 20) ? circles[n] : p2 + '.';
         return `${p1}${badge} `;
@@ -384,9 +384,10 @@ const MasterRosterModal = memo(({ onClose, visibleDates, schedule, aliasMap, tod
     const [detail, setDetail] = useState(null);
     useEffect(() => {
         if(!detail) return;
-        const onKeyDown = e => { if(e.key === 'Escape'){ e.stopPropagation(); setDetail(null); } };
-        document.addEventListener('keydown', onKeyDown);
-        return () => document.removeEventListener('keydown', onKeyDown);
+        // V22.4: capture phase + stopImmediatePropagation 確保 detail ESC 不觸發外層 Modal 關閉
+        const onKeyDown = e => { if(e.key === 'Escape'){ e.stopImmediatePropagation(); setDetail(null); } };
+        document.addEventListener('keydown', onKeyDown, true);
+        return () => document.removeEventListener('keydown', onKeyDown, true);
     }, [detail]);
     return ( <div className="fixed inset-0 z-[1000] flex items-center justify-center p-3 bg-black/70" onClick={onClose}> <div className="animate-window bg-[var(--glass-modal)] border border-[var(--border-mid)] w-full max-w-4xl rounded-[var(--r-2xl)] flex flex-col max-h-[90vh] overflow-hidden" onClick={e=>e.stopPropagation()}> <div className="p-3.5 border-b border-[var(--border-dim)] flex items-center justify-between"> <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/[0.07] border border-[var(--border-mid)] text-white/55 hover:bg-white/15 hover:text-white/90 transition-all flex items-center justify-center text-[18px] leading-none">×</button> <h3 className="text-[15px] font-bold tracking-wide">Master Roster</h3> <div className="flex gap-2"> <ActionBtn onClick={handleBackToday} icon="today" tip="回到今天"/> <ActionBtn onClick={openCal} icon="cal" tip="跳轉日期"/> </div> </div> <div className="flex-1 overflow-hidden relative"> <div className="master-left-col"> <div className="master-hdr flex items-center justify-center border-b border-[var(--border-mid)] text-[9.5px] font-bold text-white/25 tracking-[0.18em] uppercase">STAFF</div> {CONFIG.STAFF_ORDER.map(s=>( <div key={s} className="master-row px-2"> <StaffBtn name={s} aliasMap={aliasMap} mode="master" onClick={handleStaffClick}/> </div> ))} </div> <div id="master-scroll-container" className="master-right h-full overflow-y-auto no-scrollbar scroll-smooth"> <div style={{width:'fit-content'}}> <div className="flex bg-[rgba(12,12,14,0.96)] border-b border-[var(--border-mid)] sticky top-0 z-40 master-hdr"> {visibleDates.map(d=>( <div key={d.fullKey} id={`mnav-${d.fullKey}`} className={`master-cell p-1.5 flex flex-col justify-center ${d.fullKey===todayK?'master-today':''} ${d.isOff?'weekend-bg':''}`}> <div className={`text-[9.5px] tracking-wide ${d.isOff?'text-[var(--pink)] font-bold':'text-white/28'}`}>週{d.w}</div> <div className={`text-[14px] font-extrabold tabular-nums ${d.isOff?'text-[var(--pink)]':''}`}>{d.d}</div> </div> ))} </div> {CONFIG.STAFF_ORDER.map(staff=>( <div key={staff} className="master-row"> {visibleDates.map(d=>{ 
         let labels=[], bgStyle={backgroundColor:'rgba(255,255,255,0.03)'}, hasS=false, isAlert=false; 
@@ -570,7 +571,7 @@ const App = () => {
             setIsUnlocked(true);
             setIsRecentlyUpdated(false);
             window.RosterCache.setSeenUpdate(p.fmtKey);
-            const curKey = p.allDates[dateIdx]?.fullKey || formatK(new Date());
+            const curKey = selectedDateKeyRef.current || formatK(new Date());
             const newIdx = p.keys.includes(curKey) ? p.keys.indexOf(curKey) : p.keys.indexOf(formatK(new Date()));
             if(newIdx !== -1){ setDateIdx(newIdx); setTimeout(()=>scrollTo(curKey,"nav-scroll-container"), 300); }
             return;
@@ -585,7 +586,7 @@ const App = () => {
             window.location.href = window.location.pathname + '?v=' + Date.now();
         }, CONFIG.SYNC_FEEDBACK_MS);
     // V22.2 修: 移除 pendingUpdateRef 依賴
-    },[isRefreshing, isOffline, isRecentlyUpdated, dateIdx, markUpdateSeen, showError, scrollTo]);
+    },[isRefreshing, isOffline, isRecentlyUpdated, markUpdateSeen, showError, scrollTo]);
 
     useEffect(() => {
         let isMounted = true;
