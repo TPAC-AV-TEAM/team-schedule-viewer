@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>視聽班表系統 | V22.2</title>
+    <title>視聽班表系統 | V22.4</title>
     
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -151,7 +151,7 @@
         }
         @keyframes tip-fade { from { opacity:0; transform:translateX(-50%) translateY(-4px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
 
-       /* V22: Offline 紅色閃爍指示器 */
+        /* V22: Offline 紅色閃爍指示器 — 亮1s → 0.5s淡化 → 暗1s → 0.5s亮起 */
         @keyframes offline-pulse {
             0%, 33%  { opacity: 1; }
             50%      { opacity: 0.2; }
@@ -197,7 +197,7 @@ const { useState, useEffect, useMemo, memo, useCallback, useRef } = React;
    1. CENTRAL CONFIG
    ========================================================================= */
 const CONFIG = {
-    APP_VERSION: 'V22.2',
+    APP_VERSION: 'V22.4',
     APP_ID: "team-schedule-viewer",
     FIREBASE: { apiKey: "AIzaSyA7tgFRxDCnZpOzEvfT978wIAcqcXNZXVQ", authDomain: "team-schedule-viewer.firebaseapp.com", projectId: "team-schedule-viewer", storageBucket: "team-schedule-viewer.firebasestorage.app", messagingSenderId: "202883367260", appId: "1:202883367260:web:b31e495084a4ea8af20199" },
     VENUES: [ 
@@ -444,6 +444,9 @@ const App = () => {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isOffline, setIsOffline] = useState(!navigator.onLine);
     const [user, setUser] = useState(null);
+
+    // V22.3: 返回今日狀態旗標（動態造橋用）
+    const [isReturning, setIsReturning] = useState(false);
     
     const [dateIdx, setDateIdx] = useState(() => {
         if(!cachedData?.roster) return 0;
@@ -457,12 +460,22 @@ const App = () => {
     const { scrollTo, allScrollTo } = useScrollSync();
     const goDate = useCallback((absIdx,fk)=>{ setDateIdx(absIdx); allScrollTo(fk); },[allScrollTo]);
     
-    // V22.1/V22.2: 統一使用 visibleDates (前7後60) 進行畫面渲染限制
+    // V22.1+: visibleDates 前7後60，V22.3 動態造橋支援平滑返回今日
     const visibleDates = useMemo(()=>{ 
         if(!allDates.length) return []; 
-        const start=Math.max(0,dateIdx-7), end=Math.min(allDates.length,dateIdx+61); 
-        return allDates.slice(start,end); 
-    },[allDates,dateIdx]);
+        let start = Math.max(0, dateIdx - 7);
+        let end = Math.min(allDates.length, dateIdx + 61);
+        // V22.3: isReturning 時擴展視窗到今天，確保 smooth scroll 有完整軌道
+        if(isReturning){
+            const tK = formatK(new Date());
+            const todayIdx = allDates.findIndex(d => d.fullKey === tK);
+            if(todayIdx !== -1){
+                start = Math.min(start, Math.max(0, todayIdx - 7));
+                end = Math.max(end, Math.min(allDates.length, todayIdx + 61));
+            }
+        }
+        return allDates.slice(start, end); 
+    },[allDates, dateIdx, isReturning]);
 
     useSwipeDateNavigation(visibleDates, dateIdx, goDate, activeModal, allDates);
 
@@ -496,7 +509,16 @@ const App = () => {
         return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
     }, []);
 
-    const handleBackToday = useCallback(()=>{ const tK=formatK(new Date()), i=allDates.findIndex(d=>d.fullKey===tK); if(i!==-1) goDate(i,tK); },[allDates,goDate]);
+    // V22.3: 動態造橋，確保 smooth scroll 有完整 DOM 軌道
+    const handleBackToday = useCallback(()=>{ 
+        const tK = formatK(new Date());
+        const i = allDates.findIndex(d => d.fullKey === tK);
+        if(i !== -1){
+            setIsReturning(true);   // 先撐開視窗（鋪軌道）
+            goDate(i, tK);          // 觸發跳轉與 smooth scroll
+            setTimeout(() => setIsReturning(false), 800); // scroll 結束後收回
+        }
+    },[allDates, goDate]);
     const openCal = useCallback(()=>{ setPrevModal(activeModal); if(allDates[dateIdx]){ const d = parseK(allDates[dateIdx].fullKey); setCalMonth({y:d.getFullYear(), m:d.getMonth()}); } setActiveModal('calendar'); },[activeModal, allDates, dateIdx]);
     
     const handleStaffClick = useCallback(name=>{ setQueryTarget(name); setActiveModal('queryStaff'); },[]);
