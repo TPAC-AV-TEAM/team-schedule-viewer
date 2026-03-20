@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>視聽班表系統 | V22.0</title>
+    <title>視聽班表系統 | V20.4</title>
     
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -31,26 +31,6 @@
         window.SafeStorage = {
             set: (key, value) => { try { localStorage.setItem(key, JSON.stringify(value)); return true; } catch(err) { return false; } },
             get: (key, def) => { try { const val = localStorage.getItem(key); return val ? JSON.parse(val) : (def !== undefined ? def : null); } catch(err) { return def; } }
-        };
-
-        // V22: 班表快取專用物件
-        window.RosterCache = {
-            KEYS: {
-                DATA:    'tpac_roster_cache',
-                UPDATED: 'tpac_seen_update',
-                SAVED_AT:'tpac_cache_saved_at',
-                ALIAS:   'tpac_alias_cache'
-            },
-            save: function(payload) {
-                window.SafeStorage.set(this.KEYS.DATA, payload);
-                window.SafeStorage.set(this.KEYS.SAVED_AT, new Date().toISOString());
-            },
-            load: function() { return window.SafeStorage.get(this.KEYS.DATA, null); },
-            hasCache: function() { return !!window.SafeStorage.get(this.KEYS.DATA, null); },
-            getSeenUpdate: function() { return window.SafeStorage.get(this.KEYS.UPDATED, ''); },
-            setSeenUpdate: function(val) { window.SafeStorage.set(this.KEYS.UPDATED, val); },
-            saveAlias: function(maps) { window.SafeStorage.set(this.KEYS.ALIAS, maps); },
-            loadAlias: function() { return window.SafeStorage.get(this.KEYS.ALIAS, {}); }
         };
     </script>
 
@@ -150,41 +130,9 @@
             [data-tip]:hover::after { content: attr(data-tip); position: absolute; top: 120%; left: 50%; transform: translateX(-50%); background: rgba(28,28,32,0.97); color: rgba(255,255,255,0.88); border: 1px solid var(--border-mid); padding: 5px 11px; border-radius: var(--r-xs); font-size: 11px; font-weight: 600; white-space: nowrap; z-index: 10000; pointer-events: none; backdrop-filter: blur(16px); box-shadow: 0 6px 22px rgba(0,0,0,0.55); animation: tip-fade 0.12s ease-out forwards; }
         }
         @keyframes tip-fade { from { opacity:0; transform:translateX(-50%) translateY(-4px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
-
-        /* V22: Offline 紅色閃爍指示器 */
-        @keyframes offline-pulse { 0%,100% { opacity:1; } 50% { opacity:0.35; } }
-        .offline-dot  { animation: offline-pulse 1.2s ease-in-out infinite; }
-        .offline-text { animation: offline-pulse 1.2s ease-in-out infinite; }
     </style>
 </head>
 <body>
-<!-- V22: 初次無網路防護 (Vanilla JS，不依賴 React/CDN) -->
-<div id="offline-guard" style="display:none;position:fixed;inset:0;z-index:99999;background:#0c0c0e;font-family:system-ui,sans-serif;color:rgba(255,255,255,0.9);flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;gap:16px;">
-    <div style="font-size:48px;">⚠️</div>
-    <div style="font-size:18px;font-weight:700;letter-spacing:-0.02em;">初次使用需要網路連線</div>
-    <div style="font-size:14px;color:rgba(255,255,255,0.55);line-height:1.7;max-width:300px;">系統元件與班表資料尚未下載到此裝置。<br>請確認網路狀態後，重新整理頁面。</div>
-    <button onclick="window.location.reload()" style="margin-top:8px;padding:12px 28px;background:rgba(10,132,255,0.8);border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:600;cursor:pointer;">重新整理</button>
-</div>
-<script>
-(function(){
-    var hasCachedData = window.RosterCache ? window.RosterCache.hasCache() : !!(localStorage && localStorage.getItem('tpac_roster_cache'));
-    var isOnline = navigator.onLine;
-    if(!hasCachedData && !isOnline){
-        var guard = document.getElementById('offline-guard');
-        if(guard) guard.style.display = 'flex';
-        window.addEventListener('online', function(){ window.location.reload(); });
-    }
-    window.addEventListener('load', function(){
-        setTimeout(function(){
-            if(!window.React){
-                var guard = document.getElementById('offline-guard');
-                if(guard) guard.style.display = 'flex';
-            }
-        }, 5000);
-    });
-})();
-</script>
-
 <div id="root"></div>
 <script type="text/babel">
 const { useState, useEffect, useMemo, memo, useCallback, useRef } = React;
@@ -193,7 +141,7 @@ const { useState, useEffect, useMemo, memo, useCallback, useRef } = React;
    1. CENTRAL CONFIG
    ========================================================================= */
 const CONFIG = {
-    APP_VERSION: 'V22.0',
+    APP_VERSION: 'V20.4', // 更新版本號
     APP_ID: "team-schedule-viewer",
     FIREBASE: { apiKey: "AIzaSyA7tgFRxDCnZpOzEvfT978wIAcqcXNZXVQ", authDomain: "team-schedule-viewer.firebaseapp.com", projectId: "team-schedule-viewer", storageBucket: "team-schedule-viewer.firebasestorage.app", messagingSenderId: "202883367260", appId: "1:202883367260:web:b31e495084a4ea8af20199" },
     VENUES: [ 
@@ -216,11 +164,7 @@ const CONFIG = {
         "2026/02/19", "2026/02/20", "2026/03/02", "2026/04/03", "2026/04/06", 
         "2026/05/01", "2026/06/19", "2026/09/25", "2026/10/09"
     ]),
-    REGEX: { LEAVE: /休|例|假/, OFFICE: /辦公|支援|居家|其他|其它/ },
-    // V22: 補班日（週六日但需上班，isOff 判斷排除）
-    MAKEUP_DAYS: new Set([
-        // 範例："2026/03/07"
-    ])
+    REGEX: { LEAVE: /休|例|假/, OFFICE: /辦公|支援|居家|其他|其它/ }
 };
 const VENUE_IDS = CONFIG.VENUES.map(v => v.id);
 const VENUE_MAP = Object.fromEntries(CONFIG.VENUES.map(v => [v.id, v]));
@@ -265,8 +209,6 @@ const formatNoteText = (text, isMobile = false) => {
     setInterval(checkAndReload, 3600000);
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkAndReload(); });
     window.addEventListener('focus', checkAndReload);
-    // V22: 手機隔天解鎖時序：visibilitychange 可能先於網路恢復，補 online 接力確保必定觸發
-    window.addEventListener('online', checkAndReload);
 })();
 
 /* =========================================================================
@@ -371,13 +313,13 @@ const CalendarPicker = memo(({ allDates, onSelect, onClose, calMonth, setCalMont
     const dateSet = useMemo(()=>new Set(allDates.map(d=>d.fullKey)),[allDates]);
     const {y,m} = calMonth, firstDay = new Date(y,m,1).getDay(), daysInMonth = new Date(y,m+1,0).getDate(), todayK = formatK(new Date()), cells = []; 
     for(let i=0;i<firstDay;i++) cells.push(null); for(let d=1;d<=daysInMonth;d++) cells.push(d);
-    return ( <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-md" onClick={onClose}> <div className="animate-window bg-[rgba(18,18,22,0.96)] border border-[var(--border-mid)] rounded-[var(--r-xl)] shadow-2xl w-full max-w-[280px] p-5" onClick={e=>e.stopPropagation()}> <div className="flex items-center justify-between mb-4"> <button onClick={()=>setCalMonth(p=>p.m===0?{y:p.y-1,m:11}:{y:p.y,m:p.m-1})} className="text-xl px-2 py-1">‹</button> <span className="text-[15px] font-bold">{y} 年 {m+1} 月</span> <button onClick={()=>setCalMonth(p=>p.m===11?{y:p.y+1,m:0}:{y:p.y,m:p.m+1})} className="text-xl px-2 py-1">›</button> </div> <div className="grid grid-cols-7 gap-y-1.5 gap-x-1"> {['日','一','二','三','四','五','六'].map(w=>(<div key={w} className="text-center text-[10.5px] font-semibold text-white/28 tracking-wide">{w}</div>))} {cells.map((d,i)=>{ if(!d) return <div key={"e"+i}/>; const fk=`${y}/${String(m+1).padStart(2,'0')}/${String(d).padStart(2,'0')}`, has=dateSet.has(fk), isToday=fk===todayK, isWk=(((firstDay+d-1)%7===0||(firstDay+d-1)%7===6)&&!CONFIG.MAKEUP_DAYS.has(fk))||CONFIG.HOLIDAYS.has(fk); return ( <button key={fk} disabled={!has} onClick={()=>onSelect(fk)} className={`h-8 w-full rounded-full text-[13px] flex items-center justify-center transition-all ${isToday?'bg-[var(--blue)] text-white':has?(isWk?'text-rose-400 hover:bg-white/10':'text-white hover:bg-white/10'):'text-white/12 cursor-default'}`}>{d}</button> ); })} </div> </div> </div> );
+    return ( <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-md" onClick={onClose}> <div className="animate-window bg-[rgba(18,18,22,0.96)] border border-[var(--border-mid)] rounded-[var(--r-xl)] shadow-2xl w-full max-w-[280px] p-5" onClick={e=>e.stopPropagation()}> <div className="flex items-center justify-between mb-4"> <button onClick={()=>setCalMonth(p=>p.m===0?{y:p.y-1,m:11}:{y:p.y,m:p.m-1})} className="text-xl px-2 py-1">‹</button> <span className="text-[15px] font-bold">{y} 年 {m+1} 月</span> <button onClick={()=>setCalMonth(p=>p.m===11?{y:p.y+1,m:0}:{y:p.y,m:p.m+1})} className="text-xl px-2 py-1">›</button> </div> <div className="grid grid-cols-7 gap-y-1.5 gap-x-1"> {['日','一','二','三','四','五','六'].map(w=>(<div key={w} className="text-center text-[10.5px] font-semibold text-white/28 tracking-wide">{w}</div>))} {cells.map((d,i)=>{ if(!d) return <div key={"e"+i}/>; const fk=`${y}/${String(m+1).padStart(2,'0')}/${String(d).padStart(2,'0')}`, has=dateSet.has(fk), isToday=fk===todayK, isWk=(firstDay+d-1)%7===0||(firstDay+d-1)%7===6 || CONFIG.HOLIDAYS.has(fk); return ( <button key={fk} disabled={!has} onClick={()=>onSelect(fk)} className={`h-8 w-full rounded-full text-[13px] flex items-center justify-center transition-all ${isToday?'bg-[var(--blue)] text-white':has?(isWk?'text-rose-400 hover:bg-white/10':'text-white hover:bg-white/10'):'text-white/12 cursor-default'}`}>{d}</button> ); })} </div> </div> </div> );
 });
 
 const NotesModal = memo(({ onClose, visibleDates, schedule, goDate, handleBackToday }) => {
     const today = new Date(); today.setHours(0,0,0,0);
     const notesList = visibleDates.filter(d => schedule?.notes?.[d.fullKey]?.trim());
-    return ( <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={onClose}> <div className="animate-window bg-[var(--glass-modal)] border border-[var(--border-mid)] w-full max-w-md rounded-[var(--r-2xl)] flex flex-col max-h-[85vh] overflow-hidden" onClick={e=>e.stopPropagation()}> <div className="p-3 border-b border-[var(--border-dim)] bg-white/[0.03] flex items-center justify-between"> <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/[0.07] border border-[var(--border-mid)] text-white/55 hover:bg-white/15 hover:text-white/90 transition-all flex items-center justify-center text-[18px] leading-none">×</button> <h3 className="text-[16px] font-bold text-[var(--pink)]">重要提醒</h3> <ActionBtn onClick={handleBackToday} icon="today" tip="回到今天"/> </div> <div id="notes-scroll-container" className="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar scroll-smooth"> {notesList.length===0 ? ( <div className="text-center text-white/40 py-10">無任何提醒事項</div> ) : notesList.map(d=>( <button key={d.fullKey} id={`note-${d.fullKey}`} onClick={() => { onClose(); setTimeout(() => requestAnimationFrame(() => goDate(d.absIdx, d.fullKey)), 300); }} className={`w-full text-left p-3.5 rounded-2xl border transition-all ${parseK(d.fullKey)<today?'bg-white/[0.02] border-white/5 opacity-60':'bg-[rgba(255,55,95,0.08)] border-[rgba(255,55,95,0.2)]'}`}> <div className="text-[12px] font-bold">{d.fullKey} (週{d.w})</div> <div className="text-[14.5px] font-medium leading-relaxed whitespace-pre-wrap"><span className="md:hidden">{formatNoteText(schedule?.notes?.[d.fullKey], true)}</span><span className="hidden md:inline">{formatNoteText(schedule?.notes?.[d.fullKey], false)}</span></div> </button> ))} </div> </div> </div> );
+    return ( <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={onClose}> <div className="animate-window bg-[var(--glass-modal)] border border-[var(--border-mid)] w-full max-w-md rounded-[var(--r-2xl)] flex flex-col max-h-[85vh] overflow-hidden" onClick={e=>e.stopPropagation()}> <div className="p-3 border-b border-[var(--border-dim)] bg-white/[0.03] flex items-center justify-between"> <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/[0.07] border border-[var(--border-mid)] text-white/55 hover:bg-white/15 hover:text-white/90 transition-all flex items-center justify-center text-[18px] leading-none">×</button> <h3 className="text-[16px] font-bold text-[var(--pink)]">重要提醒</h3> <ActionBtn onClick={handleBackToday} icon="today" tip="回到今天"/> </div> <div id="notes-scroll-container" className="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar scroll-smooth"> {notesList.length===0 ? ( <div className="text-center text-white/40 py-10">無任何提醒事項</div> ) : notesList.map(d=>( <button key={d.fullKey} id={`note-${d.fullKey}`} onClick={() => { onClose(); setTimeout(() => requestAnimationFrame(() => goDate(d.absIdx, d.fullKey)), 100); }} className={`w-full text-left p-3.5 rounded-2xl border transition-all ${parseK(d.fullKey)<today?'bg-white/[0.02] border-white/5 opacity-60':'bg-[rgba(255,55,95,0.08)] border-[rgba(255,55,95,0.2)]'}`}> <div className="text-[12px] font-bold">{d.fullKey} (週{d.w})</div> <div className="text-[14.5px] font-medium leading-relaxed whitespace-pre-wrap"><span className="md:hidden">{formatNoteText(schedule?.notes?.[d.fullKey], true)}</span><span className="hidden md:inline">{formatNoteText(schedule?.notes?.[d.fullKey], false)}</span></div> </button> ))} </div> </div> </div> );
 });
 
 const MasterRosterModal = memo(({ onClose, visibleDates, schedule, aliasMap, todayK, handleStaffClick, handleBackToday, openCal }) => {
@@ -417,70 +359,19 @@ const QueryModal = memo(({ queryStaff, queryVenue, onClose, setQueryStaff, setQu
    5. MAIN APP ENTRY
    ========================================================================= */
 const App = () => {
-    // V22: 快取秒開 — 有快取立即渲染，Firebase 在背景同步
-    const [cachedData] = useState(() => window.RosterCache.load());
-
-    const [allDates, setAllDates] = useState(() => {
-        if(!cachedData?.roster) return [];
-        const keys = Object.keys(safeParse(cachedData.roster)).sort();
-        return keys.map((k, idx) => {
-            const [yy,mm,dd]=k.split('/').map(Number), o=new Date(yy,mm-1,dd);
-            const w=['日','一','二','三','四','五','六'][o.getDay()];
-            const isOff=((w==='六'||w==='日')&&!CONFIG.MAKEUP_DAYS.has(k))||CONFIG.HOLIDAYS.has(k);
-            return{d:`${mm}/${dd}`,w,fullKey:k,absIdx:idx,isOff};
-        });
-    });
-    const [schedule, setSchedule] = useState(() => cachedData
-        ? { roster: safeParse(cachedData.roster), statuses: safeParse(cachedData.statuses), shows: safeParse(cachedData.shows), notes: safeParse(cachedData.notes) }
-        : { roster:{}, statuses:{}, shows:{}, notes:{} }
-    );
-    const [aliasMap, setAliasMap] = useState(() => window.RosterCache.loadAlias());
-    const [lastUpdated, setLastUpdated] = useState(cachedData?.lastUpdated || "");
-    const [isRecentlyUpdated, setIsRecentlyUpdated] = useState(false);
-    const [isUnlocked, setIsUnlocked] = useState(!!cachedData);
-    const [errorMsg, setErrorMsg] = useState(null);
-    const [isRefreshing, setIsRefreshing] = useState(false);
-    const [isOffline, setIsOffline] = useState(!navigator.onLine);
-    const [user, setUser] = useState(null);
-    // V22: 初始化時直接算今天 index，消除冷啟動閃爍
-    const [dateIdx, setDateIdx] = useState(() => {
-        if(!cachedData?.roster) return 0;
-        const keys = Object.keys(safeParse(cachedData.roster)).sort();
-        const i = keys.indexOf(formatK(new Date()));
-        return i !== -1 ? i : 0;
-    });
-    const [activeModal,setActiveModal] = useState(null), [prevModal, setPrevModal] = useState(null), [queryTarget,setQueryTarget] = useState(null);
+    const [allDates,setAllDates] = useState([]), [schedule,setSchedule] = useState({roster:{},statuses:{},shows:{},notes:{}});
+    const [aliasMap,setAliasMap] = useState({}), [lastUpdated,setLastUpdated] = useState(""), [isRecentlyUpdated,setIsRecentlyUpdated] = useState(false);
+    const [isUnlocked,setIsUnlocked] = useState(false), [errorMsg,setErrorMsg] = useState(null), [isRefreshing,setIsRefreshing] = useState(false);
+    const [user,setUser] = useState(null), [dateIdx,setDateIdx] = useState(0), [activeModal,setActiveModal] = useState(null), [prevModal, setPrevModal] = useState(null), [queryTarget,setQueryTarget] = useState(null);
     const [calMonth,setCalMonth] = useState(()=>{const n=new Date();return{y:n.getFullYear(),m:n.getMonth()};});
     
     const { scrollTo, allScrollTo } = useScrollSync();
     const goDate = useCallback((absIdx,fk)=>{ setDateIdx(absIdx); allScrollTo(fk); },[allScrollTo]);
     useSwipeDateNavigation(allDates, dateIdx, goDate, activeModal);
 
-    // V22: 監聽網路狀態
-    useEffect(()=>{
-        const onOnline  = () => setIsOffline(false);
-        const onOffline = () => setIsOffline(true);
-        window.addEventListener('online',  onOnline);
-        window.addEventListener('offline', onOffline);
-        return ()=>{ window.removeEventListener('online', onOnline); window.removeEventListener('offline', onOffline); };
-    },[]);
-
-    // V22: Toast 競態保護 — 統一用 showError 管理，clearTimeout 確保只有最後一個計時器
-    const errorTimeoutRef = useRef(null);
-    const showError = useCallback((msg, ms = 4000) => {
-        clearTimeout(errorTimeoutRef.current);
-        setErrorMsg(msg);
-        if(msg) errorTimeoutRef.current = setTimeout(() => setErrorMsg(null), ms);
-    }, []);
-
-    // V22: 背景更新暫存區 — onSnapshot 有新資料時存這裡，不直接改畫面
-    const pendingUpdateRef = useRef(null);
-    // V22: 區分「初次無快取等待 Firebase」vs「有快取背景同步」
-    const isFirstLoadRef = useRef(!window.RosterCache.hasCache());
-
     const markUpdateSeen = useCallback(()=>{ 
         if(!isRecentlyUpdated || !lastUpdated) return; 
-        window.RosterCache.setSeenUpdate(lastUpdated);
+        window.SafeStorage.set('tpac_seen_update', lastUpdated); 
         setIsRecentlyUpdated(false); 
     },[isRecentlyUpdated, lastUpdated]);
     
@@ -519,119 +410,75 @@ const App = () => {
         return () => { document.body.style.cursor = ''; };
     }, [isRefreshing]);
 
+    const hasInitializedSnapshotRef = useRef(false);
     const selectedDateKeyRef = useRef(null);
     useEffect(()=>{ selectedDateKeyRef.current = allDates[dateIdx]?.fullKey || null; },[allDates, dateIdx]);
 
     const applyRosterSnapshot = useCallback((snap)=>{
-        if(!snap.exists()){ showError("找不到班表資料庫，請聯絡管理員", 4000); return; }
-        showError(null);
+        if(!snap.exists()){ setErrorMsg("找不到班表資料庫，請聯絡管理員"); return; }
+        setErrorMsg(null);
         const data=snap.data(), roster=safeParse(data.roster), statuses=safeParse(data.statuses), shows=safeParse(data.shows), notes=safeParse(data.notes);
-        const fmtKey = data.lastUpdated ? formatLastUpdated(data.lastUpdated) : "";
-
-        // V22: 每次 snapshot 都存快取（不論初次或背景更新）
-        window.RosterCache.save({ roster, statuses, shows, notes, lastUpdated: fmtKey });
-
+        if(data.lastUpdated){
+            const fmtKey = formatLastUpdated(data.lastUpdated);
+            if(fmtKey){
+                setLastUpdated(fmtKey);
+                setIsRecentlyUpdated(fmtKey !== (window.SafeStorage.get('tpac_seen_update') || ''));
+            }
+        }
         const keys=Object.keys(roster).sort(), sd=keys.map((k,idx)=>{ 
             const [yy,mm,dd]=k.split('/').map(Number), o=new Date(yy,mm-1,dd); 
             const w=['日','一','二','三','四','五','六'][o.getDay()];
-            const isOff=((w==='六'||w==='日')&&!CONFIG.MAKEUP_DAYS.has(k))||CONFIG.HOLIDAYS.has(k);
+            const isOff=w==='六'||w==='日'||CONFIG.HOLIDAYS.has(k);
             return{d:`${mm}/${dd}`,w,fullKey:k,absIdx:idx,isOff}; 
         });
-        const parsed = { roster, statuses, shows, notes, allDates: sd, keys, fmtKey };
+        setSchedule({roster,statuses,shows,notes}); setAllDates(sd); setIsUnlocked(true);
 
-        // V22: isFirstLoadRef 區分「無快取初次載入」vs「有快取背景同步」
-        // true  = 無快取 → Firebase 回來後直接渲染解鎖
-        // false = 有快取已秒開 → 存 pendingRef 亮紅點，等使用者手動 SYNC
-        if(isFirstLoadRef.current){
-            isFirstLoadRef.current = false;
-            if(fmtKey) setLastUpdated(fmtKey);
-            setSchedule({roster,statuses,shows,notes}); setAllDates(sd); setIsUnlocked(true);
-            setIsRecentlyUpdated(false);
-            window.RosterCache.setSeenUpdate(fmtKey);
-            if(!keys.length) return;
-            const todayKey = formatK(new Date());
-            const targetKey = keys.includes(todayKey) ? todayKey : keys[0];
-            const targetIdx = keys.indexOf(targetKey);
-            if(targetIdx !== -1){ setDateIdx(targetIdx); setTimeout(()=>scrollTo(targetKey,"nav-scroll-container"), 300); }
-        } else {
-            // 背景更新 — 存 pendingRef，只亮紅點
-            if(fmtKey && fmtKey !== window.RosterCache.getSeenUpdate()){
-                pendingUpdateRef.current = parsed;
-                setLastUpdated(fmtKey);
-                setIsRecentlyUpdated(true);
-            }
+        if(!keys.length) return;
+        const todayKey = formatK(new Date());
+        const preferredKey = hasInitializedSnapshotRef.current ? selectedDateKeyRef.current : todayKey;
+        const targetKey = keys.includes(preferredKey) ? preferredKey : (keys.includes(todayKey) ? todayKey : keys[0]);
+        const targetIdx = keys.indexOf(targetKey);
+
+        hasInitializedSnapshotRef.current = true;
+        if(targetIdx !== -1){
+            setDateIdx(targetIdx);
+            setTimeout(()=>scrollTo(targetKey,"nav-scroll-container"), 300);
         }
-    },[formatLastUpdated, scrollTo, showError]);
+    },[formatLastUpdated, scrollTo]);
 
     const handleRefresh = useCallback(()=>{
         if(isRefreshing) return;
-        // V22: 離線時永遠最優先
-        if(isOffline){
-            showError("目前無網路連線，無法同步", 3000);
-            return;
-        }
-        // V22: 有待套用的背景更新 → 套用到畫面，並定位到原本選取的日期
-        if(pendingUpdateRef.current){
-            const p = pendingUpdateRef.current;
-            pendingUpdateRef.current = null;
-            setSchedule({roster:p.roster,statuses:p.statuses,shows:p.shows,notes:p.notes});
-            setAllDates(p.allDates);
-            setIsUnlocked(true);
-            setIsRecentlyUpdated(false);
-            window.RosterCache.setSeenUpdate(p.fmtKey);
-            // 定位：保留使用者當前選取的日期
-            const curKey = p.allDates[dateIdx]?.fullKey || formatK(new Date());
-            const newIdx = p.keys.includes(curKey) ? p.keys.indexOf(curKey) : p.keys.indexOf(formatK(new Date()));
-            if(newIdx !== -1){ setDateIdx(newIdx); setTimeout(()=>scrollTo(curKey,"nav-scroll-container"), 300); }
-            return;
-        }
-        // V22: 無新資料 → 告知使用者
-        if(!isRecentlyUpdated){
-            showError("已是最新版本", 2000);
-            return;
-        }
         markUpdateSeen();
         setIsRefreshing(true);
         setTimeout(() => {
             window.location.href = window.location.pathname + '?v=' + Date.now();
         }, CONFIG.SYNC_FEEDBACK_MS);
-    },[isRefreshing, isOffline, isRecentlyUpdated, dateIdx, pendingUpdateRef, markUpdateSeen, showError, scrollTo]);
+    },[isRefreshing, markUpdateSeen]);
 
     useEffect(() => {
-        let isMounted = true;
         let unsubscribeAuth = null;
         const initFirebase = async () => {
             let waited = 0;
             while(!window.Firebase && waited < 50) { await new Promise(r => setTimeout(r, 100)); waited++; }
-            if(!isMounted) return;
-            if(!window.Firebase) { showError("Firebase 載入逾時，請重新整理", 5000); return; }
+            if(!window.Firebase) { setErrorMsg("Firebase 載入逾時，請重新整理"); return; }
             try {
                 const app = Firebase.getApps().length === 0 ? Firebase.initializeApp(CONFIG.FIREBASE) : Firebase.getApp();
-                const auth = Firebase.getAuth(app);
-                // 先註冊 listener 再 signIn，確保 cleanup 一定有東西清
+                const auth = Firebase.getAuth(app); await Firebase.signInAnonymously(auth);
                 unsubscribeAuth = Firebase.onAuthStateChanged(auth, async (u) => {
-                    if(!u || !isMounted) return;
-                    setUser(u);
-                    const db = Firebase.getFirestore(app);
-                    const snap = await Firebase.getDoc(Firebase.doc(db,'artifacts',CONFIG.APP_ID,'public','data','configs','name_mapping'));
-                    if(!isMounted) return;
-                    if(snap.exists()){
-                        const maps = snap.data().maps || {};
-                        setAliasMap(maps);
-                        window.RosterCache.saveAlias(maps); // V22: aliasMap 存快取
-                    }
+                    if(!u) return; setUser(u);
+                    const db = Firebase.getFirestore(app), snap = await Firebase.getDoc(Firebase.doc(db,'artifacts',CONFIG.APP_ID,'public','data','configs','name_mapping'));
+                    if(snap.exists()) setAliasMap(snap.data().maps || {});
                 });
-                await Firebase.signInAnonymously(auth);
-            } catch(e) { console.error("Firebase Init Error:", e); showError("Firebase 初始化失敗，請重新整理", 5000); }
+            } catch(e) { console.error("Firebase Init Error:", e); setErrorMsg("Firebase 初始化失敗，請重新整理"); }
         }; initFirebase();
-        return () => { isMounted = false; if(unsubscribeAuth) unsubscribeAuth(); };
-    }, [showError]);
+        return () => { if (unsubscribeAuth) unsubscribeAuth(); };
+    }, []);
 
     useEffect(()=>{
         if(!user) return; 
         const db=Firebase.getFirestore(Firebase.getApp());
-        return Firebase.onSnapshot( Firebase.doc(db,'artifacts',CONFIG.APP_ID,'public','data','rosters','master'), applyRosterSnapshot, (e)=>{ console.error("Firebase Sync Error:", e); showError("資料同步失敗", 4000); } );
-    },[applyRosterSnapshot, user, showError]);
+        return Firebase.onSnapshot( Firebase.doc(db,'artifacts',CONFIG.APP_ID,'public','data','rosters','master'), applyRosterSnapshot, (e)=>{ console.error("Firebase Sync Error:", e); setErrorMsg("資料同步失敗，請重新整理"); } );
+    },[applyRosterSnapshot, user]);
 
     useEffect(()=>{
         if(!allDates.length||!allDates[dateIdx]) return;
@@ -656,20 +503,7 @@ const App = () => {
         return{s}; 
     },[dateIdx,allDates,schedule]);
     
-    if(!isUnlocked) return ( 
-        <div className="h-screen flex flex-col items-center justify-center text-[16px] font-medium tracking-[0.22em] gap-4" style={{background:'var(--bg-base)'}}>
-            {errorMsg
-                ? <span className="text-rose-500 font-bold px-6 text-center leading-relaxed">{errorMsg}</span>
-                : isOffline
-                    ? <div className="flex flex-col items-center gap-3 px-8 text-center">
-                        <span className="text-4xl">📡</span>
-                        <span className="text-white/70 text-[15px] font-semibold tracking-normal leading-relaxed">無網路連線<br/><span className="text-white/40 text-[13px] font-normal">請連線後重新整理以載入班表</span></span>
-                        <button onClick={()=>window.location.reload()} className="mt-2 px-6 py-2.5 rounded-xl bg-white/10 border border-white/15 text-white/70 text-[13px] font-semibold hover:bg-white/15 transition-all">重新整理</button>
-                      </div>
-                    : <span style={{color:'rgba(255,255,255,0.65)'}}>CONNECTING...</span>
-            }
-        </div>
-    );
+    if(!isUnlocked) return ( <div className="h-screen flex flex-col items-center justify-center text-[16px] font-medium tracking-[0.22em] gap-4" style={{background:'var(--bg-base)'}}> {errorMsg?<span className="text-rose-500 font-bold px-6 text-center leading-relaxed">{errorMsg}</span>:<span style={{color:'rgba(255,255,255,0.65)'}}>CONNECTING...</span>} </div> );
     
     const todayK=formatK(new Date()), curFk=allDates.length?allDates[dateIdx]?.fullKey:todayK, todayNote=schedule?.notes?.[curFk], hasNote=!!(todayNote?.trim()), queryStaff = activeModal==='queryStaff' ? queryTarget : null, queryVenue = activeModal==='queryVenue' ? queryTarget : null;
 
@@ -679,16 +513,7 @@ const App = () => {
             <header className="mac-glass pt-12 pb-4 px-5 flex items-center justify-between shrink-0 z-50">
                 <div className="flex flex-col justify-center">
                     <h1 className="text-[19px] font-extrabold tracking-[-0.03em] cursor-pointer text-white/90 hover:text-white transition-colors leading-none" onClick={()=>setActiveModal('master')}>視 聽 班 表 系 統</h1>
-                    {/* V22: 離線狀態紅色閃爍 / SYNC 按鈕 */}
-                    {isOffline
-                        ? <span className="flex items-center mt-1.5 gap-1.5">
-                            <span className="offline-dot w-1.5 h-1.5 rounded-full bg-[var(--pink)] shrink-0"/>
-                            <span className="offline-text text-[10px] font-semibold tracking-[0.12em] text-[var(--pink)]">
-                                {lastUpdated ? `OFFLINE · 快取版本 ${lastUpdated}` : 'OFFLINE'}
-                            </span>
-                          </span>
-                        : lastUpdated&&( <button type="button" className={`flex items-center mt-1.5 text-left transition-colors ${isRefreshing?'cursor-wait text-white/78 animate-pulse':`cursor-pointer ${isRecentlyUpdated?'text-white/60':'text-white/32 hover:text-white/58'}`}`} onClick={handleRefresh} title="點擊同步並標記已讀"> {isRecentlyUpdated&&<span className="w-1.5 h-1.5 rounded-full bg-[var(--pink)] mr-1.5 animate-pulse shrink-0"/>} <span className="text-[10px] font-semibold tracking-[0.12em]">{isRefreshing?'SYNCING...':`SYNC: ${lastUpdated}`}</span> </button> )
-                    }
+                    {lastUpdated&&( <button type="button" className={`flex items-center mt-1.5 text-left transition-colors ${isRefreshing?'cursor-wait text-white/78 animate-pulse':`cursor-pointer ${isRecentlyUpdated?'text-white/60':'text-white/32 hover:text-white/58'}`}`} onClick={handleRefresh} title="點擊同步並標記已讀"> {isRecentlyUpdated&&<span className="w-1.5 h-1.5 rounded-full bg-[var(--pink)] mr-1.5 animate-pulse shrink-0"/>} <span className="text-[10px] font-semibold tracking-[0.12em]">{isRefreshing?'SYNCING...':`SYNC: ${lastUpdated}`}</span> </button> )}
                 </div>
                 <div className="flex items-center gap-2.5 flex-shrink-0">
                     <ActionBtn onClick={handleBackToday} icon="today" tip="回到今天"/>
@@ -724,9 +549,6 @@ const App = () => {
             {activeModal==='master'&&( <MasterRosterModal onClose={closeModal} visibleDates={visibleDates} schedule={schedule} aliasMap={aliasMap} todayK={todayK} handleStaffClick={handleStaffClick} handleBackToday={handleBackToday} openCal={openCal}/> )}
             {(activeModal==='queryStaff'||activeModal==='queryVenue')&&( <QueryModal queryStaff={queryStaff} queryVenue={queryVenue} onClose={closeModal} setQueryStaff={name=>{ if(name){setQueryTarget(name);setActiveModal('queryStaff');} else closeModal(); }} setQueryVenue={id=>{ if(id){setQueryTarget(id);setActiveModal('queryVenue');} else closeModal(); }} visibleDates={visibleDates} schedule={schedule} aliasMap={aliasMap} curFk={curFk} handleStaffClick={handleStaffClick} handleBackToday={handleBackToday} openCal={openCal} /> )}
             {activeModal==='calendar'&&( <CalendarPicker allDates={allDates} onSelect={fk=>{ const i=allDates.findIndex(d=>d.fullKey===fk); if(i!==-1)goDate(i,fk); if(prevModal){ setActiveModal(prevModal); setPrevModal(null); } else closeModal(); }} onClose={()=>{ if(prevModal){setActiveModal(prevModal);setPrevModal(null);} else closeModal(); }} calMonth={calMonth} setCalMonth={setCalMonth} /> )}
-            
-            {/* V22: Toast 錯誤提示 */}
-            {errorMsg&&( <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[9000] px-5 py-3 rounded-2xl bg-[rgba(255,69,58,0.18)] border border-[rgba(255,69,58,0.35)] text-white/90 text-[13px] font-semibold backdrop-blur-md shadow-xl max-w-[85vw] whitespace-normal text-center animate-window">{errorMsg}</div> )}
             
             <footer className="fixed bottom-0 left-0 right-0 py-2.5 flex items-center justify-center pointer-events-none text-[9px] font-semibold tracking-[0.28em] text-white/14"> <span>TPAC SCHEDULE SYSTEM | {CONFIG.APP_VERSION}</span> </footer>
         </div>
