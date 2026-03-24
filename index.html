@@ -35,11 +35,12 @@
 
         // V22: 班表快取專用物件
         window.RosterCache = {
+            VERSION: 'V22',
             KEYS: {
-                DATA:    'tpac_roster_cache',
-                UPDATED: 'tpac_seen_update',
-                SAVED_AT:'tpac_cache_saved_at',
-                ALIAS:   'tpac_alias_cache'
+                DATA:    'tpac_roster_cache_V22',
+                UPDATED: 'tpac_seen_update_V22',
+                SAVED_AT:'tpac_cache_saved_at_V22',
+                ALIAS:   'tpac_alias_cache_V22'
             },
             save: function(payload) {
                 window.SafeStorage.set(this.KEYS.DATA, payload);
@@ -203,7 +204,7 @@ const { useState, useEffect, useMemo, memo, useCallback, useRef } = React;
    1. CENTRAL CONFIG
    ========================================================================= */
 const CONFIG = {
-    APP_VERSION: 'V22.4',
+    APP_VERSION: 'V22.6',
     APP_ID: "team-schedule-viewer",
     FIREBASE: { apiKey: "AIzaSyA7tgFRxDCnZpOzEvfT978wIAcqcXNZXVQ", authDomain: "team-schedule-viewer.firebaseapp.com", projectId: "team-schedule-viewer", storageBucket: "team-schedule-viewer.firebasestorage.app", messagingSenderId: "202883367260", appId: "1:202883367260:web:b31e495084a4ea8af20199" },
     VENUES: [ 
@@ -525,6 +526,14 @@ const App = () => {
 
     const selectedDateKeyRef = useRef(null);
     useEffect(()=>{ selectedDateKeyRef.current = allDates[dateIdx]?.fullKey || null; },[allDates, dateIdx]);
+
+    const hasScrolledRef = useRef(false);
+    useEffect(() => {
+        if (!hasScrolledRef.current && allDates.length > 0 && allDates[dateIdx]) {
+            hasScrolledRef.current = true;
+            setTimeout(() => scrollTo(allDates[dateIdx].fullKey, "nav-scroll-container"), 300);
+        }
+    }, [allDates, dateIdx, scrollTo]);
 
     const applyRosterSnapshot = useCallback((snap)=>{
         if(!snap.exists()){ showError("找不到班表資料庫，請聯絡管理員", 4000); return; }
