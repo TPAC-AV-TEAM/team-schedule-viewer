@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>視聽班表系統 | V22.7</title>
+    <title>視聽班表系統 | V22.6</title>
     
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -204,7 +204,7 @@ const { useState, useEffect, useMemo, memo, useCallback, useRef } = React;
    1. CENTRAL CONFIG
    ========================================================================= */
 const CONFIG = {
-    APP_VERSION: 'V22.7',
+    APP_VERSION: 'V22.6',
     APP_ID: "team-schedule-viewer",
     FIREBASE: { apiKey: "AIzaSyA7tgFRxDCnZpOzEvfT978wIAcqcXNZXVQ", authDomain: "team-schedule-viewer.firebaseapp.com", projectId: "team-schedule-viewer", storageBucket: "team-schedule-viewer.firebasestorage.app", messagingSenderId: "202883367260", appId: "1:202883367260:web:b31e495084a4ea8af20199" },
     VENUES: [ 
@@ -563,10 +563,7 @@ const App = () => {
             const targetIdx = keys.indexOf(targetKey);
             if(targetIdx !== -1){ setDateIdx(targetIdx); setTimeout(()=>scrollTo(targetKey,"nav-scroll-container"), 300); }
         } else {
-            // V22.7 修: 僅在確認有新版本時才亮紅點；fmtKey 空值不觸發
-            const seenUpdate = window.RosterCache.getSeenUpdate();
-            console.log('[Sync] snapshot received', { fmtKey, seenUpdate, isNew: fmtKey && fmtKey !== seenUpdate });
-            if(fmtKey && fmtKey !== seenUpdate){
+            if(fmtKey && fmtKey !== window.RosterCache.getSeenUpdate()){
                 pendingUpdateRef.current = parsed;
                 setLastUpdated(fmtKey);
                 setIsRecentlyUpdated(true);
@@ -584,13 +581,11 @@ const App = () => {
         if(pendingUpdateRef.current){
             const p = pendingUpdateRef.current;
             pendingUpdateRef.current = null;
-            // V22.7 修: 套用 pending 更新時同步寫入快取，確保下次開啟讀到最新資料
-            window.RosterCache.save({ roster: p.roster, statuses: p.statuses, shows: p.shows, notes: p.notes, lastUpdated: p.fmtKey });
-            window.RosterCache.setSeenUpdate(p.fmtKey);
             setSchedule({roster:p.roster,statuses:p.statuses,shows:p.shows,notes:p.notes});
             setAllDates(p.allDates);
             setIsUnlocked(true);
             setIsRecentlyUpdated(false);
+            window.RosterCache.setSeenUpdate(p.fmtKey);
             const curKey = selectedDateKeyRef.current || formatK(new Date());
             const newIdx = p.keys.includes(curKey) ? p.keys.indexOf(curKey) : p.keys.indexOf(formatK(new Date()));
             if(newIdx !== -1){ setDateIdx(newIdx); setTimeout(()=>scrollTo(curKey,"nav-scroll-container"), 300); }
