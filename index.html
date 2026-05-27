@@ -4,6 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>視聽班表系統 | V22.7</title>
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0c0c0e">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="班表系統">
+    <link rel="apple-touch-icon" href="icon-192.png">
     
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -168,6 +177,17 @@
         .offline-dot  { animation: offline-pulse 3s ease-in-out infinite; }
         .offline-text { animation: offline-pulse 3s ease-in-out infinite; }
     </style>
+
+    <script>
+        // V22.7 PWA: 註冊 Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(function(reg) { console.log('[PWA] SW registered, scope:', reg.scope); })
+                    .catch(function(err) { console.warn('[PWA] SW registration failed:', err); });
+            });
+        }
+    </script>
 </head>
 <body>
 <div id="offline-guard" style="display:none;position:fixed;inset:0;z-index:99999;background:#0c0c0e;font-family:system-ui,sans-serif;color:rgba(255,255,255,0.9);flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;gap:16px;">
