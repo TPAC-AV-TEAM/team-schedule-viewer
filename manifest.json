@@ -1,13 +1,13 @@
 {
-  "name": "AV 迴路盒查詢",
-  "short_name": "迴路盒",
-  "description": "音視訊迴路盒接口查詢系統",
-  "start_url": "/Panel-circuit-box/index.html",
-  "scope": "/Panel-circuit-box/",
+  "name": "視聽班表系統",
+  "short_name": "班表系統",
+  "description": "TPAC 視聽班表查詢系統",
+  "start_url": "/team-schedule-viewer/index.html",
+  "scope": "/team-schedule-viewer/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#000000",
-  "theme_color": "#000000",
+  "background_color": "#0c0c0e",
+  "theme_color": "#0c0c0e",
   "lang": "zh-TW",
   "icons": [
     {

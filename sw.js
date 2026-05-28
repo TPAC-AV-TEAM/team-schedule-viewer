@@ -1,8 +1,6 @@
-// AV 迴路盒查詢 — Service Worker V12.1.1
-// 修正：GitHub Pages 子路徑 /Panel-circuit-box/ 部署
-
-const CACHE_NAME = 'av-panel-v12';
-const BASE = '/Panel-circuit-box/';
+// TPAC 班表系統 — Service Worker V22.7.2
+const CACHE_NAME = 'tpac-v22';
+const BASE = '/team-schedule-viewer/';
 
 self.addEventListener('install', event => {
     event.waitUntil(
@@ -10,8 +8,7 @@ self.addEventListener('install', event => {
             return cache.addAll([
                 BASE,
                 BASE + 'index.html',
-                BASE + 'manifest.json',
-                BASE + 'data.json'
+                BASE + 'manifest.json'
             ]).catch(err => console.warn('[SW] Cache partial fail:', err));
         })
     );
@@ -30,7 +27,14 @@ self.addEventListener('fetch', event => {
     if (event.request.method !== 'GET') return;
 
     const url = new URL(event.request.url);
-    const isExternal = url.hostname !== self.location.hostname;
+    const isExternal = (
+        url.hostname !== self.location.hostname ||
+        url.hostname.includes('googleapis') ||
+        url.hostname.includes('unpkg.com') ||
+        url.hostname.includes('cdn.tailwindcss') ||
+        url.hostname.includes('fonts.gstatic') ||
+        url.hostname.includes('fonts.googleapis')
+    );
 
     if (isExternal) {
         event.respondWith(fetch(event.request));
