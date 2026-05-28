@@ -182,7 +182,7 @@
         // V22.7 PWA: 註冊 Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('/sw.js')
+                navigator.serviceWorker.register('sw.js')
                     .then(function(reg) { console.log('[PWA] SW registered, scope:', reg.scope); })
                     .catch(function(err) { console.warn('[PWA] SW registration failed:', err); });
             });
