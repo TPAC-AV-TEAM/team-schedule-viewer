@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>視聽班表系統 | V22.7</title>
+    <title>視聽班表系統 | V22.7.3</title>
 
     <!-- PWA -->
     <link rel="manifest" href="manifest.json">
@@ -179,11 +179,15 @@
     </style>
 
     <script>
-        // V22.7 PWA: 註冊 Service Worker
+        // V22.7.3 PWA: 註冊 Service Worker（含強制更新機制）
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function() {
                 navigator.serviceWorker.register('sw.js')
-                    .then(function(reg) { console.log('[PWA] SW registered, scope:', reg.scope); })
+                    .then(function(reg) {
+                        console.log('[PWA] SW registered, scope:', reg.scope);
+                        // 強制檢查更新，確保 SW 不卡在舊版
+                        reg.update().catch(function(){});
+                    })
                     .catch(function(err) { console.warn('[PWA] SW registration failed:', err); });
             });
         }
@@ -206,8 +210,32 @@
         window.addEventListener('online', function(){ window.location.reload(); });
     }
     window.addEventListener('load', function(){
+        // ★ V22.7.3: 5秒後若 React 還沒掛載，自動清除 SW 快取並強制重載
         setTimeout(function(){
-            if(!window.React){
+            var rootEl = document.getElementById('root');
+            var reactMounted = rootEl && rootEl.children.length > 0;
+            if(!reactMounted){
+                console.warn('[TPAC] React did not mount in 5s, clearing SW cache and reloading...');
+                if('serviceWorker' in navigator && navigator.serviceWorker.controller){
+                    // 清除所有 SW 快取再重載（只執行一次，避免無限迴圈）
+                    var clearedKey = 'tpac_sw_cleared_at';
+                    var lastCleared = localStorage.getItem(clearedKey);
+                    var now = Date.now();
+                    if(!lastCleared || (now - parseInt(lastCleared)) > 60000){
+                        localStorage.setItem(clearedKey, String(now));
+                        caches.keys().then(function(keys){
+                            return Promise.all(keys.map(function(k){ return caches.delete(k); }));
+                        }).then(function(){
+                            navigator.serviceWorker.getRegistrations().then(function(regs){
+                                return Promise.all(regs.map(function(r){ return r.unregister(); }));
+                            }).then(function(){
+                                window.location.reload(true);
+                            });
+                        });
+                        return;
+                    }
+                }
+                // 若已嘗試清除還是沒 React，顯示 guard
                 var guard = document.getElementById('offline-guard');
                 if(guard) guard.style.display = 'flex';
             }
@@ -224,7 +252,7 @@ const { useState, useEffect, useMemo, memo, useCallback, useRef } = React;
    1. CENTRAL CONFIG
    ========================================================================= */
 const CONFIG = {
-    APP_VERSION: 'V22.7',
+    APP_VERSION: 'V22.7.3',
     APP_ID: "team-schedule-viewer",
     FIREBASE: { apiKey: "AIzaSyA7tgFRxDCnZpOzEvfT978wIAcqcXNZXVQ", authDomain: "team-schedule-viewer.firebaseapp.com", projectId: "team-schedule-viewer", storageBucket: "team-schedule-viewer.firebasestorage.app", messagingSenderId: "202883367260", appId: "1:202883367260:web:b31e495084a4ea8af20199" },
     VENUES: [ 
