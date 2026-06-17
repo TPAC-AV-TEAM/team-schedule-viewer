@@ -14,8 +14,8 @@
     <meta name="apple-mobile-web-app-title" content="班表系統">
     <link rel="apple-touch-icon" href="icon-192.png">
     
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone@7.27.1/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -634,7 +634,7 @@ const App = () => {
         let unsubscribeAuth = null;
         const initFirebase = async () => {
             let waited = 0;
-            while(!window.Firebase && waited < 50) { await new Promise(r => setTimeout(r, 100)); waited++; }
+            while((!window.Firebase || !window.isFirebaseReady) && waited < 50) { await new Promise(r => setTimeout(r, 100)); waited++; }
             if(!isMounted) return;
             if(!window.Firebase) { showError("Firebase 載入逾時，請重新整理", 5000); return; }
             try {
