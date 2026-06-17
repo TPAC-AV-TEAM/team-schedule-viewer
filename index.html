@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>視聽班表系統 | V22.7</title>
+    <title>視聽班表系統 | V22.8</title>
 
     <!-- PWA -->
     <link rel="manifest" href="manifest.json">
@@ -31,6 +31,7 @@
         import { getFirestore, doc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         window.Firebase = { initializeApp, getApps, getApp, getFirestore, doc, onSnapshot, getDoc, getAuth, signInAnonymously, onAuthStateChanged };
+        window.isFirebaseReady = true;
     </script>
     
     <script>
@@ -224,7 +225,7 @@ const { useState, useEffect, useMemo, memo, useCallback, useRef } = React;
    1. CENTRAL CONFIG
    ========================================================================= */
 const CONFIG = {
-    APP_VERSION: 'V22.7',
+    APP_VERSION: 'V22.8',
     APP_ID: "team-schedule-viewer",
     FIREBASE: { apiKey: "AIzaSyA7tgFRxDCnZpOzEvfT978wIAcqcXNZXVQ", authDomain: "team-schedule-viewer.firebaseapp.com", projectId: "team-schedule-viewer", storageBucket: "team-schedule-viewer.firebasestorage.app", messagingSenderId: "202883367260", appId: "1:202883367260:web:b31e495084a4ea8af20199" },
     VENUES: [ 

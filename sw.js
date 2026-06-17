@@ -1,4 +1,4 @@
-// TPAC 班表系統 — Service Worker V22.7.2
+// TPAC 班表系統 — Service Worker V22.8
 const CACHE_NAME = 'tpac-v22-8';
 const BASE = '/team-schedule-viewer/';
 
