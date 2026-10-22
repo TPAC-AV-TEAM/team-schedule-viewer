@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>視聽班表系統 | V22.8</title>
+    <title>視聽班表系統 | V22.10</title>
 
     <!-- PWA -->
     <link rel="manifest" href="manifest.json">
@@ -101,6 +101,9 @@
             -webkit-backdrop-filter: blur(48px) saturate(180%); border-bottom: 1px solid var(--border-dim);
             box-shadow: 0 1px 0 rgba(255,255,255,0.04);
         }
+
+        /* 頂部安全區：電腦維持 48px；iPhone 11 / 動態島機種依 safe-area-inset-top 自動撐開 */
+        .app-header { padding-top: max(3rem, calc(env(safe-area-inset-top, 0px) + 0.5rem)); }
 
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .weekend-bg { background: rgba(255,55,95,0.04) !important; }
@@ -226,7 +229,7 @@ const { useState, useEffect, useMemo, memo, useCallback, useRef } = React;
    1. CENTRAL CONFIG
    ========================================================================= */
 const CONFIG = {
-    APP_VERSION: 'V22.8',
+    APP_VERSION: 'V22.10',
     APP_ID: "team-schedule-viewer",
     FIREBASE: { apiKey: "AIzaSyA7tgFRxDCnZpOzEvfT978wIAcqcXNZXVQ", authDomain: "team-schedule-viewer.firebaseapp.com", projectId: "team-schedule-viewer", storageBucket: "team-schedule-viewer.firebasestorage.app", messagingSenderId: "202883367260", appId: "1:202883367260:web:b31e495084a4ea8af20199" },
     VENUES: [ 
@@ -493,12 +496,37 @@ const App = () => {
 
     useSwipeDateNavigation(allDates, dateIdx, goDate, activeModal);
 
+    // 網路狀態：navigator.onLine 在電腦上不可靠（連著路由器但外網斷線仍回傳 true），
+    // 因此加上心跳探測。探測目標 firestore.googleapis.com 在 SW 中為「純網路、不快取」，
+    // 不會被 SW 的快取回退誤判成連線正常。
     useEffect(()=>{
-        const onOnline  = () => setIsOffline(false);
+        let cancelled = false;
+        const probe = async () => {
+            if(!navigator.onLine){ if(!cancelled) setIsOffline(true); return; }
+            const ctrl = new AbortController();
+            const timer = setTimeout(() => ctrl.abort(), 5000);
+            try {
+                await fetch('https://firestore.googleapis.com/?_=' + Date.now(), { mode:'no-cors', cache:'no-store', signal: ctrl.signal });
+                if(!cancelled) setIsOffline(false);
+            } catch(e) {
+                if(!cancelled) setIsOffline(true);
+            } finally { clearTimeout(timer); }
+        };
+        const onOnline  = () => probe();
         const onOffline = () => setIsOffline(true);
+        const onVisible = () => { if(document.visibilityState === 'visible') probe(); };
         window.addEventListener('online',  onOnline);
         window.addEventListener('offline', onOffline);
-        return ()=>{ window.removeEventListener('online', onOnline); window.removeEventListener('offline', onOffline); };
+        document.addEventListener('visibilitychange', onVisible);
+        const interval = setInterval(() => { if(document.visibilityState === 'visible') probe(); }, 15000);
+        probe();
+        return ()=>{
+            cancelled = true;
+            clearInterval(interval);
+            window.removeEventListener('online', onOnline);
+            window.removeEventListener('offline', onOffline);
+            document.removeEventListener('visibilitychange', onVisible);
+        };
     },[]);
 
     const errorTimeoutRef = useRef(null);
@@ -709,7 +737,7 @@ const App = () => {
     return (
         <div className="h-screen flex flex-col overflow-hidden relative text-white bg-[var(--bg-base)]">
             <div className="aura-bg"/>
-            <header className="mac-glass pt-12 pb-4 px-5 flex items-center justify-between shrink-0 z-50">
+            <header className="mac-glass app-header pb-4 px-5 flex items-center justify-between shrink-0 z-50">
                 <div className="flex flex-col justify-center">
                     <h1 className="text-[19px] font-extrabold tracking-[-0.03em] cursor-pointer text-white/90 hover:text-white transition-colors leading-none" onClick={()=>setActiveModal('master')}>視 聽 班 表 系 統</h1>
                     {isOffline
