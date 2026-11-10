@@ -1,5 +1,5 @@
-// TPAC 班表系統 — Service Worker V22.12 (離線白畫面修復版)
-const CACHE_NAME = 'tpac-v22-12';
+// TPAC 班表系統 — Service Worker V22.13 (離線白畫面修復版)
+const CACHE_NAME = 'tpac-v22-13';
 const BASE = '/team-schedule-viewer/';
 
 // 核心本機靜態資源與外部固定版本函式庫
