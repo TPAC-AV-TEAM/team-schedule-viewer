@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>視聽班表系統 | V22.12 (無授權輕量版)</title>
+    <title>視聽班表系統 | V22.10</title>
 
     <!-- PWA -->
     <link rel="manifest" href="manifest.json">
@@ -14,12 +14,11 @@
     <meta name="apple-mobile-web-app-title" content="班表系統">
     <link rel="apple-touch-icon" href="icon-192.png">
     
-    <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"></script>
-    <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
-    <script src="https://unpkg.com/@babel/standalone@7.27.1/babel.min.js" crossorigin="anonymous"></script>
-    
-    <!-- 鎖定 Tailwind 版本避開 302 導向，並加上 crossorigin 確保 SW 快取相容 -->
-    <script src="https://cdn.tailwindcss.com/3.4.16" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone@7.27.1/babel.min.js"></script>
+    <!-- Tailwind v3 Play CDN — 無法鎖版本，但升級到 v4 需手動操作，不會自動升級 -->
+    <script src="https://cdn.tailwindcss.com"></script>
     
     <script>
         tailwind.config = {
@@ -28,12 +27,11 @@
         }
     </script>
 
- <script type="module">
+    <script type="module">
         import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, doc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        
-        // 【架構師修正】徹底拔除未定義的 Auth 變數，確保穩定掛載
-        window.Firebase = { initializeApp, getApps, getApp, getFirestore, doc, onSnapshot, getDoc };
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        window.Firebase = { initializeApp, getApps, getApp, getFirestore, doc, onSnapshot, getDoc, getAuth, signInAnonymously, onAuthStateChanged };
         window.isFirebaseReady = true;
     </script>
     
@@ -231,7 +229,7 @@ const { useState, useEffect, useMemo, memo, useCallback, useRef } = React;
    1. CENTRAL CONFIG
    ========================================================================= */
 const CONFIG = {
-    APP_VERSION: 'V22.12 (無授權輕量版)',
+    APP_VERSION: 'V22.10',
     APP_ID: "team-schedule-viewer",
     FIREBASE: { apiKey: "AIzaSyA7tgFRxDCnZpOzEvfT978wIAcqcXNZXVQ", authDomain: "team-schedule-viewer.firebaseapp.com", projectId: "team-schedule-viewer", storageBucket: "team-schedule-viewer.firebasestorage.app", messagingSenderId: "202883367260", appId: "1:202883367260:web:b31e495084a4ea8af20199" },
     VENUES: [ 
@@ -518,7 +516,7 @@ const App = () => {
     const [errorMsg, setErrorMsg] = useState(null);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isOffline, setIsOffline] = useState(!navigator.onLine);
-    const [dbReady, setDbReady] = useState(false);
+    const [user, setUser] = useState(null);
     
     const [dateIdx, setDateIdx] = useState(() => {
         if(!cachedData?.roster) return 0;
@@ -705,6 +703,7 @@ const App = () => {
 
     useEffect(() => {
         let isMounted = true;
+        let unsubscribeAuth = null;
         const initFirebase = async () => {
             let waited = 0;
             while((!window.Firebase || !window.isFirebaseReady) && waited < 50) { await new Promise(r => setTimeout(r, 100)); waited++; }
@@ -712,27 +711,31 @@ const App = () => {
             if(!window.Firebase) { showError("Firebase 載入逾時，請重新整理", 5000); return; }
             try {
                 const app = Firebase.getApps().length === 0 ? Firebase.initializeApp(CONFIG.FIREBASE) : Firebase.getApp();
-                const db = Firebase.getFirestore(app);
-                
-                const snap = await Firebase.getDoc(Firebase.doc(db,'artifacts',CONFIG.APP_ID,'public','data','configs','name_mapping'));
-                if(!isMounted) return;
-                if(snap.exists()){
-                    const maps = snap.data().maps || {};
-                    setAliasMap(maps);
-                    window.RosterCache.saveAlias(maps); 
-                }
-                setDbReady(true);
+                const auth = Firebase.getAuth(app);
+                unsubscribeAuth = Firebase.onAuthStateChanged(auth, async (u) => {
+                    if(!u || !isMounted) return;
+                    setUser(u);
+                    const db = Firebase.getFirestore(app);
+                    const snap = await Firebase.getDoc(Firebase.doc(db,'artifacts',CONFIG.APP_ID,'public','data','configs','name_mapping'));
+                    if(!isMounted) return;
+                    if(snap.exists()){
+                        const maps = snap.data().maps || {};
+                        setAliasMap(maps);
+                        window.RosterCache.saveAlias(maps); 
+                    }
+                });
+                await Firebase.signInAnonymously(auth);
             } catch(e) { console.error("Firebase Init Error:", e); showError("Firebase 初始化失敗，請重新整理", 5000); }
-        }; 
-        initFirebase();
-        return () => { isMounted = false; };
+        }; initFirebase();
+        return () => { isMounted = false; if(unsubscribeAuth) unsubscribeAuth(); };
     }, [showError]);
 
     useEffect(()=>{
-        if(!dbReady) return; 
-        const db = Firebase.getFirestore(Firebase.getApp());
+        if(!user) return; 
+        const db=Firebase.getFirestore(Firebase.getApp());
         return Firebase.onSnapshot( Firebase.doc(db,'artifacts',CONFIG.APP_ID,'public','data','rosters','master'), applyRosterSnapshot, (e)=>{ console.error("Firebase Sync Error:", e); showError("資料同步失敗", 4000); } );
-    },[applyRosterSnapshot, dbReady]);
+    // V22.2 修: 移除 showError 依賴
+    },[applyRosterSnapshot, user]);
 
     useEffect(()=>{
         if(!allDates.length||!allDates[dateIdx]) return;
