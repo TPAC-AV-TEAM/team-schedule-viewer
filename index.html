@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>視聽班表系統 | V22.11 (無授權輕量版)</title>
+    <title>視聽班表系統 | V22.12 (無授權輕量版)</title>
 
     <!-- PWA -->
     <link rel="manifest" href="manifest.json">
@@ -14,11 +14,12 @@
     <meta name="apple-mobile-web-app-title" content="班表系統">
     <link rel="apple-touch-icon" href="icon-192.png">
     
-    <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone@7.27.1/babel.min.js"></script>
-    <!-- Tailwind v3 Play CDN — 無法鎖版本，但升級到 v4 需手動操作，不會自動升級 -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/@babel/standalone@7.27.1/babel.min.js" crossorigin="anonymous"></script>
+    
+    <!-- 鎖定 Tailwind 版本避開 302 導向，並加上 crossorigin 確保 SW 快取相容 -->
+    <script src="https://cdn.tailwindcss.com/3.4.16" crossorigin="anonymous"></script>
     
     <script>
         tailwind.config = {
@@ -230,7 +231,7 @@ const { useState, useEffect, useMemo, memo, useCallback, useRef } = React;
    1. CENTRAL CONFIG
    ========================================================================= */
 const CONFIG = {
-    APP_VERSION: 'V22.11 (無授權輕量版)',
+    APP_VERSION: 'V22.12 (無授權輕量版)',
     APP_ID: "team-schedule-viewer",
     FIREBASE: { apiKey: "AIzaSyA7tgFRxDCnZpOzEvfT978wIAcqcXNZXVQ", authDomain: "team-schedule-viewer.firebaseapp.com", projectId: "team-schedule-viewer", storageBucket: "team-schedule-viewer.firebasestorage.app", messagingSenderId: "202883367260", appId: "1:202883367260:web:b31e495084a4ea8af20199" },
     VENUES: [ 
