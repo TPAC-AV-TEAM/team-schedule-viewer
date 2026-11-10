@@ -27,10 +27,12 @@
         }
     </script>
 
-    <script type="module">
+ <script type="module">
         import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, doc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        window.Firebase = { initializeApp, getApps, getApp, getFirestore, doc, onSnapshot, getDoc, getAuth, signInAnonymously, onAuthStateChanged };
+        
+        // 【架構師修正】徹底拔除未定義的 Auth 變數，確保穩定掛載
+        window.Firebase = { initializeApp, getApps, getApp, getFirestore, doc, onSnapshot, getDoc };
         window.isFirebaseReady = true;
     </script>
     
