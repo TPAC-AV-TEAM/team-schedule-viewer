@@ -1,5 +1,5 @@
-// TPAC 班表系統 — Service Worker V22.10 (離線強化版)
-const CACHE_NAME = 'tpac-v22-10';
+// TPAC 班表系統 — Service Worker V22.11 (無授權輕量版)
+const CACHE_NAME = 'tpac-v22-11';
 const BASE = '/team-schedule-viewer/';
 
 // 核心本機靜態資源與外部固定版本函式庫
@@ -16,8 +16,7 @@ const PRE_CACHE_RESOURCES = [
     'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap',
     // Firebase SDK（版本須與 index.html 一致）
     'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js',
-    'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js',
-    'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js'
+    'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js'
 ];
 
 // 逐一預快取：單一資源失敗只略過該項，不影響其他資源（避免 addAll 全有全無）
