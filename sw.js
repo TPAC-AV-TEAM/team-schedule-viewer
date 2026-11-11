@@ -1,5 +1,5 @@
-// TPAC 班表系統 — Service Worker V22.13 (離線白畫面修復版)
-const CACHE_NAME = 'tpac-v22-13';
+// TPAC 班表系統 — Service Worker V22.16 (離線白畫面修復與精準快取對齊版)
+const CACHE_NAME = 'tpac-v22-16';
 const BASE = '/team-schedule-viewer/';
 
 // 核心本機靜態資源與外部固定版本函式庫
@@ -13,8 +13,9 @@ const PRE_CACHE_RESOURCES = [
     'https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js',
     'https://unpkg.com/@babel/standalone@7.27.1/babel.min.js',
     'https://cdn.tailwindcss.com/3.4.16',
-    // Firebase SDK（版本須與 index.html 一致）
+    // Firebase SDK（版本須與 index.html 100% 一致，並補上 Auth 模組防止離線報錯白畫面）
     'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js',
+    'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js',
     'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js'
 ];
 
