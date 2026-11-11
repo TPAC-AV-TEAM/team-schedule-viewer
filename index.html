@@ -421,7 +421,7 @@ const App = () => {
     const [errorMsg, setErrorMsg] = useState(null);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isOffline, setIsOffline] = useState(!navigator.onLine);
-    const [user, setUser] = useState(null);
+    const [fbApp, setFbApp] = useState(null);
     
     const [dateIdx, setDateIdx] = useState(() => {
         if(!cachedData?.roster) return 0;
@@ -565,7 +565,6 @@ const App = () => {
 
     useEffect(() => {
         let isMounted = true;
-        let unsubscribeAuth = null;
         const initFirebase = async () => {
             let waited = 0;
             while((!window.Firebase || !window.isFirebaseReady) && waited < 50) { await new Promise(r => setTimeout(r, 100)); waited++; }
@@ -573,30 +572,29 @@ const App = () => {
             if(!window.Firebase) { showError("Firebase 載入逾時，請重新整理", 5000); return; }
             try {
                 const app = Firebase.getApps().length === 0 ? Firebase.initializeApp(CONFIG.FIREBASE) : Firebase.getApp();
-                const auth = Firebase.getAuth(app);
-                unsubscribeAuth = Firebase.onAuthStateChanged(auth, async (u) => {
-                    if(!u || !isMounted) return;
-                    setUser(u);
+                if(!isMounted) return;
+                // 讀取規則為 read: if true，前端不需登入；匿名登入已取消，故不再呼叫 Auth
+                setFbApp(app);
+                // 別名載入獨立處理：失敗只記錄，不影響班表主流程（沿用本機快取的別名）
+                try {
                     const db = Firebase.getFirestore(app);
                     const snap = await Firebase.getDoc(Firebase.doc(db,'artifacts',CONFIG.APP_ID,'public','data','configs','name_mapping'));
-                    if(!isMounted) return;
-                    if(snap.exists()){
+                    if(isMounted && snap.exists()){
                         const maps = snap.data().maps || {};
                         setAliasMap(maps);
-                        window.RosterCache.saveAlias(maps); 
+                        window.RosterCache.saveAlias(maps);
                     }
-                });
-                await Firebase.signInAnonymously(auth);
+                } catch(aliasErr) { console.warn("Alias load failed:", aliasErr); }
             } catch(e) { console.error("Firebase Init Error:", e); showError("Firebase 初始化失敗，請重新整理", 5000); }
         }; initFirebase();
-        return () => { isMounted = false; if(unsubscribeAuth) unsubscribeAuth(); };
+        return () => { isMounted = false; };
     }, [showError]);
 
     useEffect(()=>{
-        if(!user) return; 
-        const db=Firebase.getFirestore(Firebase.getApp());
+        if(!fbApp) return; 
+        const db=Firebase.getFirestore(fbApp);
         return Firebase.onSnapshot( Firebase.doc(db,'artifacts',CONFIG.APP_ID,'public','data','rosters','master'), applyRosterSnapshot, (e)=>{ console.error("Firebase Sync Error:", e); showError("資料同步失敗", 4000); } );
-    },[applyRosterSnapshot, user]);
+    },[applyRosterSnapshot, fbApp]);
 
     useEffect(()=>{
         if(!allDates.length||!allDates[dateIdx]) return;
