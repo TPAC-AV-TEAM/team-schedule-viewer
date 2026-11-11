@@ -1,6 +1,10 @@
-// TPAC 班表系統 — Service Worker V22.16 (離線白畫面修復與精準快取對齊版)
-const CACHE_NAME = 'tpac-v22-16';
+// TPAC 班表系統 — Service Worker V22.17 (網路優先加入逾時保護版)
+const CACHE_NAME = 'tpac-v22-17';
 const BASE = '/team-schedule-viewer/';
+
+// 本地頁面的網路等待上限：訊號半通不通時，超過此時間就先用快取回應，
+// 網路請求仍會在背景完成並更新快取（下次開啟即為新版）。首次使用（無快取）則繼續等網路。
+const NETWORK_TIMEOUT_MS = 4000;
 
 // 核心本機靜態資源與外部固定版本函式庫
 const PRE_CACHE_RESOURCES = [
@@ -82,25 +86,34 @@ self.addEventListener('fetch', event => {
         return;
     }
 
-    // 3. 本地 App 核心頁面資源：Network-First，斷網時回退到本地快取
+    // 3. 本地 App 核心頁面資源：Network-First（含逾時保護），斷網或逾時時回退到本地快取
     //    ignoreSearch：index.html?v=時間戳 離線時也能命中快取
+    let timer = null;
+    const networkPromise = fetch(event.request).then(response => {
+        if (response && response.status === 200) {
+            const cloned = response.clone();
+            // 以不含查詢字串的網址存放，避免 ?v=... 讓快取無限增長
+            const reqUrl = new URL(event.request.url);
+            reqUrl.search = '';
+            caches.open(CACHE_NAME).then(cache => cache.put(reqUrl.toString(), cloned));
+        }
+        return response;
+    });
+
+    // 逾時：有快取就先回快取；沒快取（首次使用）就繼續等網路
+    const timeoutPromise = new Promise(resolve => { timer = setTimeout(resolve, NETWORK_TIMEOUT_MS); })
+        .then(() => caches.match(event.request, { ignoreSearch: true }))
+        .then(cached => cached || networkPromise);
+
+    // 讓 SW 活到背景更新完成（即使已先回了快取）；吞掉背景失敗，並清除計時器
+    event.waitUntil(networkPromise.catch(() => {}).then(() => clearTimeout(timer)));
+
     event.respondWith(
-        fetch(event.request)
-            .then(response => {
-                if (response && response.status === 200) {
-                    const cloned = response.clone();
-                    // 以不含查詢字串的網址存放，避免 ?v=... 讓快取無限增長
-                    const reqUrl = new URL(event.request.url);
-                    reqUrl.search = '';
-                    caches.open(CACHE_NAME).then(cache => cache.put(reqUrl.toString(), cloned));
-                }
-                return response;
-            })
-            .catch(() => {
-                return caches.match(event.request, { ignoreSearch: true }).then(cached => {
-                    if (cached) return cached;
-                    return caches.match(BASE + 'index.html');
-                });
-            })
+        Promise.race([networkPromise, timeoutPromise]).catch(() => {
+            return caches.match(event.request, { ignoreSearch: true }).then(cached => {
+                if (cached) return cached;
+                return caches.match(BASE + 'index.html');
+            });
+        })
     );
 });
