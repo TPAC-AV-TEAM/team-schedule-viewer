@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>視聽班表系統 | V22.19</title>
+    <title>視聽班表系統 | V22.20</title>
 
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0c0c0e">
@@ -57,8 +57,13 @@
         };
     </script>
 
+    <!-- V22.20: 字型改為非阻塞載入（原 @import 會擋住首次繪製；訊號差時最明顯） -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Noto+Sans+TC:wght@400;500;700;900&amp;display=swap" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Noto+Sans+TC:wght@400;500;700;900&amp;display=swap"></noscript>
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
         :root {
             --bg-base: #0c0c0e; --glass-nav: rgba(14,14,16,0.88); --glass-modal: rgba(20,20,23,0.97);
             --glass-card: rgba(255,255,255,0.038); --glass-card-hover: rgba(255,255,255,0.065);
@@ -74,6 +79,7 @@
         .mac-glass { background: var(--glass-nav); backdrop-filter: blur(48px) saturate(180%); -webkit-backdrop-filter: blur(48px) saturate(180%); border-bottom: 1px solid var(--border-dim); box-shadow: 0 1px 0 rgba(255,255,255,0.04); }
         .app-header { padding-top: max(3rem, calc(env(safe-area-inset-top, 0px) + 0.5rem)); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
+        .app-h { height: 100vh; height: 100dvh; }
         .weekend-bg { background: rgba(255,55,95,0.04) !important; }
         @keyframes b-badge-pulse { 0%, 100% { border-color: rgba(255,255,255,0.3); box-shadow: 0 0 0 rgba(255,255,255,0); } 50% { border-color: #FFFFFF; box-shadow: 0 0 12px rgba(255,255,255,0.6), inset 0 0 4px rgba(255,255,255,0.3); } }
         .b-badge-glow { animation: b-badge-pulse 3s infinite ease-in-out; border-width: 2px !important; }
@@ -155,7 +161,7 @@
 const { useState, useEffect, useMemo, memo, useCallback, useRef } = React;
 
 const CONFIG = {
-    APP_VERSION: 'V22.19',
+    APP_VERSION: 'V22.20',
     APP_ID: "team-schedule-viewer",
     FIREBASE: { apiKey: "AIzaSyA7tgFRxDCnZpOzEvfT978wIAcqcXNZXVQ", authDomain: "team-schedule-viewer.firebaseapp.com", projectId: "team-schedule-viewer", storageBucket: "team-schedule-viewer.firebasestorage.app", messagingSenderId: "202883367260", appId: "1:202883367260:web:b31e495084a4ea8af20199" },
     VENUES: [ 
@@ -178,7 +184,7 @@ const CONFIG = {
         "2026/01/01", "2026/02/16", "2026/02/17", "2026/02/18", "2026/02/19", "2026/02/20", "2026/02/27", "2026/04/03", "2026/04/06", "2026/05/01", "2026/06/19", "2026/09/25", "2026/09/28", "2026/10/09", "2026/10/26", "2026/12/25",
         "2027/01/01", "2027/02/04", "2027/02/05", "2027/02/08", "2027/02/09", "2027/02/10", "2027/03/01", "2027/04/05", "2027/04/06", "2027/04/30", "2027/06/09", "2027/09/15", "2027/09/28", "2027/10/11", "2027/10/25", "2027/12/24", "2027/12/31"
     ]),
-    REGEX: { LEAVE: /休|例|假/, OFFICE: /辦公|支援|居家|其他|其它/ },
+    REGEX: { OFFICE: /辦公|支援|居家|其他|其它/ },
     MAKEUP_DAYS: new Set([]),
     STATUS_KEYS: { OFFICE: "辦公", LEAVE: "休假" }
 };
@@ -192,7 +198,6 @@ const parseK = k => { if(!k || typeof k !== 'string') return new Date(); const [
 const getStaffColors = info => info?.type==="Special" ? { text:"text-[var(--special-text)]", dot:"bg-[var(--special-dot)]" } : info?.gender==="F" ? { text:"text-[var(--women-text)]", dot:"bg-[var(--women-dot)]" } : { text:"text-[var(--men-text)]", dot:"bg-[var(--men-dot)]" };
 
 const isOfficeStatus = status => CONFIG.REGEX.OFFICE.test(status || "");
-const isLeaveStatus = status => CONFIG.REGEX.LEAVE.test(status || "");
 const isAlertShift = shift => !!shift && shift.toUpperCase() !== 'A'; 
 
 // P1 修復: 完美整合「精準行首帶圈轉換」與「時間括號」
@@ -325,7 +330,7 @@ const CalendarPicker = memo(({ allDates, onSelect, onClose, calMonth, setCalMont
     const dateSet = useMemo(()=>new Set(allDates.map(d=>d.fullKey)),[allDates]);
     const {y,m} = calMonth, firstDay = new Date(y,m,1).getDay(), daysInMonth = new Date(y,m+1,0).getDate(), todayK = formatK(new Date()), cells = []; 
     for(let i=0;i<firstDay;i++) cells.push(null); for(let d=1;d<=daysInMonth;d++) cells.push(d);
-    return ( <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-md" onClick={onClose}> <div className="animate-window bg-[rgba(18,18,22,0.96)] border border-[var(--border-mid)] rounded-[var(--r-xl)] shadow-2xl w-full max-w-[280px] p-5" onClick={e=>e.stopPropagation()}> <div className="flex items-center justify-between mb-4"> <button onClick={()=>setCalMonth(p=>p.m===0?{y:p.y-1,m:11}:{y:p.y,m:p.m-1})} className="text-xl px-2 py-1">‹</button> <span className="text-[15px] font-bold">{y} 年 {m+1} 月</span> <button onClick={()=>setCalMonth(p=>p.m===11?{y:p.y+1,m:0}:{y:p.y,m:p.m+1})} className="text-xl px-2 py-1">›</button> </div> <div className="grid grid-cols-7 gap-y-1.5 gap-x-1"> {['日','一','二','三','四','五','六'].map(w=>(<div key={w} className="text-center text-[10.5px] font-semibold text-white/28 tracking-wide">{w}</div>))} {cells.map((d,i)=>{ if(!d) return <div key={"e"+i}/>; const fk=`${y}/${String(m+1).padStart(2,'0')}/${String(d).padStart(2,'0')}`, has=dateSet.has(fk), isToday=fk===todayK, isWk=(((firstDay+d-1)%7===0||(firstDay+d-1)%7===6)&&!CONFIG.MAKEUP_DAYS.has(fk))||CONFIG.HOLIDAYS.has(fk); return ( <button key={fk} disabled={!has} onClick={()=>onSelect(fk)} className={`h-8 w-full rounded-full text-[13px] flex items-center justify-center transition-all ${isToday?'bg-[var(--blue)] text-white':has?(isWk?'text-rose-400 hover:bg-white/10':'text-white hover:bg-white/10'):'text-white/12 cursor-default'}`}>{d}</button> ); })} </div> </div> </div> );
+    return ( <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-md" onClick={onClose}> <div className="animate-window bg-[rgba(18,18,22,0.96)] border border-[var(--border-mid)] rounded-[var(--r-xl)] shadow-2xl w-full max-w-[280px] p-5" onClick={e=>e.stopPropagation()}> <div className="flex items-center justify-between mb-4"> <button onClick={()=>setCalMonth(p=>p.m===0?{y:p.y-1,m:11}:{y:p.y,m:p.m-1})} className="text-xl px-2 py-1">‹</button> <span className="text-[15px] font-bold">{y} 年 {m+1} 月</span> <button onClick={()=>setCalMonth(p=>p.m===11?{y:p.y+1,m:0}:{y:p.y,m:p.m+1})} className="text-xl px-2 py-1">›</button> </div> <div className="grid grid-cols-7 gap-y-1.5 gap-x-1"> {['日','一','二','三','四','五','六'].map(w=>(<div key={w} className="text-center text-[10.5px] font-semibold text-white/30 tracking-wide">{w}</div>))} {cells.map((d,i)=>{ if(!d) return <div key={"e"+i}/>; const fk=`${y}/${String(m+1).padStart(2,'0')}/${String(d).padStart(2,'0')}`, has=dateSet.has(fk), isToday=fk===todayK, isWk=(((firstDay+d-1)%7===0||(firstDay+d-1)%7===6)&&!CONFIG.MAKEUP_DAYS.has(fk))||CONFIG.HOLIDAYS.has(fk); return ( <button key={fk} disabled={!has} onClick={()=>onSelect(fk)} className={`h-8 w-full rounded-full text-[13px] flex items-center justify-center transition-all ${isToday?'bg-[var(--blue)] text-white':has?(isWk?'text-rose-400 hover:bg-white/10':'text-white hover:bg-white/10'):'text-white/10 cursor-default'}`}>{d}</button> ); })} </div> </div> </div> );
 });
 
 const NotesModal = memo(({ onClose, visibleDates, schedule, goDate, handleBackToday }) => {
@@ -342,7 +347,7 @@ const MasterRosterModal = memo(({ onClose, visibleDates, schedule, aliasMap, tod
         document.addEventListener('keydown', onKeyDown, true);
         return () => document.removeEventListener('keydown', onKeyDown, true);
     }, [detail]);
-    return ( <div className="fixed inset-0 z-[1000] flex items-center justify-center p-3 bg-black/70" onClick={onClose}> <div className="animate-window bg-[var(--glass-modal)] border border-[var(--border-mid)] w-full max-w-4xl rounded-[var(--r-2xl)] flex flex-col max-h-[90vh] overflow-hidden" onClick={e=>e.stopPropagation()}> <div className="p-3.5 border-b border-[var(--border-dim)] flex items-center justify-between"> <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/[0.07] border border-[var(--border-mid)] text-white/55 hover:bg-white/15 hover:text-white/90 transition-all flex items-center justify-center text-[18px] leading-none">×</button> <h3 className="text-[15px] font-bold tracking-wide">Master Roster</h3> <div className="flex gap-2"> <ActionBtn onClick={handleBackToday} icon="today" tip="回到今天"/> <ActionBtn onClick={openCal} icon="cal" tip="跳轉日期"/> </div> </div> <div className="flex-1 overflow-hidden relative"> <div className="master-left-col"> <div className="master-hdr flex items-center justify-center border-b border-[var(--border-mid)] text-[9.5px] font-bold text-white/25 tracking-[0.18em] uppercase">STAFF</div> {CONFIG.STAFF_ORDER.map(s=>( <div key={s} className="master-row px-2"> <StaffBtn name={s} aliasMap={aliasMap} mode="master" onClick={handleStaffClick}/> </div> ))} </div> <div id="master-scroll-container" className="master-right h-full overflow-y-auto no-scrollbar scroll-smooth"> <div style={{width:'fit-content'}}> <div className="flex bg-[rgba(12,12,14,0.96)] border-b border-[var(--border-mid)] sticky top-0 z-40 master-hdr"> {visibleDates.map(d=>( <div key={d.fullKey} id={`mnav-${d.fullKey}`} className={`master-cell p-1.5 flex flex-col justify-center ${d.fullKey===todayK?'master-today':''} ${d.isOff?'weekend-bg':''}`}> <div className={`text-[9.5px] tracking-wide ${d.isOff?'text-[var(--pink)] font-bold':'text-white/28'}`}>週{d.w}</div> <div className={`text-[14px] font-extrabold tabular-nums ${d.isOff?'text-[var(--pink)]':''}`}>{d.d}</div> </div> ))} </div> {CONFIG.STAFF_ORDER.map(staff=>( <div key={staff} className="master-row"> {visibleDates.map(d=>{ 
+    return ( <div className="fixed inset-0 z-[1000] flex items-center justify-center p-3 bg-black/70" onClick={onClose}> <div className="animate-window bg-[var(--glass-modal)] border border-[var(--border-mid)] w-full max-w-4xl rounded-[var(--r-2xl)] flex flex-col max-h-[90vh] overflow-hidden" onClick={e=>e.stopPropagation()}> <div className="p-3.5 border-b border-[var(--border-dim)] flex items-center justify-between"> <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/[0.07] border border-[var(--border-mid)] text-white/55 hover:bg-white/15 hover:text-white/90 transition-all flex items-center justify-center text-[18px] leading-none">×</button> <h3 className="text-[15px] font-bold tracking-wide">Master Roster</h3> <div className="flex gap-2"> <ActionBtn onClick={handleBackToday} icon="today" tip="回到今天"/> <ActionBtn onClick={openCal} icon="cal" tip="跳轉日期"/> </div> </div> <div className="flex-1 overflow-hidden relative"> <div className="master-left-col"> <div className="master-hdr flex items-center justify-center border-b border-[var(--border-mid)] text-[9.5px] font-bold text-white/25 tracking-[0.18em] uppercase">STAFF</div> {CONFIG.STAFF_ORDER.map(s=>( <div key={s} className="master-row px-2"> <StaffBtn name={s} aliasMap={aliasMap} mode="master" onClick={handleStaffClick}/> </div> ))} </div> <div id="master-scroll-container" className="master-right h-full overflow-y-auto no-scrollbar scroll-smooth"> <div style={{width:'fit-content'}}> <div className="flex bg-[rgba(12,12,14,0.96)] border-b border-[var(--border-mid)] sticky top-0 z-40 master-hdr"> {visibleDates.map(d=>( <div key={d.fullKey} id={`mnav-${d.fullKey}`} className={`master-cell p-1.5 flex flex-col justify-center ${d.fullKey===todayK?'master-today':''} ${d.isOff?'weekend-bg':''}`}> <div className={`text-[9.5px] tracking-wide ${d.isOff?'text-[var(--pink)] font-bold':'text-white/30'}`}>週{d.w}</div> <div className={`text-[14px] font-extrabold tabular-nums ${d.isOff?'text-[var(--pink)]':''}`}>{d.d}</div> </div> ))} </div> {CONFIG.STAFF_ORDER.map(staff=>( <div key={staff} className="master-row"> {visibleDates.map(d=>{ 
         let labels=[], bgStyle={backgroundColor:'rgba(255,255,255,0.03)'}, hasS=false, isAlert=false; 
         VENUE_IDS.forEach(vid=>{ 
             const entry = schedule?.roster?.[d.fullKey]?.[vid]?.[staff];
@@ -357,7 +362,7 @@ const MasterRosterModal = memo(({ onClose, visibleDates, schedule, aliasMap, tod
         let label = "—", textStyle = {};
         if (labels.length > 1) { label = `ST-${labels[0].split('-')[1]}`; textStyle = { color: '#FFFFFF', fontWeight: '800', letterSpacing: '0.02em' }; } else if (labels.length === 1) { label = labels[0]; textStyle = { color: '#FFFFFF' }; } else { const status = schedule?.statuses?.[d.fullKey]?.[staff] || ""; if (isOfficeStatus(status)) { label = CONFIG.STATUS_KEYS.OFFICE; bgStyle = { backgroundColor: 'transparent' }; textStyle = { color: 'rgba(255,255,255,0.35)', fontWeight: '600' }; } else { textStyle = { color: 'rgba(255,255,255,0.15)' }; } }
         return ( <div key={d.fullKey} className={`master-cell p-1 ${d.fullKey===todayK?'master-today':''} ${d.isOff?'weekend-bg':''}`}> <div className={`w-full h-8 flex items-center justify-center rounded-lg text-[11px] font-bold ${(hasS && (isAlert || d.isOff))?'b-row-glow':''} ${hasS?'cursor-pointer hover:brightness-125':''}`} style={bgStyle} onClick={()=>{ if(hasS){ const showParts=labels.map(l=>{ const v=l.split("-")[0]; const sh=schedule?.shows?.[d.fullKey]?.[v]; return sh?`${v}:${sh}`:null; }).filter(Boolean); setDetail({date:d.fullKey,venue:labels.join("/"),show:showParts.join(" | ")||"無演出"}); } }}> <span style={textStyle}>{label}</span> </div> </div> ); 
-    })} </div> ))} </div> </div> </div> </div> {detail&&( <div className="fixed inset-0 z-[5000] flex items-center justify-center p-4 bg-black/40" onClick={e=>{e.stopPropagation();setDetail(null);}}> <div className="animate-window bg-[var(--glass-modal)] border border-[var(--border-mid)] p-6 rounded-[var(--r-xl)] w-full max-w-xs text-center" onClick={e=>e.stopPropagation()}> <h4 className="text-[17px] font-extrabold">{detail.venue} <span className="text-[13px] opacity-50">{detail.date}</span></h4> <p className="mt-4">{detail.show}</p> <button onClick={()=>setDetail(null)} className="mt-6 w-full py-2.5 bg-white/[0.08] hover:bg-white/14 rounded-[var(--r-sm)] font-semibold transition-all">關閉</button> </div> </div> )} </div> );
+    })} </div> ))} </div> </div> </div> </div> {detail&&( <div className="fixed inset-0 z-[5000] flex items-center justify-center p-4 bg-black/40" onClick={e=>{e.stopPropagation();setDetail(null);}}> <div className="animate-window bg-[var(--glass-modal)] border border-[var(--border-mid)] p-6 rounded-[var(--r-xl)] w-full max-w-xs text-center" onClick={e=>e.stopPropagation()}> <h4 className="text-[17px] font-extrabold">{detail.venue} <span className="text-[13px] opacity-50">{detail.date}</span></h4> <p className="mt-4">{detail.show}</p> <button onClick={()=>setDetail(null)} className="mt-6 w-full py-2.5 bg-white/[0.08] hover:bg-white/15 rounded-[var(--r-sm)] font-semibold transition-all">關閉</button> </div> </div> )} </div> );
 });
 
 const QueryModal = memo(({ queryStaff, queryVenue, onClose, setQueryStaff, setQueryVenue, visibleDates, schedule, aliasMap, curFk, handleStaffClick, handleBackToday, openCal }) => {
@@ -381,7 +386,7 @@ const QueryModal = memo(({ queryStaff, queryVenue, onClose, setQueryStaff, setQu
             );
         })}
     </div>
-):( <h3 className="text-[17px] font-bold">{aliasMap[queryStaff]||queryStaff}</h3> )} </div> <div className="flex items-center gap-2"> {queryStaff&&( <button onClick={()=>setFilterMode(f=>!f)} data-tip={filterMode?"顯示全部":"異常班表篩選"} className={`w-8 h-8 rounded-full border flex items-center justify-center text-[13px] font-black transition-all shrink-0 ${filterMode?'bg-[var(--pink)] border-[var(--pink)] text-white':`bg-white/[0.05] border-[var(--border-dim)] text-white/50 hover:bg-white/10`}`}>B</button> )} <ActionBtn onClick={handleBackToday} icon="today" tip="回到今天"/> <ActionBtn onClick={openCal} icon="cal" tip="跳轉日期"/> </div> </div> <div id={queryVenue?"venue-scroll-container":"staff-scroll-container"} className="flex-1 overflow-y-auto p-4 space-y-3.5 no-scrollbar scroll-smooth"> {visibleDates.map(d=>{ const isS=d.fullKey===curFk, isW=d.isOff; if(queryVenue){ const vn=schedule?.shows?.[d.fullKey]?.[queryVenue]||"—"; return ( <div key={d.fullKey} id={`vrow-${d.fullKey}`} className={`day-block ${isS?'day-block-today':''}`}> <div className="mb-2 text-[13px] opacity-50 text-right truncate italic">{vn}</div> <div className="flex items-center gap-4"> <div className="flex flex-col border-r border-white/10 pr-3 w-[72px]"> <span className={`text-[10px] font-semibold tracking-wide ${isW?'text-[var(--pink)]':'text-white/30'}`}>週{d.w}</span> <span className={`text-[21px] font-extrabold tabular-nums ${isW?'text-[var(--pink)]':'text-white/88'}`}>{d.d}</span> </div> <div className="flex-1 grid grid-cols-2 gap-2.5"> {CONFIG.SHIFTS.map(sh=>( <div key={sh} className="bg-[var(--glass-inset)] rounded-[var(--r-sm)] p-1.5 min-h-[44px]"> {Object.entries(schedule?.roster?.[d.fullKey]?.[queryVenue]||{}).filter(([,v])=>v.shift===sh).map(([n])=><StaffBtn key={n} name={n} aliasMap={aliasMap} onClick={handleStaffClick} mode="small"/>)} </div> ))} </div> </div> </div> ); } 
+):( <h3 className="text-[17px] font-bold">{aliasMap[queryStaff]||queryStaff}</h3> )} </div> <div className="flex items-center gap-2"> {queryStaff&&( <button onClick={()=>setFilterMode(f=>!f)} data-tip={filterMode?"顯示全部":"異常班表篩選"} className={`w-8 h-8 rounded-full border flex items-center justify-center text-[13px] font-black transition-all shrink-0 ${filterMode?'bg-[var(--pink)] border-[var(--pink)] text-white':`bg-white/[0.05] border-[var(--border-dim)] text-white/50 hover:bg-white/10`}`}>B</button> )} <ActionBtn onClick={handleBackToday} icon="today" tip="回到今天"/> <ActionBtn onClick={openCal} icon="cal" tip="跳轉日期"/> </div> </div> <div id={queryVenue?"venue-scroll-container":"staff-scroll-container"} className="flex-1 overflow-y-auto p-4 space-y-3.5 no-scrollbar scroll-smooth"> {visibleDates.map(d=>{ const isS=d.fullKey===curFk, isW=d.isOff; if(queryVenue){ const vn=schedule?.shows?.[d.fullKey]?.[queryVenue]||"—"; return ( <div key={d.fullKey} id={`vrow-${d.fullKey}`} className={`day-block ${isS?'day-block-today':''}`}> <div className="mb-2 text-[13px] opacity-50 text-right truncate italic">{vn}</div> <div className="flex items-center gap-4"> <div className="flex flex-col border-r border-white/10 pr-3 w-[72px]"> <span className={`text-[10px] font-semibold tracking-wide ${isW?'text-[var(--pink)]':'text-white/30'}`}>週{d.w}</span> <span className={`text-[21px] font-extrabold tabular-nums ${isW?'text-[var(--pink)]':'text-white/90'}`}>{d.d}</span> </div> <div className="flex-1 grid grid-cols-2 gap-2.5"> {CONFIG.SHIFTS.map(sh=>( <div key={sh} className="bg-[var(--glass-inset)] rounded-[var(--r-sm)] p-1.5 min-h-[44px]"> {Object.entries(schedule?.roster?.[d.fullKey]?.[queryVenue]||{}).filter(([,v])=>v.shift===sh).map(([n])=><StaffBtn key={n} name={n} aliasMap={aliasMap} onClick={handleStaffClick} mode="small"/>)} </div> ))} </div> </div> </div> ); } 
     // P2 修復: 解決空狀態一致性與 ST (跨場館) 節目漏字 Bug
     const showNames = [];
     let stLabels=[], stColors=[], co="#636366", hasS=false, activeV="", activeSh=""; 
@@ -407,7 +412,7 @@ const QueryModal = memo(({ queryStaff, queryVenue, onClose, setQueryStaff, setQu
     const isAlert=hasS && (isAlertShift(activeSh) || isW); 
     if (filterMode && !(isAlert || (hasS && isW))) return null; 
     
-    return ( <div key={d.fullKey} id={`mrow-${d.fullKey}`} className={`flex items-center gap-4 day-block ${isS?'day-block-today':''} ${isW?(hasS?`wk-${activeV}`:'wk-off'):''}`}> <div className="flex flex-col border-r border-white/10 pr-3 w-[72px]"> <span className={`text-[10px] font-semibold tracking-wide ${isW?'text-[var(--pink)]':'text-white/30'}`}>週{d.w}</span> <span className={`text-[21px] font-extrabold tabular-nums ${isW?'text-[var(--pink)]':'text-white/88'}`}>{d.d}</span> </div> <div className="flex-1 mq-wrap text-[16px] font-medium opacity-60 italic"> <span className={sn.length>10?"mq-run":""}>{sn}</span> </div> <button onClick={()=>{ if(hasS){ setPrevStaff(queryStaff); setQueryVenue(activeV); } }} className={`text-[15px] font-bold px-3.5 py-1.5 rounded-xl shrink-0 transition-all ${isAlert?'b-badge-glow':''} ${hasS?'cursor-pointer hover:opacity-80 active:scale-95':'cursor-default'}`} style={{background:stColors.length>1?`linear-gradient(90deg, ${VENUE_MAP[stLabels[0].split('-')[0]]?.color}55 0%, ${VENUE_MAP[stLabels[stLabels.length-1].split('-')[0]]?.color}55 100%)`:undefined,backgroundColor:stColors.length>1?undefined:`${co}45`,borderColor:isAlert?undefined:(stColors.length>1?'rgba(255,255,255,0.3)':`${co}99`)}}> {stColors.length>1 ? <span style={{color:'#FFF', letterSpacing:'0.03em'}}>{st}</span> : st} </button> </div> ); })} </div> </div> </div> ); });
+    return ( <div key={d.fullKey} id={`mrow-${d.fullKey}`} className={`flex items-center gap-4 day-block ${isS?'day-block-today':''} ${isW?(hasS?`wk-${activeV}`:'wk-off'):''}`}> <div className="flex flex-col border-r border-white/10 pr-3 w-[72px]"> <span className={`text-[10px] font-semibold tracking-wide ${isW?'text-[var(--pink)]':'text-white/30'}`}>週{d.w}</span> <span className={`text-[21px] font-extrabold tabular-nums ${isW?'text-[var(--pink)]':'text-white/90'}`}>{d.d}</span> </div> <div className="flex-1 mq-wrap text-[16px] font-medium opacity-60 italic"> <span className={sn.length>10?"mq-run":""}>{sn}</span> </div> <button onClick={()=>{ if(hasS){ setPrevStaff(queryStaff); setQueryVenue(activeV); } }} className={`text-[15px] font-bold px-3.5 py-1.5 rounded-xl shrink-0 transition-all ${isAlert?'b-badge-glow':''} ${hasS?'cursor-pointer hover:opacity-80 active:scale-95':'cursor-default'}`} style={{background:stColors.length>1?`linear-gradient(90deg, ${VENUE_MAP[stLabels[0].split('-')[0]]?.color}55 0%, ${VENUE_MAP[stLabels[stLabels.length-1].split('-')[0]]?.color}55 100%)`:undefined,backgroundColor:stColors.length>1?undefined:`${co}45`,borderColor:isAlert?undefined:(stColors.length>1?'rgba(255,255,255,0.3)':`${co}99`)}}> {stColors.length>1 ? <span style={{color:'#FFF', letterSpacing:'0.03em'}}>{st}</span> : st} </button> </div> ); })} </div> </div> </div> ); });
 
 /* =========================================================================
    5. MAIN APP ENTRY
@@ -656,7 +661,7 @@ const App = () => {
     },[dateIdx,allDates,schedule]);
     
     if(!isUnlocked) return ( 
-        <div className="h-screen flex flex-col items-center justify-center text-[16px] font-medium tracking-[0.22em] gap-4" style={{background:'var(--bg-base)'}}>
+        <div className="app-h flex flex-col items-center justify-center text-[16px] font-medium tracking-[0.22em] gap-4" style={{background:'var(--bg-base)'}}>
             {errorMsg
                 ? <span className="text-rose-500 font-bold px-6 text-center leading-relaxed">{errorMsg}</span>
                 : isOffline
@@ -676,14 +681,14 @@ const App = () => {
     const displayDateStr = isCurFkToday ? "今日" : (allDates[dateIdx] ? allDates[dateIdx].d + " " : "今日");
 
     return (
-        <div className="h-screen flex flex-col overflow-hidden relative text-white bg-[var(--bg-base)]">
+        <div className="app-h flex flex-col overflow-hidden relative text-white bg-[var(--bg-base)]">
             <div className="aura-bg"/>
             <header className="mac-glass app-header pb-4 px-5 flex items-center justify-between shrink-0 z-50">
                 <div className="flex flex-col justify-center">
                     <h1 className="text-[19px] font-extrabold tracking-[-0.03em] cursor-pointer text-white/90 hover:text-white transition-colors leading-none" onClick={()=>setActiveModal('master')}>視 聽 班 表 系 統</h1>
                     {isOffline
                         ? <span className="flex items-center mt-1.5 gap-1.5"><span className="offline-dot w-1.5 h-1.5 rounded-full bg-[var(--pink)] shrink-0"/><span className="offline-text text-[10px] font-semibold tracking-[0.12em] text-[var(--pink)]">{lastUpdated ? `OFFLINE · 快取 ${lastUpdated}` : 'OFFLINE'}</span></span>
-                        : lastUpdated&&( <button type="button" className={`flex items-center mt-1.5 text-left transition-colors ${isRefreshing?'cursor-wait text-white/78 animate-pulse':'cursor-pointer text-white/40 hover:text-white/70'}`} onClick={handleRefresh} title="點擊強制重整"> <span className="text-[10px] font-semibold tracking-[0.12em]">{isRefreshing?'SYNCING...':`SYNC: ${lastUpdated}`}</span> </button> )
+                        : lastUpdated&&( <button type="button" className={`flex items-center mt-1.5 text-left transition-colors ${isRefreshing?'cursor-wait text-white/80 animate-pulse':'cursor-pointer text-white/40 hover:text-white/70'}`} onClick={handleRefresh} title="點擊強制重整"> <span className="text-[10px] font-semibold tracking-[0.12em]">{isRefreshing?'SYNCING...':`SYNC: ${lastUpdated}`}</span> </button> )
                     }
                 </div>
                 <div className="flex items-center gap-2.5 flex-shrink-0">
@@ -710,7 +715,7 @@ const App = () => {
                 </div>
                 
                 <div className="space-y-4">
-                    <section className="bg-[var(--glass-card)] border border-[var(--border-dim)] rounded-[var(--r-lg)] p-4"> <h4 className="text-[var(--orange)]/80 text-[11px] font-bold uppercase tracking-[0.14em] mb-3 flex items-center gap-2"><Icon name="brief"/> {displayDateStr}{CONFIG.STATUS_KEYS.OFFICE}人員</h4> <div className="grid grid-cols-4 gap-2.5">{dData?.s[CONFIG.STATUS_KEYS.OFFICE]?.map(n=><StaffBtn key={n} name={n} aliasMap={aliasMap} mode="tiny" onClick={handleStaffClick}/>)}</div> </section>
+                    <section className="bg-[var(--glass-card)] border border-[var(--border-dim)] rounded-[var(--r-lg)] p-4"> <h4 className="text-[#FF9F0A]/80 text-[11px] font-bold uppercase tracking-[0.14em] mb-3 flex items-center gap-2"><Icon name="brief"/> {displayDateStr}{CONFIG.STATUS_KEYS.OFFICE}人員</h4> <div className="grid grid-cols-4 gap-2.5">{dData?.s[CONFIG.STATUS_KEYS.OFFICE]?.map(n=><StaffBtn key={n} name={n} aliasMap={aliasMap} mode="tiny" onClick={handleStaffClick}/>)}</div> </section>
                     <section className="bg-[var(--glass-card)] border border-[var(--border-dim)] rounded-[var(--r-lg)] p-4"> <h4 className="text-white/30 text-[11px] font-bold uppercase tracking-[0.14em] mb-3 flex items-center gap-2"><Icon name="sun"/> {displayDateStr}{CONFIG.STATUS_KEYS.LEAVE}</h4> <div className="grid grid-cols-4 gap-2.5">{dData?.s[CONFIG.STATUS_KEYS.LEAVE]?.map(n=><StaffBtn key={n} name={n} aliasMap={aliasMap} mode="tiny" onClick={handleStaffClick}/>)}</div> </section>
                 </div>
             </main>
@@ -722,7 +727,7 @@ const App = () => {
             
             {errorMsg&&( <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[9000] px-5 py-3 rounded-2xl bg-[rgba(255,69,58,0.18)] border border-[rgba(255,69,58,0.35)] text-white/90 text-[13px] font-semibold backdrop-blur-md shadow-xl max-w-[85vw] whitespace-normal text-center animate-window">{errorMsg}</div> )}
             
-            <footer className="fixed bottom-0 left-0 right-0 py-2.5 flex items-center justify-center pointer-events-none text-[9px] font-semibold tracking-[0.28em] text-white/14"> <span>TPAC SCHEDULE SYSTEM | {CONFIG.APP_VERSION}</span> </footer>
+            <footer className="fixed bottom-0 left-0 right-0 py-2.5 flex items-center justify-center pointer-events-none text-[9px] font-semibold tracking-[0.28em] text-white/15"> <span>TPAC SCHEDULE SYSTEM | {CONFIG.APP_VERSION}</span> </footer>
         </div>
     );
 };

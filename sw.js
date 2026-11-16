@@ -1,5 +1,5 @@
-// TPAC 班表系統 — Service Worker V22.19 (Tailwind 本機化 + 預快取補洞版)
-const CACHE_NAME = 'tpac-v22-19';
+// TPAC 班表系統 — Service Worker V22.20 (Tailwind 本機化 + 預快取補洞 + 5xx 回退快取版)
+const CACHE_NAME = 'tpac-v22-20';
 const BASE = '/team-schedule-viewer/';
 // 本機 Tailwind：檔名含版本號、內容永不變動，採 Cache-First
 const TAILWIND_LOCAL = BASE + 'tailwind-3_4_16.js';
@@ -127,8 +127,15 @@ self.addEventListener('fetch', event => {
 
     // 3. 本地 App 核心頁面資源：Network-First（含逾時保護），斷網或逾時時回退到本地快取
     //    ignoreSearch：index.html?v=時間戳 離線時也能命中快取
+    //    V22.20：網路雖有回應但是 5xx（例如 GitHub Pages 暫時故障）時，視同網路失敗，優先使用快取；
+    //    若完全沒有快取，才把這個 5xx 回應原樣交給瀏覽器（不吞掉錯誤）。
     let timer = null;
+    let badResponse = null;
     const networkPromise = fetch(event.request).then(response => {
+        if (response && response.status >= 500) {
+            badResponse = response;
+            throw new Error('HTTP ' + response.status);
+        }
         if (response && response.status === 200) {
             const cloned = response.clone();
             // 以不含查詢字串的網址存放，避免 ?v=... 讓快取無限增長
@@ -151,6 +158,7 @@ self.addEventListener('fetch', event => {
         Promise.race([networkPromise, timeoutPromise]).catch(() => {
             return caches.match(event.request, { ignoreSearch: true }).then(cached => {
                 if (cached) return cached;
+                if (badResponse) return badResponse;
                 return caches.match(BASE + 'index.html');
             });
         })
