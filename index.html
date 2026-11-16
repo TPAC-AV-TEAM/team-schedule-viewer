@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>視聽班表系統 | V22.17</title>
+    <title>視聽班表系統 | V22.18</title>
 
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0c0c0e">
@@ -17,8 +17,8 @@
     <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone@7.27.1/babel.min.js"></script>
     
-    <!-- P0 修復: 鎖定 tailwind 版本與 SW 快取完美對齊 -->
-    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <!-- V22.18: Tailwind 3.4.16 改為本機檔案（與 index.html 同層），確保離線冷啟動樣式不失效 -->
+    <script src="tailwind-3_4_16.js"></script>
     
     <script>
         tailwind.config = {
@@ -150,7 +150,7 @@
 const { useState, useEffect, useMemo, memo, useCallback, useRef } = React;
 
 const CONFIG = {
-    APP_VERSION: 'V22.17',
+    APP_VERSION: 'V22.18',
     APP_ID: "team-schedule-viewer",
     FIREBASE: { apiKey: "AIzaSyA7tgFRxDCnZpOzEvfT978wIAcqcXNZXVQ", authDomain: "team-schedule-viewer.firebaseapp.com", projectId: "team-schedule-viewer", storageBucket: "team-schedule-viewer.firebasestorage.app", messagingSenderId: "202883367260", appId: "1:202883367260:web:b31e495084a4ea8af20199" },
     VENUES: [ 

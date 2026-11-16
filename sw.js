@@ -1,6 +1,8 @@
-// TPAC 班表系統 — Service Worker V22.17 (網路優先加入逾時保護版)
-const CACHE_NAME = 'tpac-v22-17';
+// TPAC 班表系統 — Service Worker V22.18 (Tailwind 本機化版)
+const CACHE_NAME = 'tpac-v22-18';
 const BASE = '/team-schedule-viewer/';
+// 本機 Tailwind：檔名含版本號、內容永不變動，採 Cache-First
+const TAILWIND_LOCAL = BASE + 'tailwind-3_4_16.js';
 
 // 本地頁面的網路等待上限：訊號半通不通時，超過此時間就先用快取回應，
 // 網路請求仍會在背景完成並更新快取（下次開啟即為新版）。首次使用（無快取）則繼續等網路。
@@ -13,10 +15,10 @@ const PRE_CACHE_RESOURCES = [
     BASE + 'manifest.json',
     BASE + 'icon-192.png',
     BASE + 'icon-512.png',
+    TAILWIND_LOCAL,
     'https://unpkg.com/react@18.3.1/umd/react.production.min.js',
     'https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js',
     'https://unpkg.com/@babel/standalone@7.27.1/babel.min.js',
-    'https://cdn.tailwindcss.com/3.4.16',
     // Firebase SDK（版本須與 index.html 100% 一致，並補上 Auth 模組防止離線報錯白畫面）
     'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js',
     'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js',
@@ -61,7 +63,8 @@ self.addEventListener('fetch', event => {
         return;
     }
 
-    // 2. 外部靜態資源（React, Babel, Fonts, Tailwind, Firebase SDK）：Cache-First 策略
+    // 2. 外部靜態資源（React, Babel, Fonts, Firebase SDK）：Cache-First 策略
+    //    （cdn.tailwindcss 判斷保留僅為相容尚未更新的舊版頁面，新版頁面已不使用）
     const isExternalStatic = (
         url.hostname.includes('unpkg.com') ||
         url.hostname.includes('cdn.tailwindcss') ||
@@ -78,6 +81,23 @@ self.addEventListener('fetch', event => {
                     if (response && response.status === 200) {
                         const cloned = response.clone();
                         caches.open(CACHE_NAME).then(cache => cache.put(event.request, cloned));
+                    }
+                    return response;
+                });
+            })
+        );
+        return;
+    }
+
+    // 2b. 本機 Tailwind：Cache-First（它是 <head> 內阻塞渲染的腳本，訊號差時不能卡在網路等待）
+    if (url.origin === self.location.origin && url.pathname === TAILWIND_LOCAL) {
+        event.respondWith(
+            caches.match(TAILWIND_LOCAL).then(cached => {
+                if (cached) return cached;
+                return fetch(event.request).then(response => {
+                    if (response && response.status === 200) {
+                        const cloned = response.clone();
+                        caches.open(CACHE_NAME).then(cache => cache.put(TAILWIND_LOCAL, cloned));
                     }
                     return response;
                 });
