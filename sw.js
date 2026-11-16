@@ -1,5 +1,5 @@
-// TPAC 班表系統 — Service Worker V22.18 (Tailwind 本機化版)
-const CACHE_NAME = 'tpac-v22-18';
+// TPAC 班表系統 — Service Worker V22.19 (Tailwind 本機化 + 預快取補洞版)
+const CACHE_NAME = 'tpac-v22-19';
 const BASE = '/team-schedule-viewer/';
 // 本機 Tailwind：檔名含版本號、內容永不變動，採 Cache-First
 const TAILWIND_LOCAL = BASE + 'tailwind-3_4_16.js';
@@ -19,9 +19,8 @@ const PRE_CACHE_RESOURCES = [
     'https://unpkg.com/react@18.3.1/umd/react.production.min.js',
     'https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js',
     'https://unpkg.com/@babel/standalone@7.27.1/babel.min.js',
-    // Firebase SDK（版本須與 index.html 100% 一致，並補上 Auth 模組防止離線報錯白畫面）
+    // Firebase SDK（版本須與 index.html 100% 一致；V22.19 起前端不再使用 Auth 模組，已移除）
     'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js',
-    'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js',
     'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js'
 ];
 
@@ -37,6 +36,26 @@ self.addEventListener('install', event => {
         )
     );
     self.skipWaiting();
+});
+
+// 補抓預快取中缺漏的項目。
+// 安裝當下訊號不佳時，失敗的項目會被略過；而外部腳本是 no-cors 請求，執行期快取收不到，
+// 缺漏便永遠補不上。因此由頁面載入完成後發訊息觸發，只抓缺的，已有的不重抓。
+async function backfillPrecache() {
+    try {
+        const cache = await caches.open(CACHE_NAME);
+        await Promise.allSettled(PRE_CACHE_RESOURCES.map(async url => {
+            if (await cache.match(url)) return;
+            try { await cache.add(url); }
+            catch (err) { console.warn('[SW] Backfill fail:', url, err); }
+        }));
+    } catch (err) { console.warn('[SW] Backfill error:', err); }
+}
+
+self.addEventListener('message', event => {
+    if (event.data && event.data.type === 'BACKFILL_PRECACHE') {
+        event.waitUntil(backfillPrecache());
+    }
 });
 
 self.addEventListener('activate', event => {
