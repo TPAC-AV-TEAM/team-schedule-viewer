@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>視聽班表系統 | V22.21</title>
+    <title>視聽班表系統 | V22.22</title>
 
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0c0c0e">
@@ -172,7 +172,7 @@
 const { useState, useEffect, useMemo, memo, useCallback, useRef } = React;
 
 const CONFIG = {
-    APP_VERSION: 'V22.21',
+    APP_VERSION: 'V22.22',
     APP_ID: "team-schedule-viewer",
     FIREBASE: { apiKey: "AIzaSyA7tgFRxDCnZpOzEvfT978wIAcqcXNZXVQ", authDomain: "team-schedule-viewer.firebaseapp.com", projectId: "team-schedule-viewer", storageBucket: "team-schedule-viewer.firebasestorage.app", messagingSenderId: "202883367260", appId: "1:202883367260:web:b31e495084a4ea8af20199" },
     VENUES: [ 
@@ -706,7 +706,7 @@ const App = () => {
                     <h1 className="text-[19px] font-extrabold tracking-[-0.03em] cursor-pointer text-white/90 hover:text-white transition-colors leading-none" onClick={()=>setActiveModal('master')}>視 聽 班 表 系 統</h1>
                     {isOffline
                         ? <span className="flex items-center mt-1.5 gap-1.5"><span className="offline-dot w-1.5 h-1.5 rounded-full bg-[var(--pink)] shrink-0"/><span className="offline-text text-[10px] font-semibold tracking-[0.12em] text-[var(--pink)]">{lastUpdated ? `OFFLINE · 快取 ${lastUpdated}` : 'OFFLINE'}</span></span>
-                        : lastUpdated&&( <button type="button" className={`flex items-center mt-1.5 text-left transition-colors ${isRefreshing?'cursor-wait text-white/80 animate-pulse':`cursor-pointer ${isRecentlyUpdated?'text-white/60 hover:text-white/80':'text-white/40 hover:text-white/70'}`}`} onClick={handleRefresh} title="點擊同步並標記已讀"> {isRecentlyUpdated&&<span className="w-1.5 h-1.5 rounded-full bg-[var(--pink)] mr-1.5 animate-pulse shrink-0"/>} <span className="text-[10px] font-semibold tracking-[0.12em]">{isRefreshing?'SYNCING...':`SYNC: ${lastUpdated}`}</span> </button> )
+                        : lastUpdated&&( <button type="button" className={`flex items-center mt-1.5 -ml-2.5 px-2.5 py-0.5 rounded-full border text-left transition-colors ${isRefreshing?'cursor-wait border-transparent text-white/80 animate-pulse':`cursor-pointer ${isRecentlyUpdated?'border-[#FF375F]/40 bg-[#FF375F]/15 text-white/95 hover:bg-[#FF375F]/25':'border-transparent text-white/40 hover:text-white/70'}`}`} onClick={handleRefresh} title="點擊同步並標記已讀"> {isRecentlyUpdated&&<span className="relative flex w-2 h-2 mr-2 shrink-0"><span className="absolute inline-flex h-full w-full rounded-full bg-[#FF375F] opacity-75 animate-ping"/><span className="relative inline-flex w-2 h-2 rounded-full bg-[#FF375F]"/></span>} <span className={`leading-4 tracking-[0.12em] ${isRecentlyUpdated?'text-[11px] font-bold':'text-[10px] font-semibold'}`}>{isRefreshing?'SYNCING...':`SYNC: ${lastUpdated}`}</span> </button> )
                     }
                 </div>
                 <div className="flex items-center gap-2.5 flex-shrink-0">
@@ -734,7 +734,7 @@ const App = () => {
                 
                 <div className="space-y-4">
                     <section className="bg-[var(--glass-card)] border border-[var(--border-dim)] rounded-[var(--r-lg)] p-4"> <h4 className="text-[#FF9F0A]/80 text-[11px] font-bold uppercase tracking-[0.14em] mb-3 flex items-center gap-2"><Icon name="brief"/> {displayDateStr}{CONFIG.STATUS_KEYS.OFFICE}人員</h4> <div className="grid grid-cols-4 gap-2.5">{dData?.s[CONFIG.STATUS_KEYS.OFFICE]?.map(n=><StaffBtn key={n} name={n} aliasMap={aliasMap} mode="tiny" onClick={handleStaffClick}/>)}</div> </section>
-                    <section className="bg-[var(--glass-card)] border border-[var(--border-dim)] rounded-[var(--r-lg)] p-4"> <h4 className="text-white/30 text-[11px] font-bold uppercase tracking-[0.14em] mb-3 flex items-center gap-2"><Icon name="sun"/> {displayDateStr}{CONFIG.STATUS_KEYS.LEAVE}</h4> <div className="grid grid-cols-4 gap-2.5">{dData?.s[CONFIG.STATUS_KEYS.LEAVE]?.map(n=><StaffBtn key={n} name={n} aliasMap={aliasMap} mode="tiny" onClick={handleStaffClick}/>)}</div> </section>
+                    <section className="bg-[var(--glass-card)] border border-[var(--border-dim)] rounded-[var(--r-lg)] p-4"> <h4 className="text-[#5AC8FA]/90 text-[11px] font-bold uppercase tracking-[0.14em] mb-3 flex items-center gap-2"><Icon name="sun"/> {displayDateStr}{CONFIG.STATUS_KEYS.LEAVE}</h4> <div className="grid grid-cols-4 gap-2.5">{dData?.s[CONFIG.STATUS_KEYS.LEAVE]?.map(n=><StaffBtn key={n} name={n} aliasMap={aliasMap} mode="tiny" onClick={handleStaffClick}/>)}</div> </section>
                 </div>
             </main>
 

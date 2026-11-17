@@ -1,5 +1,5 @@
-// TPAC 班表系統 — Service Worker V22.21 (Tailwind 本機化 + 預快取補洞 + 5xx 回退快取版)
-const CACHE_NAME = 'tpac-v22-21';
+// TPAC 班表系統 — Service Worker V22.22 (Tailwind 本機化 + 預快取補洞 + 5xx 回退快取版)
+const CACHE_NAME = 'tpac-v22-22';
 const BASE = '/team-schedule-viewer/';
 // 本機 Tailwind：檔名含版本號、內容永不變動，採 Cache-First
 const TAILWIND_LOCAL = BASE + 'tailwind-3_4_16.js';
