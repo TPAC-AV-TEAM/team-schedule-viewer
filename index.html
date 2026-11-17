@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>視聽班表系統 | V22.20</title>
+    <title>視聽班表系統 | V22.21</title>
 
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0c0c0e">
@@ -46,12 +46,23 @@
 
         window.RosterCache = {
             VERSION: 'V22',
-            KEYS: { DATA: 'tpac_roster_cache_V22', UPDATED: 'tpac_seen_update_V22', SAVED_AT:'tpac_cache_saved_at_V22', ALIAS: 'tpac_alias_cache_V22' },
+            KEYS: { DATA: 'tpac_roster_cache_V22', UPDATED: 'tpac_seen_update_V22', ACKED: 'tpac_acked_update_V22', SAVED_AT:'tpac_cache_saved_at_V22', ALIAS: 'tpac_alias_cache_V22' },
             save: function(payload) { window.SafeStorage.set(this.KEYS.DATA, payload); window.SafeStorage.set(this.KEYS.SAVED_AT, new Date().toISOString()); },
             load: function() { return window.SafeStorage.get(this.KEYS.DATA, null); },
             hasCache: function() { return !!window.SafeStorage.get(this.KEYS.DATA, null); },
             getSeenUpdate: function() { return window.SafeStorage.get(this.KEYS.UPDATED, ''); },
             setSeenUpdate: function(val) { window.SafeStorage.set(this.KEYS.UPDATED, val); },
+            // V22.21: 「更新紅點」用。UPDATED = 最後一次套用的同步版本（收到就更新）；
+            //         ACKED = 使用者點過 SYNC 確認的版本。兩者不同 = 有尚未確認的新同步 → 亮紅點（重新整理後仍保留）
+            getAcked: function() { return window.SafeStorage.get(this.KEYS.ACKED, null); },
+            setAcked: function(val) { window.SafeStorage.set(this.KEYS.ACKED, val); },
+            hasUnread: function() {
+                var seen = this.getSeenUpdate();
+                if(!seen) return false;                                    // 全新裝置：沒有同步記錄
+                var acked = this.getAcked();
+                if(acked === null){ this.setAcked(seen); return false; }   // 升級後第一次開啟：視為已讀，避免誤亮
+                return acked !== seen;
+            },
             saveAlias: function(maps) { window.SafeStorage.set(this.KEYS.ALIAS, maps); },
             loadAlias: function() { return window.SafeStorage.get(this.KEYS.ALIAS, {}); }
         };
@@ -161,7 +172,7 @@
 const { useState, useEffect, useMemo, memo, useCallback, useRef } = React;
 
 const CONFIG = {
-    APP_VERSION: 'V22.20',
+    APP_VERSION: 'V22.21',
     APP_ID: "team-schedule-viewer",
     FIREBASE: { apiKey: "AIzaSyA7tgFRxDCnZpOzEvfT978wIAcqcXNZXVQ", authDomain: "team-schedule-viewer.firebaseapp.com", projectId: "team-schedule-viewer", storageBucket: "team-schedule-viewer.firebasestorage.app", messagingSenderId: "202883367260", appId: "1:202883367260:web:b31e495084a4ea8af20199" },
     VENUES: [ 
@@ -436,7 +447,7 @@ const App = () => {
     );
     const [aliasMap, setAliasMap] = useState(() => window.RosterCache.loadAlias());
     const [lastUpdated, setLastUpdated] = useState(cachedData?.lastUpdated || "");
-    const [isRecentlyUpdated, setIsRecentlyUpdated] = useState(false);
+    const [isRecentlyUpdated, setIsRecentlyUpdated] = useState(() => window.RosterCache.hasUnread());
     const [isUnlocked, setIsUnlocked] = useState(!!cachedData);
     const [errorMsg, setErrorMsg] = useState(null);
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -544,7 +555,8 @@ const App = () => {
         }
     }, [allDates, dateIdx, scrollTo]);
 
-    // P2 修復: 接收到 Firebase Snapshot 時，自動覆寫畫面資料 (無需假紅點等待)
+    // P2 修復: 接收到 Firebase Snapshot 時，自動覆寫畫面資料（不需等使用者點擊）
+    // V22.21: 紅點只作為「有新同步」的通知、不阻擋更新；每次同步（不論內容有沒有變）都會亮，點 SYNC 確認後熄滅
     const applyRosterSnapshot = useCallback((snap)=>{
         if(!snap.exists()){ showError("找不到班表資料庫，請聯絡管理員", 4000); return; }
         showError(null);
@@ -565,6 +577,8 @@ const App = () => {
             dataSigRef.current = dataSig;
             window.RosterCache.save({ roster, statuses, shows, notes, lastUpdated: fmtKey });
             window.RosterCache.setSeenUpdate(verKey);
+            window.RosterCache.setAcked(verKey);      // 全新安裝的第一次載入不算「有新更新」
+            setIsRecentlyUpdated(false);
             if(fmtKey) setLastUpdated(fmtKey);
             setSchedule({roster,statuses,shows,notes}); setAllDates(sd); setIsUnlocked(true);
             if(!keys.length) return;
@@ -579,6 +593,7 @@ const App = () => {
                 window.RosterCache.save({ roster, statuses, shows, notes, lastUpdated: fmtKey });
                 window.RosterCache.setSeenUpdate(verKey);
                 setLastUpdated(fmtKey);
+                setIsRecentlyUpdated(true);               // V22.21: 每次同步都亮紅點
 
                 // 內容真的有變才重繪、維持視圖位置並提示；內容沒變就靜默更新時間即可
                 if(dataSig !== dataSigRef.current){
@@ -600,6 +615,9 @@ const App = () => {
     const handleRefresh = useCallback(()=>{
         if(isRefreshing) return;
         if(isOffline){ showError("目前無網路連線，無法手動同步", 3000); return; }
+        // V22.21: 點擊視為「已讀」：記下目前已套用的版本，紅點熄滅（重新整理後也不會再亮）
+        window.RosterCache.setAcked(window.RosterCache.getSeenUpdate());
+        setIsRecentlyUpdated(false);
         setIsRefreshing(true);
         setTimeout(() => { window.location.href = window.location.pathname + '?v=' + Date.now(); }, CONFIG.SYNC_FEEDBACK_MS);
     },[isRefreshing, isOffline, showError]);
@@ -688,7 +706,7 @@ const App = () => {
                     <h1 className="text-[19px] font-extrabold tracking-[-0.03em] cursor-pointer text-white/90 hover:text-white transition-colors leading-none" onClick={()=>setActiveModal('master')}>視 聽 班 表 系 統</h1>
                     {isOffline
                         ? <span className="flex items-center mt-1.5 gap-1.5"><span className="offline-dot w-1.5 h-1.5 rounded-full bg-[var(--pink)] shrink-0"/><span className="offline-text text-[10px] font-semibold tracking-[0.12em] text-[var(--pink)]">{lastUpdated ? `OFFLINE · 快取 ${lastUpdated}` : 'OFFLINE'}</span></span>
-                        : lastUpdated&&( <button type="button" className={`flex items-center mt-1.5 text-left transition-colors ${isRefreshing?'cursor-wait text-white/80 animate-pulse':'cursor-pointer text-white/40 hover:text-white/70'}`} onClick={handleRefresh} title="點擊強制重整"> <span className="text-[10px] font-semibold tracking-[0.12em]">{isRefreshing?'SYNCING...':`SYNC: ${lastUpdated}`}</span> </button> )
+                        : lastUpdated&&( <button type="button" className={`flex items-center mt-1.5 text-left transition-colors ${isRefreshing?'cursor-wait text-white/80 animate-pulse':`cursor-pointer ${isRecentlyUpdated?'text-white/60 hover:text-white/80':'text-white/40 hover:text-white/70'}`}`} onClick={handleRefresh} title="點擊同步並標記已讀"> {isRecentlyUpdated&&<span className="w-1.5 h-1.5 rounded-full bg-[var(--pink)] mr-1.5 animate-pulse shrink-0"/>} <span className="text-[10px] font-semibold tracking-[0.12em]">{isRefreshing?'SYNCING...':`SYNC: ${lastUpdated}`}</span> </button> )
                     }
                 </div>
                 <div className="flex items-center gap-2.5 flex-shrink-0">
