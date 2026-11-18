@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>視聽班表系統 | V22.22</title>
+    <title>視聽班表系統 | V22.23</title>
 
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0c0c0e">
@@ -46,7 +46,7 @@
 
         window.RosterCache = {
             VERSION: 'V22',
-            KEYS: { DATA: 'tpac_roster_cache_V22', UPDATED: 'tpac_seen_update_V22', ACKED: 'tpac_acked_update_V22', SAVED_AT:'tpac_cache_saved_at_V22', ALIAS: 'tpac_alias_cache_V22' },
+            KEYS: { DATA: 'tpac_roster_cache_V22', UPDATED: 'tpac_seen_update_V22', ACKED: 'tpac_acked_update_V22', ME: 'tpac_me_name_V22', MY_CHANGES: 'tpac_my_changes_V22', MY_SEEN: 'tpac_my_seen_V22', SAVED_AT:'tpac_cache_saved_at_V22', ALIAS: 'tpac_alias_cache_V22' },
             save: function(payload) { window.SafeStorage.set(this.KEYS.DATA, payload); window.SafeStorage.set(this.KEYS.SAVED_AT, new Date().toISOString()); },
             load: function() { return window.SafeStorage.get(this.KEYS.DATA, null); },
             hasCache: function() { return !!window.SafeStorage.get(this.KEYS.DATA, null); },
@@ -63,6 +63,18 @@
                 if(acked === null){ this.setAcked(seen); return false; }   // 升級後第一次開啟：視為已讀，避免誤亮
                 return acked !== seen;
             },
+            // V22.23: 「我的異動」。ME = 這台裝置要追蹤的姓名（空 = 關閉）；MY_CHANGES = 最近一次收到的異動快取（離線也能看）；
+            //         MY_SEEN = 使用者上次打開「我的異動」的時間，用來算紅色未讀數字。
+            getMe: function() { return window.SafeStorage.get(this.KEYS.ME, '') || ''; },
+            setMe: function(name) {
+                window.SafeStorage.set(this.KEYS.ME, name || '');
+                if(!name){ window.SafeStorage.set(this.KEYS.MY_CHANGES, []); window.SafeStorage.set(this.KEYS.MY_SEEN, ''); }
+                else if(!this.getMySeen()) window.SafeStorage.set(this.KEYS.MY_SEEN, new Date().toISOString());   // 首次啟用：只提醒「之後」的異動
+            },
+            getMyChanges: function() { return window.SafeStorage.get(this.KEYS.MY_CHANGES, []) || []; },
+            saveMyChanges: function(list) { window.SafeStorage.set(this.KEYS.MY_CHANGES, list); },
+            getMySeen: function() { return window.SafeStorage.get(this.KEYS.MY_SEEN, '') || ''; },
+            setMySeen: function(v) { window.SafeStorage.set(this.KEYS.MY_SEEN, v); },
             saveAlias: function(maps) { window.SafeStorage.set(this.KEYS.ALIAS, maps); },
             loadAlias: function() { return window.SafeStorage.get(this.KEYS.ALIAS, {}); }
         };
@@ -172,7 +184,7 @@
 const { useState, useEffect, useMemo, memo, useCallback, useRef } = React;
 
 const CONFIG = {
-    APP_VERSION: 'V22.22',
+    APP_VERSION: 'V22.23',
     APP_ID: "team-schedule-viewer",
     FIREBASE: { apiKey: "AIzaSyA7tgFRxDCnZpOzEvfT978wIAcqcXNZXVQ", authDomain: "team-schedule-viewer.firebaseapp.com", projectId: "team-schedule-viewer", storageBucket: "team-schedule-viewer.firebasestorage.app", messagingSenderId: "202883367260", appId: "1:202883367260:web:b31e495084a4ea8af20199" },
     VENUES: [ 
@@ -312,6 +324,7 @@ const Icon = memo(({ name, className="w-4 h-4" }) => {
         info:    <><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></>,
         sun:     <path d="M12 2v2m0 16v2m10-10h-2M4 12H2m15.364-7.364-1.414 1.414M7.05 16.95l-1.414 1.414M16.95 16.95l1.414 1.414M5.636 5.636l1.414 1.414M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/>,
         brief:   <><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></>,
+        history: <><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 9 8 9"/><path d="M12 7v5l3 2"/></>,
         cal:     <><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></>,
         today:   <><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="12" cy="16" r="1.2"/></>,
     };
@@ -348,6 +361,48 @@ const NotesModal = memo(({ onClose, visibleDates, schedule, goDate, handleBackTo
     const today = new Date(); today.setHours(0,0,0,0);
     const notesList = visibleDates.filter(d => schedule?.notes?.[d.fullKey]?.trim());
     return ( <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={onClose}> <div className="animate-window bg-[var(--glass-modal)] border border-[var(--border-mid)] w-full max-w-md rounded-[var(--r-2xl)] flex flex-col max-h-[85vh] overflow-hidden" onClick={e=>e.stopPropagation()}> <div className="p-3 border-b border-[var(--border-dim)] bg-white/[0.03] flex items-center justify-between"> <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/[0.07] border border-[var(--border-mid)] text-white/55 hover:bg-white/15 hover:text-white/90 transition-all flex items-center justify-center text-[18px] leading-none">×</button> <h3 className="text-[16px] font-bold text-[var(--pink)]">重要提醒</h3> <ActionBtn onClick={handleBackToday} icon="today" tip="回到今天"/> </div> <div id="notes-scroll-container" className="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar scroll-smooth"> {notesList.length===0 ? ( <div className="text-center text-white/40 py-10">無任何提醒事項</div> ) : notesList.map(d=>( <button key={d.fullKey} id={`note-${d.fullKey}`} onClick={() => { onClose(); setTimeout(() => requestAnimationFrame(() => goDate(d.absIdx, d.fullKey)), 300); }} className={`w-full text-left p-3.5 rounded-2xl border transition-all ${parseK(d.fullKey)<today?'bg-white/[0.02] border-white/5 opacity-60':'bg-[rgba(255,55,95,0.08)] border-[rgba(255,55,95,0.2)]'}`}> <div className="text-[12px] font-bold">{d.fullKey} (週{d.w})</div> <div className="text-[14.5px] font-medium leading-relaxed whitespace-pre-wrap"><span className="md:hidden">{formatNoteText(schedule?.notes?.[d.fullKey], true)}</span><span className="hidden md:inline">{formatNoteText(schedule?.notes?.[d.fullKey], false)}</span></div> </button> ))} </div> </div> </div> );
+});
+
+const ChangeChip = memo(({ lab }) => {
+ const v = CONFIG.VENUES.find(x => lab.startsWith(x.id + '-'));
+ const cls = v ? 'font-bold' : lab === '辦公' ? 'text-[#FF9F0A] font-bold' : lab.startsWith('ST') ? 'text-white font-extrabold' : 'text-white/45 font-semibold';
+ return <span className={`text-[13px] tracking-wide ${cls}`} style={v ? { color: v.color } : undefined}>{lab}</span>;
+});
+
+// V22.23: 「我的異動」：依「同步時間」分組（新 → 舊），每筆顯示哪一天、原本 → 改為；今天以前的日期變淡；點一筆跳到那天。
+const MyChangesModal = memo(({ onClose, me, entries, seenAt, allDates, goDate }) => {
+ const todayStr = formatK(new Date());
+ const WD = ['日','一','二','三','四','五','六'];
+ const dLabel = d => { const p = d.split('/').map(Number); return `${p[1]}/${p[2]}（週${WD[new Date(p[0], p[1]-1, p[2]).getDay()]}）`; };
+ const tLabel = t => { const x = new Date(t); const z = n => String(n).padStart(2,'0'); return `${x.getMonth()+1}/${x.getDate()} ${z(x.getHours())}:${z(x.getMinutes())}`; };
+ const groups = [];
+ [...entries].sort((a,b) => (a.t < b.t ? 1 : a.t > b.t ? -1 : 0)).forEach(e => { let g = groups[groups.length-1]; if(!g || g.t !== e.t){ g = { t: e.t, items: [] }; groups.push(g); } g.items.push(e); });
+ groups.forEach(g => g.items.sort((a,b) => (a.d < b.d ? -1 : a.d > b.d ? 1 : 0)));
+ const jump = d => { const i = allDates.findIndex(x => x.fullKey === d); if(i === -1) return; onClose(); setTimeout(() => requestAnimationFrame(() => goDate(i, d)), 300); };
+ return ( <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={onClose}>
+  <div className="animate-window bg-[var(--glass-modal)] border border-[var(--border-mid)] w-full max-w-md rounded-[var(--r-2xl)] flex flex-col max-h-[85vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
+   <div className="p-3 border-b border-[var(--border-dim)] bg-white/[0.03] flex items-center justify-between">
+    <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/[0.07] border border-[var(--border-mid)] text-white/55 hover:bg-white/15 hover:text-white/90 transition-all flex items-center justify-center text-[18px] leading-none">×</button>
+    <h3 className="text-[16px] font-bold text-white/90">我的異動 <span className="text-[13px] font-semibold text-white/40">· {me}</span></h3>
+    <span className="w-8"/>
+   </div>
+   <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar">
+    {groups.length === 0 ? ( <div className="text-center text-white/40 py-10 text-[14px] leading-relaxed">目前沒有異動紀錄<br/><span className="text-[12px] text-white/30">只會記錄開始追蹤之後、你的班被改動的日期</span></div> ) : groups.map(g => (
+     <section key={g.t}>
+      <div className="flex items-center gap-2 mb-2 text-[11px] font-bold tracking-[0.12em] text-white/40">
+       {seenAt && g.t > seenAt ? <span className="w-1.5 h-1.5 rounded-full bg-[#FF375F] shrink-0"/> : null}
+       <span>{tLabel(g.t)} 同步</span>
+      </div>
+      <div className="space-y-1.5">
+       {g.items.map(e => ( <button key={e.d + e.from + e.to} type="button" onClick={() => jump(e.d)} className={`w-full text-left px-3.5 py-2.5 rounded-2xl border flex items-center justify-between gap-3 transition-colors ${e.d < todayStr ? 'bg-white/[0.02] border-white/5 opacity-60' : 'bg-white/[0.05] border-white/10 hover:bg-white/[0.09]'}`}>
+        <span className="text-[13.5px] font-semibold text-white/85">{dLabel(e.d)}</span>
+        <span className="flex items-center gap-2"><ChangeChip lab={e.from}/><span className="text-[12px] text-white/30">→</span><ChangeChip lab={e.to}/></span>
+       </button> ))}
+      </div>
+     </section> ))}
+   </div>
+  </div>
+ </div> );
 });
 
 const MasterRosterModal = memo(({ onClose, visibleDates, schedule, aliasMap, todayK, handleStaffClick, handleBackToday, openCal }) => {
@@ -448,6 +503,23 @@ const App = () => {
     const [aliasMap, setAliasMap] = useState(() => window.RosterCache.loadAlias());
     const [lastUpdated, setLastUpdated] = useState(cachedData?.lastUpdated || "");
     const [isRecentlyUpdated, setIsRecentlyUpdated] = useState(() => window.RosterCache.hasUnread());
+    // V22.23: 「我的異動」。只有這台裝置設定過名字才會出現入口（網址加 ?me=姓名，或長按標題）；沒設定的人完全看不到。
+    const [me, setMe] = useState(() => {
+        try {
+            const p = new URLSearchParams(window.location.search).get('me');
+            if(p !== null){
+                window.RosterCache.setMe(p.trim());
+                const u = new URL(window.location.href); u.searchParams.delete('me');
+                window.history.replaceState(null, '', u.pathname + u.search + u.hash);
+            }
+        } catch(e) {}
+        return window.RosterCache.getMe();
+    });
+    const [myEntries, setMyEntries] = useState(() => window.RosterCache.getMe() ? window.RosterCache.getMyChanges() : []);
+    const [mySeenAt, setMySeenAt] = useState(() => window.RosterCache.getMySeen());
+    const [modalSeenAt, setModalSeenAt] = useState('');
+    const myUnread = me ? myEntries.filter(e => e && e.t > mySeenAt).length : 0;
+    const lpTimer = useRef(null); const lpFired = useRef(false);
     const [isUnlocked, setIsUnlocked] = useState(!!cachedData);
     const [errorMsg, setErrorMsg] = useState(null);
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -655,6 +727,41 @@ const App = () => {
         return Firebase.onSnapshot( Firebase.doc(db,'artifacts',CONFIG.APP_ID,'public','data','rosters','master'), applyRosterSnapshot, (e)=>{ console.error("Firebase Sync Error:", e); showError("資料同步失敗", 4000); } );
     },[applyRosterSnapshot, fbApp]);
 
+    // V22.23: 只在設定過名字的裝置才監聽「異動紀錄」文件（由 Apps Script 寫入，內容只含被追蹤的人）
+    useEffect(()=>{
+        if(!fbApp || !me) return;
+        const db=Firebase.getFirestore(fbApp);
+        return Firebase.onSnapshot( Firebase.doc(db,'artifacts',CONFIG.APP_ID,'public','data','rosters','changelog'), snap=>{
+            let list=[];
+            if(snap.exists()){
+                try{ const raw=snap.data()?.entries; const arr=typeof raw==='string'?JSON.parse(raw):(Array.isArray(raw)?raw:[]); list=arr.filter(e=>e && e.p===me && e.t && e.d); }
+                catch(err){ console.warn('changelog parse failed', err); }
+            }
+            window.RosterCache.saveMyChanges(list);
+            setMyEntries(list);
+        }, (err)=>{ console.warn('changelog listen failed', err); } );
+    },[fbApp, me]);
+
+    const applyMe = useCallback((name)=>{
+        const next=(name||'').trim();
+        if(next!==me){ window.RosterCache.saveMyChanges([]); window.RosterCache.setMySeen(''); setMyEntries([]); }
+        window.RosterCache.setMe(next);
+        setMe(next);
+        setMySeenAt(window.RosterCache.getMySeen());
+    },[me]);
+    const promptMe = useCallback(()=>{
+        const v=window.prompt('「我的異動」要追蹤誰？\n請輸入班表上的姓名（留空 = 關閉此功能）', me||'');
+        if(v!==null) applyMe(v);
+    },[me, applyMe]);
+    const startLongPress = useCallback(()=>{ lpFired.current=false; clearTimeout(lpTimer.current); lpTimer.current=setTimeout(()=>{ lpFired.current=true; promptMe(); }, 800); },[promptMe]);
+    const cancelLongPress = useCallback(()=>{ clearTimeout(lpTimer.current); },[]);
+    const openMyChanges = useCallback(()=>{
+        const latest = myEntries.reduce((m,e)=> (e.t>m?e.t:m), mySeenAt||'');
+        setModalSeenAt(mySeenAt);
+        setMySeenAt(latest); window.RosterCache.setMySeen(latest);
+        setActiveModal('myChanges');
+    },[myEntries, mySeenAt]);
+
     useEffect(()=>{
         if(!allDates.length||!allDates[dateIdx]) return;
         const fk=allDates[dateIdx].fullKey;
@@ -703,13 +810,14 @@ const App = () => {
             <div className="aura-bg"/>
             <header className="mac-glass app-header pb-4 px-5 flex items-center justify-between shrink-0 z-50">
                 <div className="flex flex-col justify-center">
-                    <h1 className="text-[19px] font-extrabold tracking-[-0.03em] cursor-pointer text-white/90 hover:text-white transition-colors leading-none" onClick={()=>setActiveModal('master')}>視 聽 班 表 系 統</h1>
+                    <h1 className="text-[19px] font-extrabold tracking-[-0.03em] cursor-pointer text-white/90 hover:text-white transition-colors leading-none select-none [-webkit-touch-callout:none]" onPointerDown={startLongPress} onPointerUp={cancelLongPress} onPointerLeave={cancelLongPress} onPointerCancel={cancelLongPress} onContextMenu={e=>e.preventDefault()} onClick={()=>{ if(lpFired.current){ lpFired.current=false; return; } setActiveModal('master'); }}>視 聽 班 表 系 統</h1>
                     {isOffline
                         ? <span className="flex items-center mt-1.5 gap-1.5"><span className="offline-dot w-1.5 h-1.5 rounded-full bg-[var(--pink)] shrink-0"/><span className="offline-text text-[10px] font-semibold tracking-[0.12em] text-[var(--pink)]">{lastUpdated ? `OFFLINE · 快取 ${lastUpdated}` : 'OFFLINE'}</span></span>
                         : lastUpdated&&( <button type="button" className={`flex items-center mt-1.5 -ml-2.5 px-2.5 py-0.5 rounded-full border text-left transition-colors ${isRefreshing?'cursor-wait border-transparent text-white/80 animate-pulse':`cursor-pointer ${isRecentlyUpdated?'border-[#FF375F]/40 bg-[#FF375F]/15 text-white/95 hover:bg-[#FF375F]/25':'border-transparent text-white/40 hover:text-white/70'}`}`} onClick={handleRefresh} title="點擊同步並標記已讀"> {isRecentlyUpdated&&<span className="relative flex w-2 h-2 mr-2 shrink-0"><span className="absolute inline-flex h-full w-full rounded-full bg-[#FF375F] opacity-75 animate-ping"/><span className="relative inline-flex w-2 h-2 rounded-full bg-[#FF375F]"/></span>} <span className={`leading-4 tracking-[0.12em] ${isRecentlyUpdated?'text-[11px] font-bold':'text-[10px] font-semibold'}`}>{isRefreshing?'SYNCING...':`SYNC: ${lastUpdated}`}</span> </button> )
                     }
                 </div>
                 <div className="flex items-center gap-2.5 flex-shrink-0">
+  {me && ( <span className="relative flex"><ActionBtn onClick={openMyChanges} icon="history" tip="我的異動"/>{myUnread>0 && <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-[#FF375F] text-white text-[10px] font-bold leading-4 text-center pointer-events-none">{myUnread>9?'9+':myUnread}</span>}</span> )}
                     <ActionBtn onClick={handleBackToday} icon="today" tip="回到今天"/>
                     <ActionBtn onClick={openCal} icon="cal" tip="跳轉日期"/>
                 </div>
@@ -738,7 +846,8 @@ const App = () => {
                 </div>
             </main>
 
-            {activeModal==='notes'&&( <NotesModal onClose={closeModal} visibleDates={visibleDates} schedule={schedule} goDate={goDate} handleBackToday={handleBackToday}/> )}
+            {activeModal==='myChanges'&&( <MyChangesModal onClose={closeModal} me={me} entries={myEntries} seenAt={modalSeenAt} allDates={allDates} goDate={goDate}/> )}
+  {activeModal==='notes'&&( <NotesModal onClose={closeModal} visibleDates={visibleDates} schedule={schedule} goDate={goDate} handleBackToday={handleBackToday}/> )}
             {activeModal==='master'&&( <MasterRosterModal onClose={closeModal} visibleDates={visibleDates} schedule={schedule} aliasMap={aliasMap} todayK={todayK} handleStaffClick={handleStaffClick} handleBackToday={handleBackToday} openCal={openCal}/> )}
             {(activeModal==='queryStaff'||activeModal==='queryVenue')&&( <QueryModal queryStaff={queryStaff} queryVenue={queryVenue} onClose={closeModal} setQueryStaff={name=>{ if(name){setQueryTarget(name);setActiveModal('queryStaff');} else closeModal(); }} setQueryVenue={id=>{ if(id){setQueryTarget(id);setActiveModal('queryVenue');} else closeModal(); }} visibleDates={visibleDates} schedule={schedule} aliasMap={aliasMap} curFk={curFk} handleStaffClick={handleStaffClick} handleBackToday={handleBackToday} openCal={openCal} /> )}
             {activeModal==='calendar'&&( <CalendarPicker allDates={allDates} onSelect={fk=>{ const i=allDates.findIndex(d=>d.fullKey===fk); if(i!==-1)goDate(i,fk); if(prevModal){ setActiveModal(prevModal); setPrevModal(null); } else closeModal(); }} onClose={()=>{ if(prevModal){setActiveModal(prevModal);setPrevModal(null);} else closeModal(); }} calMonth={calMonth} setCalMonth={setCalMonth} /> )}
