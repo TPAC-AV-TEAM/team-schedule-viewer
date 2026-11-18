@@ -549,7 +549,7 @@ const App = () => {
         } catch(e) {}
         return window.RosterCache.getMe();
     });
-    const [myEntries, setMyEntries] = useState(() => window.RosterCache.getMe().length ? window.RosterCache.getMyChanges() : []);
+    const [myEntries, setMyEntries] = useState(() => { const m = window.RosterCache.getMe(); return m.length ? window.RosterCache.getMyChanges().filter(e => e && m.includes(e.p)) : []; });   // 讀快取時也只留仍在追蹤的人（取消追蹤後離線重開不會殘留）
     const [mySeenAt, setMySeenAt] = useState(() => window.RosterCache.getMySeen());
     const [modalSeenAt, setModalSeenAt] = useState('');
     const meKey = me.join('|');
