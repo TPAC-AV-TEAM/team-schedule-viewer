@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>視聽班表系統 | V22.23</title>
+    <title>視聽班表系統 | V22.24</title>
 
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0c0c0e">
@@ -65,10 +65,11 @@
             },
             // V22.23: 「我的異動」。ME = 這台裝置要追蹤的姓名（空 = 關閉）；MY_CHANGES = 最近一次收到的異動快取（離線也能看）；
             //         MY_SEEN = 使用者上次打開「我的異動」的時間，用來算紅色未讀數字。
-            getMe: function() { return window.SafeStorage.get(this.KEYS.ME, '') || ''; },
-            setMe: function(name) {
-                window.SafeStorage.set(this.KEYS.ME, name || '');
-                if(!name){ window.SafeStorage.set(this.KEYS.MY_CHANGES, []); window.SafeStorage.set(this.KEYS.MY_SEEN, ''); }
+            getMe: function() { var v = window.SafeStorage.get(this.KEYS.ME, []); if(typeof v === 'string') v = v ? [v] : []; return Array.isArray(v) ? v.filter(Boolean) : []; },   // V22.24: 可多人（舊版存的是單一字串，這裡自動相容）
+            setMe: function(names) {
+                var list = Array.isArray(names) ? names.filter(Boolean) : (names ? [names] : []);
+                window.SafeStorage.set(this.KEYS.ME, list);
+                if(!list.length){ window.SafeStorage.set(this.KEYS.MY_CHANGES, []); window.SafeStorage.set(this.KEYS.MY_SEEN, ''); }
                 else if(!this.getMySeen()) window.SafeStorage.set(this.KEYS.MY_SEEN, new Date().toISOString());   // 首次啟用：只提醒「之後」的異動
             },
             getMyChanges: function() { return window.SafeStorage.get(this.KEYS.MY_CHANGES, []) || []; },
@@ -184,7 +185,7 @@
 const { useState, useEffect, useMemo, memo, useCallback, useRef } = React;
 
 const CONFIG = {
-    APP_VERSION: 'V22.23',
+    APP_VERSION: 'V22.24',
     APP_ID: "team-schedule-viewer",
     FIREBASE: { apiKey: "AIzaSyA7tgFRxDCnZpOzEvfT978wIAcqcXNZXVQ", authDomain: "team-schedule-viewer.firebaseapp.com", projectId: "team-schedule-viewer", storageBucket: "team-schedule-viewer.firebasestorage.app", messagingSenderId: "202883367260", appId: "1:202883367260:web:b31e495084a4ea8af20199" },
     VENUES: [ 
@@ -363,6 +364,36 @@ const NotesModal = memo(({ onClose, visibleDates, schedule, goDate, handleBackTo
     return ( <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={onClose}> <div className="animate-window bg-[var(--glass-modal)] border border-[var(--border-mid)] w-full max-w-md rounded-[var(--r-2xl)] flex flex-col max-h-[85vh] overflow-hidden" onClick={e=>e.stopPropagation()}> <div className="p-3 border-b border-[var(--border-dim)] bg-white/[0.03] flex items-center justify-between"> <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/[0.07] border border-[var(--border-mid)] text-white/55 hover:bg-white/15 hover:text-white/90 transition-all flex items-center justify-center text-[18px] leading-none">×</button> <h3 className="text-[16px] font-bold text-[var(--pink)]">重要提醒</h3> <ActionBtn onClick={handleBackToday} icon="today" tip="回到今天"/> </div> <div id="notes-scroll-container" className="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar scroll-smooth"> {notesList.length===0 ? ( <div className="text-center text-white/40 py-10">無任何提醒事項</div> ) : notesList.map(d=>( <button key={d.fullKey} id={`note-${d.fullKey}`} onClick={() => { onClose(); setTimeout(() => requestAnimationFrame(() => goDate(d.absIdx, d.fullKey)), 300); }} className={`w-full text-left p-3.5 rounded-2xl border transition-all ${parseK(d.fullKey)<today?'bg-white/[0.02] border-white/5 opacity-60':'bg-[rgba(255,55,95,0.08)] border-[rgba(255,55,95,0.2)]'}`}> <div className="text-[12px] font-bold">{d.fullKey} (週{d.w})</div> <div className="text-[14.5px] font-medium leading-relaxed whitespace-pre-wrap"><span className="md:hidden">{formatNoteText(schedule?.notes?.[d.fullKey], true)}</span><span className="hidden md:inline">{formatNoteText(schedule?.notes?.[d.fullKey], false)}</span></div> </button> ))} </div> </div> </div> );
 });
 
+// V22.24: 「追蹤誰的異動」勾選視窗（取代原本手打姓名的輸入框）。按「完成」才儲存；點 × 或背景＝放棄修改。一個都不勾＝關閉此功能。
+const MeSettingsModal = memo(({ onClose, me, aliasMap={}, onSave }) => {
+ const [draft, setDraft] = useState(me);
+ const toggle = n => setDraft(p => p.includes(n) ? p.filter(x => x !== n) : [...p, n]);
+ const dispName = n => aliasMap[n] || (CONFIG.STAFF_INFO[n] && CONFIG.STAFF_INFO[n].defaultAlias) || n;
+ return ( <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={onClose}>
+  <div className="animate-window bg-[var(--glass-modal)] border border-[var(--border-mid)] w-full max-w-sm rounded-[var(--r-2xl)] flex flex-col max-h-[85vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
+   <div className="p-3 border-b border-[var(--border-dim)] bg-white/[0.03] flex items-center justify-between">
+    <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/[0.07] border border-[var(--border-mid)] text-white/55 hover:bg-white/15 hover:text-white/90 transition-all flex items-center justify-center text-[18px] leading-none">×</button>
+    <h3 className="text-[16px] font-bold text-white/90">追蹤誰的異動</h3>
+    <span className="w-8"/>
+   </div>
+   <div className="flex-1 overflow-y-auto p-4 no-scrollbar">
+    <p className="text-[12px] leading-relaxed text-white/40 mb-3">勾選後，標題旁會出現「我的異動」。可多選；都不勾 = 關閉此功能。</p>
+    <div className="grid grid-cols-2 gap-2">
+     {CONFIG.STAFF_ORDER.map(n => { const on = draft.includes(n); const dn = dispName(n); return (
+      <button key={n} type="button" role="checkbox" aria-checked={on} onClick={() => toggle(n)} className={`flex items-center justify-between gap-2 px-3.5 h-12 rounded-2xl border text-left transition-all active:scale-[0.97] ${on ? 'bg-[rgba(10,132,255,0.14)] border-[rgba(10,132,255,0.55)] text-white' : 'bg-white/[0.04] border-white/10 text-white/70 hover:bg-white/[0.08]'}`}>
+       <span className="flex items-baseline gap-1.5 min-w-0"><span className="text-[15px] font-semibold truncate">{dn}</span>{dn !== n && <span className="text-[11px] text-white/35 truncate">{n}</span>}</span>
+       <span className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 transition-colors ${on ? 'bg-[var(--blue)] border-blue-400' : 'border-white/25'}`}>{on && <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3 text-white"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>}</span>
+      </button> ); })}
+    </div>
+   </div>
+   <div className="p-3 border-t border-[var(--border-dim)] bg-white/[0.03] flex items-center gap-2">
+    <button type="button" onClick={() => setDraft([])} disabled={draft.length === 0} className="px-4 h-10 rounded-[var(--r-sm)] text-[13px] font-semibold text-white/50 hover:text-white/80 disabled:opacity-30 transition-all">全部取消</button>
+    <button type="button" onClick={() => onSave(draft)} className="flex-1 h-10 rounded-[var(--r-sm)] bg-[var(--blue)] text-white text-[14px] font-bold active:scale-[0.98] transition-all">{draft.length ? `完成（已選 ${draft.length} 人）` : '完成（關閉功能）'}</button>
+   </div>
+  </div>
+ </div> );
+});
+
 const ChangeChip = memo(({ lab }) => {
  const v = CONFIG.VENUES.find(x => lab.startsWith(x.id + '-'));
  const cls = v ? 'font-bold' : lab === '辦公' ? 'text-[#FF9F0A] font-bold' : lab.startsWith('ST') ? 'text-white font-extrabold' : 'text-white/45 font-semibold';
@@ -370,7 +401,9 @@ const ChangeChip = memo(({ lab }) => {
 });
 
 // V22.23: 「我的異動」：依「同步時間」分組（新 → 舊），每筆顯示哪一天、原本 → 改為；今天以前的日期變淡；點一筆跳到那天。
-const MyChangesModal = memo(({ onClose, me, entries, seenAt, allDates, goDate }) => {
+const MyChangesModal = memo(({ onClose, me, aliasMap={}, entries, seenAt, allDates, goDate }) => {
+ const dispName = n => aliasMap[n] || (CONFIG.STAFF_INFO[n] && CONFIG.STAFF_INFO[n].defaultAlias) || n;
+ const multi = me.length > 1;
  const todayStr = formatK(new Date());
  const WD = ['日','一','二','三','四','五','六'];
  const dLabel = d => { const p = d.split('/').map(Number); return `${p[1]}/${p[2]}（週${WD[new Date(p[0], p[1]-1, p[2]).getDay()]}）`; };
@@ -383,19 +416,19 @@ const MyChangesModal = memo(({ onClose, me, entries, seenAt, allDates, goDate })
   <div className="animate-window bg-[var(--glass-modal)] border border-[var(--border-mid)] w-full max-w-md rounded-[var(--r-2xl)] flex flex-col max-h-[85vh] overflow-hidden" onClick={e=>e.stopPropagation()}>
    <div className="p-3 border-b border-[var(--border-dim)] bg-white/[0.03] flex items-center justify-between">
     <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/[0.07] border border-[var(--border-mid)] text-white/55 hover:bg-white/15 hover:text-white/90 transition-all flex items-center justify-center text-[18px] leading-none">×</button>
-    <h3 className="text-[16px] font-bold text-white/90">我的異動 <span className="text-[13px] font-semibold text-white/40">· {me}</span></h3>
+    <h3 className="text-[16px] font-bold text-white/90">我的異動 <span className="text-[13px] font-semibold text-white/40">· {multi ? `${me.length} 人` : dispName(me[0])}</span></h3>
     <span className="w-8"/>
    </div>
    <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar">
-    {groups.length === 0 ? ( <div className="text-center text-white/40 py-10 text-[14px] leading-relaxed">目前沒有異動紀錄<br/><span className="text-[12px] text-white/30">只會記錄開始追蹤之後、你的班被改動的日期</span></div> ) : groups.map(g => (
+    {groups.length === 0 ? ( <div className="text-center text-white/40 py-10 text-[14px] leading-relaxed">目前沒有異動紀錄<br/><span className="text-[12px] text-white/30">只會記錄開始追蹤之後、所勾選人員的班被改動的日期</span></div> ) : groups.map(g => (
      <section key={g.t}>
       <div className="flex items-center gap-2 mb-2 text-[11px] font-bold tracking-[0.12em] text-white/40">
        {seenAt && g.t > seenAt ? <span className="w-1.5 h-1.5 rounded-full bg-[#FF375F] shrink-0"/> : null}
        <span>{tLabel(g.t)} 同步</span>
       </div>
       <div className="space-y-1.5">
-       {g.items.map(e => ( <button key={e.d + e.from + e.to} type="button" onClick={() => jump(e.d)} className={`w-full text-left px-3.5 py-2.5 rounded-2xl border flex items-center justify-between gap-3 transition-colors ${e.d < todayStr ? 'bg-white/[0.02] border-white/5 opacity-60' : 'bg-white/[0.05] border-white/10 hover:bg-white/[0.09]'}`}>
-        <span className="text-[13.5px] font-semibold text-white/85">{dLabel(e.d)}</span>
+       {g.items.map(e => ( <button key={e.d + e.p + e.from + e.to} type="button" onClick={() => jump(e.d)} className={`w-full text-left px-3.5 py-2.5 rounded-2xl border flex items-center justify-between gap-3 transition-colors ${e.d < todayStr ? 'bg-white/[0.02] border-white/5 opacity-60' : 'bg-white/[0.05] border-white/10 hover:bg-white/[0.09]'}`}>
+        <span className="flex items-baseline gap-2 min-w-0"><span className="text-[13.5px] font-semibold text-white/85">{dLabel(e.d)}</span>{multi && <span className="text-[12px] font-semibold text-white/45 truncate">{dispName(e.p)}</span>}</span>
         <span className="flex items-center gap-2"><ChangeChip lab={e.from}/><span className="text-[12px] text-white/30">→</span><ChangeChip lab={e.to}/></span>
        </button> ))}
       </div>
@@ -503,22 +536,24 @@ const App = () => {
     const [aliasMap, setAliasMap] = useState(() => window.RosterCache.loadAlias());
     const [lastUpdated, setLastUpdated] = useState(cachedData?.lastUpdated || "");
     const [isRecentlyUpdated, setIsRecentlyUpdated] = useState(() => window.RosterCache.hasUnread());
-    // V22.23: 「我的異動」。只有這台裝置設定過名字才會出現入口（網址加 ?me=姓名，或長按標題）；沒設定的人完全看不到。
+    // V22.24: 「我的異動」。只有這台裝置勾選過人員才會出現入口（長按標題開啟勾選視窗，或網址加 ?me=姓名）；沒勾選的人完全看不到。
     const [me, setMe] = useState(() => {
         try {
             const p = new URLSearchParams(window.location.search).get('me');
             if(p !== null){
-                window.RosterCache.setMe(p.trim());
+                // V22.24: 網址仍可用（多人以逗號分隔），只接受名單內的姓名
+                window.RosterCache.setMe(CONFIG.STAFF_ORDER.filter(n => p.split(/[,，、]/).map(x => x.trim()).includes(n)));
                 const u = new URL(window.location.href); u.searchParams.delete('me');
                 window.history.replaceState(null, '', u.pathname + u.search + u.hash);
             }
         } catch(e) {}
         return window.RosterCache.getMe();
     });
-    const [myEntries, setMyEntries] = useState(() => window.RosterCache.getMe() ? window.RosterCache.getMyChanges() : []);
+    const [myEntries, setMyEntries] = useState(() => window.RosterCache.getMe().length ? window.RosterCache.getMyChanges() : []);
     const [mySeenAt, setMySeenAt] = useState(() => window.RosterCache.getMySeen());
     const [modalSeenAt, setModalSeenAt] = useState('');
-    const myUnread = me ? myEntries.filter(e => e && e.t > mySeenAt).length : 0;
+    const meKey = me.join('|');
+    const myUnread = me.length ? myEntries.filter(e => e && e.t > mySeenAt).length : 0;
     const lpTimer = useRef(null); const lpFired = useRef(false);
     const [isUnlocked, setIsUnlocked] = useState(!!cachedData);
     const [errorMsg, setErrorMsg] = useState(null);
@@ -729,30 +764,34 @@ const App = () => {
 
     // V22.23: 只在設定過名字的裝置才監聽「異動紀錄」文件（由 Apps Script 寫入，內容只含被追蹤的人）
     useEffect(()=>{
-        if(!fbApp || !me) return;
+        if(!fbApp || !me.length) return;
         const db=Firebase.getFirestore(fbApp);
         return Firebase.onSnapshot( Firebase.doc(db,'artifacts',CONFIG.APP_ID,'public','data','rosters','changelog'), snap=>{
             let list=[];
             if(snap.exists()){
-                try{ const raw=snap.data()?.entries; const arr=typeof raw==='string'?JSON.parse(raw):(Array.isArray(raw)?raw:[]); list=arr.filter(e=>e && e.p===me && e.t && e.d); }
+                try{ const raw=snap.data()?.entries; const arr=typeof raw==='string'?JSON.parse(raw):(Array.isArray(raw)?raw:[]); list=arr.filter(e=>e && me.includes(e.p) && e.t && e.d); }
                 catch(err){ console.warn('changelog parse failed', err); }
             }
             window.RosterCache.saveMyChanges(list);
             setMyEntries(list);
         }, (err)=>{ console.warn('changelog listen failed', err); } );
-    },[fbApp, me]);
+    },[fbApp, meKey]);   // eslint-disable-line
 
-    const applyMe = useCallback((name)=>{
-        const next=(name||'').trim();
-        if(next!==me){ window.RosterCache.saveMyChanges([]); window.RosterCache.setMySeen(''); setMyEntries([]); }
+    const applyMe = useCallback((names)=>{
+        const next = CONFIG.STAFF_ORDER.filter(n => (names||[]).includes(n));   // 依名單順序、只收名單內的姓名
+        if(next.join('|') === me.join('|')) return;
+        const added = next.some(n => !me.includes(n));
         window.RosterCache.setMe(next);
+        if(!next.length){ setMyEntries([]); }
+        else {
+            setMyEntries(prev => prev.filter(e => next.includes(e.p)));
+            // 新增追蹤的人：他過去已記錄的異動不算「未讀」，只提醒勾選之後的新異動
+            if(added) window.RosterCache.setMySeen(new Date().toISOString());
+        }
         setMe(next);
         setMySeenAt(window.RosterCache.getMySeen());
     },[me]);
-    const promptMe = useCallback(()=>{
-        const v=window.prompt('「我的異動」要追蹤誰？\n請輸入班表上的姓名（留空 = 關閉此功能）', me||'');
-        if(v!==null) applyMe(v);
-    },[me, applyMe]);
+    const promptMe = useCallback(()=>{ setActiveModal('meSettings'); },[]);
     const startLongPress = useCallback(()=>{ lpFired.current=false; clearTimeout(lpTimer.current); lpTimer.current=setTimeout(()=>{ lpFired.current=true; promptMe(); }, 800); },[promptMe]);
     const cancelLongPress = useCallback(()=>{ clearTimeout(lpTimer.current); },[]);
     const openMyChanges = useCallback(()=>{
@@ -817,7 +856,7 @@ const App = () => {
                     }
                 </div>
                 <div className="flex items-center gap-2.5 flex-shrink-0">
-  {me && ( <span className="relative flex"><ActionBtn onClick={openMyChanges} icon="history" tip="我的異動"/>{myUnread>0 && <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-[#FF375F] text-white text-[10px] font-bold leading-4 text-center pointer-events-none">{myUnread>9?'9+':myUnread}</span>}</span> )}
+  {me.length>0 && ( <span className="relative flex"><ActionBtn onClick={openMyChanges} icon="history" tip="我的異動"/>{myUnread>0 && <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-[#FF375F] text-white text-[10px] font-bold leading-4 text-center pointer-events-none">{myUnread>9?'9+':myUnread}</span>}</span> )}
                     <ActionBtn onClick={handleBackToday} icon="today" tip="回到今天"/>
                     <ActionBtn onClick={openCal} icon="cal" tip="跳轉日期"/>
                 </div>
@@ -846,7 +885,8 @@ const App = () => {
                 </div>
             </main>
 
-            {activeModal==='myChanges'&&( <MyChangesModal onClose={closeModal} me={me} entries={myEntries} seenAt={modalSeenAt} allDates={allDates} goDate={goDate}/> )}
+            {activeModal==='myChanges'&&( <MyChangesModal onClose={closeModal} me={me} aliasMap={aliasMap} entries={myEntries} seenAt={modalSeenAt} allDates={allDates} goDate={goDate}/> )}
+            {activeModal==='meSettings'&&( <MeSettingsModal onClose={closeModal} me={me} aliasMap={aliasMap} onSave={names=>{ applyMe(names); closeModal(); }}/> )}
   {activeModal==='notes'&&( <NotesModal onClose={closeModal} visibleDates={visibleDates} schedule={schedule} goDate={goDate} handleBackToday={handleBackToday}/> )}
             {activeModal==='master'&&( <MasterRosterModal onClose={closeModal} visibleDates={visibleDates} schedule={schedule} aliasMap={aliasMap} todayK={todayK} handleStaffClick={handleStaffClick} handleBackToday={handleBackToday} openCal={openCal}/> )}
             {(activeModal==='queryStaff'||activeModal==='queryVenue')&&( <QueryModal queryStaff={queryStaff} queryVenue={queryVenue} onClose={closeModal} setQueryStaff={name=>{ if(name){setQueryTarget(name);setActiveModal('queryStaff');} else closeModal(); }} setQueryVenue={id=>{ if(id){setQueryTarget(id);setActiveModal('queryVenue');} else closeModal(); }} visibleDates={visibleDates} schedule={schedule} aliasMap={aliasMap} curFk={curFk} handleStaffClick={handleStaffClick} handleBackToday={handleBackToday} openCal={openCal} /> )}
